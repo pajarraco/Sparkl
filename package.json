@@ -1,0 +1,21 @@
+{
+  "name": "Sparkl",
+  "version": "1.0.0",
+  "description": "A two-sided marketplace connecting vacation-rental hosts with cleaning professionals",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Ernesto La Fontaine",
+  "license": "ISC",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.15.0",
+      "onFail": "download"
+    }
+  },
+  "packageManager": "pnpm@12.15.0",
+  "type": "module"
+}

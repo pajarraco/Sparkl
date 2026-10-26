@@ -1,44 +1,31 @@
 # Sparkl
-Host and Cleaners connection App (Meta Global AI Developer Hackathon)
 
-## Idea
-A two-sided marketplace connecting Vacation rental hosts with cleaning professionals. Built with Expo (iOS, Android, Web), Fastify, tRPC, and PostgreSQL.
+A two-sided marketplace connecting vacation-rental hosts with cleaning professionals.
 
-## Architecture
-- All business logic MUST live in the service layer, never in tRPC procedures
-- Service layer pattern enables future public REST API without refactoring
-- Use Zod schemas for validation on both frontend and backend
+Built for the Meta Global AI Developer Hackathon with Expo (iOS, Android, Web), Fastify, tRPC, and PostgreSQL.
 
-## Stack
-- Node.js 24
-- pnpm
-- Docker
-- Expo SDK
-- Expo Go
-- Fastify
-- tRPC
-- Zod
-- Drizzle ORM
-- PostgreSQL
-- Unleash
-- Vitest
-- React Native
-- Typescript
-- NativeWind v4
-- Better Auth
+## MVP Scope
 
-## Context files
-- `project.md` Project scope, goals and core feature
-- `architecture.md` Frontend, backend, database and APIs and how the data flow
-- `design.md` UI design, look and feel.
-- `code-standard.md` code style, testing, validations, libraries.
-- `rules.md` what to do and not to do.
-- `tasks.md` TODO pending list of tasks and what was done.
-- `features\` Folder with the features plan files to build, use number + name + .md. Sample `01-setup-pnpm.md`.
-- `archive\` List of finished features in production.
+- Auth with host/cleaner roles
+- Hosts post cleaning jobs; cleaners browse a ranked board and claim jobs
+- Ranked suggestions in both directions (hosts see suggested cleaners, cleaners see ranked jobs)
+- Job lifecycle: open → claimed → in progress → completed
+- Per-job realtime chat
+- Profiles with service area and availability
+- Mutual reviews after completion (1–5 stars + comment)
 
+Out of scope: in-app payments, auto-assignment, admin panel, Spanish translations.
+Full scope: `context/project.md`.
 
-## Structure
+## Tech Stack
+
+- **Frontend:** Expo SDK, Expo Go, React Native, NativeWind v4
+- **Backend:** Fastify, tRPC, Zod, Drizzle ORM, Better Auth
+- **Data & Infra:** PostgreSQL, Docker, Unleash
+- **Tooling:** Node.js 24, TypeScript, pnpm, Vitest
+
+## Project Structure (Planned)
+
 ```
 Sparkl/
 ├── apps/
@@ -70,14 +57,29 @@ Sparkl/
 └── docker-compose.dev.yml
 ```
 
-## Workflow
-- Ask before doing anything — never act autonomously
-- Make a step for each process or task
-- Suggest ideas and improvements proactively
-- Always think of security implications
-- Keep documentation and change history updated
+## Architecture Principles
 
-## Changelog
-- `CHANGELOG.md` is APPEND-ONLY: for ANY change, add a NEW entry under `## [Unreleased]` stamped with the date and time (`YYYY-MM-DD HH:MM`). NEVER edit, reword, reorder, or delete existing entries
-- This append-only rule applies ONLY to `CHANGELOG.md`. For all OTHER files (context, README, etc.) update and remove whatever is no longer relevant as normal
-- Group entries under Added / Changed / Fixed / Removed / Security
+- All business logic lives in the service layer, never in tRPC procedures — this enables a future public REST API without refactoring.
+- Use Zod schemas for validation on both frontend and backend.
+
+## Design
+
+Clean & airy, role-based tabs. Brand tokens adapted from alehosts.com: indigo `#2205A4` signature, orange `#FF6B00` accent, Elms Sans throughout. Full spec: `context/design.md`.
+
+## Documentation
+
+| File | Contents |
+| ---- | -------- |
+| `context/project.md` | Project scope, goals and core features |
+| `context/architecture.md` | Frontend, backend, database, APIs and data flow |
+| `context/design.md` | UI design, look and feel |
+| `context/code-standard.md` | Code style, testing, validation, libraries |
+| `context/rules.md` | Dos and don'ts |
+| `context/tasks.md` | Pending tasks and completed work |
+| `context/features/` | Feature plans, named `<number>-<name>.md` (e.g. `01-setup-pnpm.md`) |
+| `context/archive/` | Finished features in production |
+| `context/hackathon.md` | Hackathon rules, dates and compliance |
+
+## Contributing
+
+See `AGENTS.md` for working agreements, architecture rules and the changelog policy.
