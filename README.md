@@ -27,6 +27,16 @@ A two-sided marketplace connecting Vacation rental hosts with cleaning professio
 - NativeWind v4
 - Better Auth
 
+## Context files
+- `project.md` Project scope, goals and core feature
+- `architecture.md` Frontend, backend, database and APIs and how the data flow
+- `design.md` UI design, look and feel.
+- `code-standard.md` code style, testing, validations, libraries.
+- `rules.md` what to do and not to do.
+- `tasks.md` TODO pending list of tasks and what was done.
+- `features\` Folder with the features plan files to build, use number + name + .md. Sample `01-setup-pnpm.md`.
+- `archive\` List of finished features in production.
+
 
 ## Structure
 ```
