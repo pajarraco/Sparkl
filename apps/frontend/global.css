@@ -1,0 +1,43 @@
+/* Global styles for apps/frontend (NativeWind v4).
+   Tokens mirror providers/theme.ts, which mirrors context/design.md
+   and the approved prototype (apps/frontend/prototype/board.html,
+   variant B). No new colours, fonts, or radii — see rules.md. */
+
+@import "tailwindcss";
+
+@theme {
+  --color-paper: #ffffff;
+  --color-paper-2: #f8fafc;
+  --color-ink: #1e293b;
+  --color-ink-soft: #64748b;
+  --color-ink-mute: #94a3b8;
+  --color-indigo: #2205a4;
+  --color-indigo-deep: #1a0480;
+  --color-orange: #ff6b00;
+  --color-orange-deep: #c24e00;
+  --color-orange-tint: #fff0e6;
+  --color-stone: #e2e8f0;
+  --color-success: #16a34a;
+  --font-sans: "Elms Sans", -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+/* Prototype parity: visible indigo focus on every interactive element. */
+:focus-visible {
+  outline: 2px solid var(--color-indigo);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
