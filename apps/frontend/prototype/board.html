@@ -7,7 +7,7 @@
   variant wins; the winner gets rewritten properly in the real app.
   Data is fake (demo lane / sample st). Explanations are canned until you press
   "Rewrite with local Glimmer", which calls Ollama at http://localhost:11434.
-  Photo blocks are placeholders labelled with the Muse Image prompt to use. -->
+  Photos in assets/ are live Muse Image generations (muse-image-1.0). -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -47,6 +47,8 @@
   .photo{background:var(--paper-2);border:1px dashed var(--stone);border-radius:6px;
     padding:20px 12px;text-align:center;color:var(--ink-mute);font-size:12px;margin:8px 0}
   .photo b{display:block;color:var(--ink-soft);font-size:12px;margin-bottom:4px}
+  img.ph{width:100%;height:auto;display:block;border-radius:6px;border:1px solid var(--stone);margin:8px 0 4px}
+  .img-src{font-size:12px;color:var(--ink-soft);margin:0 0 8px}
   .why{background:var(--orange-tint);border-radius:6px;padding:12px;margin:8px 0;font-size:14px}
   .why .k{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
     color:var(--orange-deep);margin:0 0 4px}
@@ -54,6 +56,7 @@
   .why .src{font-size:12px;color:var(--ink-soft);margin-top:6px}
   .row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
   button{font:inherit;cursor:pointer;min-height:44px;border-radius:6px;padding:10px 18px}
+  button:focus-visible{outline:2px solid var(--indigo);outline-offset:2px}
   .btn-primary{background:var(--indigo);color:#fff;border:none;font-weight:600;
     text-transform:uppercase;letter-spacing:.03em;font-size:14px}
   .btn-primary:active{background:var(--indigo-deep)}
@@ -96,7 +99,7 @@
     <h1 class="title">Board</h1>
   </header>
   <nav class="tabs"><span class="active">Board</span><span>My Jobs</span><span>Messages</span><span>Profile</span></nav>
-  <p class="state" id="state">variant=A · explanations=canned · images=placeholder</p>
+  <p class="state" id="state">variant=A · explanations=canned · images=live (muse-image-1.0)</p>
 
   <!-- Variant A: ranked cards, explanation inline in each card -->
   <section class="variant" id="vA">
@@ -105,7 +108,7 @@
       <h3>Turnover clean · 2bd condo</h3>
       <p class="meta">Fri 10:00–13:00 · $85 · 1.2 mi · host Dana K. 4.9★</p>
       <span class="pill">open</span>
-      <div class="photo"><b>Property photo — Muse Image</b>Prompt: bright 2-bedroom condo living room, natural daylight, tidy, photorealistic, wide angle</div>
+      <img class="ph" src="assets/job1.webp" width="1024" height="1024" alt="Bright 2-bedroom condo living room in daylight"><p class="img-src">source: live · muse-image-1.0</p>
       <div class="why"><p class="k">Why this matches</p><p class="txt">Shortest trip on your Friday (1.2 mi) from a 4.9-star host you have cleaned for twice. High acceptance chance.</p><p class="src">source: canned</p></div>
       <div class="row"><button class="btn-primary">Claim</button><button class="btn-secondary glimmer">Rewrite with local Glimmer</button></div>
       <p class="err" hidden></p>
@@ -115,7 +118,7 @@
       <h3>Checkout clean · 3bd house</h3>
       <p class="meta">Sat 9:00–12:00 · $120 · 3.8 mi · host Sam R. 4.7★</p>
       <span class="pill">open</span>
-      <div class="photo"><b>Property photo — Muse Image</b>Prompt: suburban 3-bedroom house exterior at morning, welcoming, photorealistic</div>
+      <img class="ph" src="assets/job2.webp" width="1024" height="1024" alt="Sunlit suburban 3-bedroom house living room"><p class="img-src">source: live · muse-image-1.0</p>
       <div class="why"><p class="k">Why this matches</p><p class="txt">Best Saturday pay ($120) and overlaps your morning availability. This host replies in about 5 minutes.</p><p class="src">source: canned</p></div>
       <div class="row"><button class="btn-primary">Claim</button><button class="btn-secondary glimmer">Rewrite with local Glimmer</button></div>
       <p class="err" hidden></p>
@@ -125,7 +128,7 @@
       <h3>Studio refresh</h3>
       <p class="meta">Sun 14:00–16:00 · $64 · 0.6 mi · new host, no reviews yet</p>
       <span class="pill">open</span>
-      <div class="photo"><b>Property photo — Muse Image</b>Prompt: small bright studio apartment, compact kitchen, natural light, photorealistic</div>
+      <img class="ph" src="assets/job3.webp" width="1024" height="1024" alt="Small bright studio apartment with compact kitchen"><p class="img-src">source: live · muse-image-1.0</p>
       <div class="why"><p class="k">Why this matches</p><p class="txt">Closest job to you (0.6 mi) from a brand-new host. No reviews yet, so an easy first booking to fill Sunday.</p><p class="src">source: canned</p></div>
       <div class="row"><button class="btn-primary">Claim</button><button class="btn-secondary glimmer">Rewrite with local Glimmer</button></div>
       <p class="err" hidden></p>
@@ -137,15 +140,16 @@
     <div class="spot" data-job="job1">
       <p class="eyebrow">Top match for you</p>
       <h3 style="font-size:24px;line-height:30px;margin:0 0 8px">Turnover clean · 2bd condo — $85</h3>
-      <p class="meta">Fri 10:00–13:00 · 1.2 mi · host Dana K. 4.9★</p>
-      <div class="photo"><b>Property photo — Muse Image</b>Prompt: bright 2-bedroom condo living room, natural daylight, tidy, photorealistic, wide angle</div>
-      <div class="why"><p class="k">Why this matches</p><p class="txt">Shortest trip on your Friday (1.2 mi) from a 4.9-star host you have cleaned for twice. High acceptance chance.</p><p class="src">source: canned</p></div>
-      <div class="row"><button class="btn-primary">Claim this job</button><button class="btn-secondary glimmer">Rewrite with local Glimmer</button></div>
+      <p class="meta">Fri 10:00–13:00 · 1.2 mi</p>
+      <p class="meta">host Dana K. · ★ 4.9 · 12 jobs done</p>
+      <img class="ph" src="assets/job1.webp" width="1024" height="1024" alt="Bright 2-bedroom condo living room in daylight"><p class="img-src">source: live · muse-image-1.0</p>
+      <div class="why" aria-live="polite"><p class="k">Why this matches</p><p class="txt">Shortest trip on your Friday (1.2 mi) from a 4.9-star host you have cleaned for twice. High acceptance chance.</p><p class="src">source: canned</p></div>
+      <div class="row"><button class="btn-primary" aria-label="Claim turnover clean condo, Friday, 85 dollars">Claim this job</button><button class="btn-secondary glimmer">Rewrite with local Glimmer</button></div>
       <p class="err" hidden></p>
     </div>
     <p class="eyebrow">Also ranked for you</p>
-    <div class="crow"><span class="rank">2</span><div class="t"><b>Checkout clean · 3bd house</b><span>Sat · $120 · 3.8 mi · 4.7★ host</span></div></div>
-    <div class="crow"><span class="rank">3</span><div class="t"><b>Studio refresh</b><span>Sun · $64 · 0.6 mi · new host</span></div></div>
+    <div class="crow"><span class="rank">2</span><div class="t"><b>Checkout clean · 3bd house</b><span>Sat · $120 · 3.8 mi · ★ 4.7 · 31 jobs done</span></div></div>
+    <div class="crow"><span class="rank">3</span><div class="t"><b>Studio refresh</b><span>Sun · $64 · 0.6 mi · new host · no reviews yet</span></div></div>
   </section>
 
   <!-- Variant C: matcher briefing — reasons lead, job details follow -->
@@ -214,7 +218,7 @@
     document.getElementById("state").textContent =
       "variant=" + current() + " · explanations=" +
       (n ? "live x" + n + " (muse-glimmer)" : "canned") +
-      " · images=placeholder (Muse Image prompts shown)";
+      " · images=live (muse-image-1.0)";
   }
   document.getElementById("prev").onclick = function(){
     var i = (order.indexOf(current()) + order.length - 1) % order.length;

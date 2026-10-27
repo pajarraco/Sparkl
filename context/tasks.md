@@ -45,7 +45,7 @@
 
 ### 7. Frontend — cleaner flow
 
-- [ ] Ranked Board with filters (date, distance, price), Job Detail with claim
+- [ ] Ranked Board with filters (date, distance, price), Job Detail with claim (FlatList + keyExtractor, memoized rows, expo-image, accessibility labels on every interactive element)
 - [ ] My Jobs, Chat thread UI, Leave Review screen, Profile + availability editor
 
 ### 8. Demo gate

@@ -92,7 +92,8 @@ The one memorable component, used on the Board, My Jobs, and suggestions:
 - Top: address in uppercase caption, `ink-soft`.
 - Title: H3, `ink`.
 - Meta row: date/time · price · distance (or cleaner name · rating for suggestions) — small, tabular numerals.
-- Status pill where relevant (open / claimed / in progress / completed), tinted background, never orange-on-white text.
+- Trust row: host ★ rating and completed-job count on board cards; cleaner ★ and completed count on suggestion rows. Both come from the matching service, never hardcoded. No verified badge until a real verification backend exists.
+- Status pill where relevant, tinted background with dark text, never orange-on-white text: open = green tint + dark green text; claimed / in progress = indigo tint + `indigo-deep` text; completed = `paper-2` + `ink-soft`; cancelled = red tint + dark red text.
 - `stone` border, radius up to 14, no shadow, no lift on press — a meta line shifts to `indigo` instead.
 
 ## Components
@@ -120,7 +121,7 @@ Restrained. Default platform screen transitions; one subtle moment per surface a
 
 ## Imagery
 
-Real work, warm light. Avatars are user photos; job photos (when added) show the actual space to be cleaned — bright interiors, natural light. No stock-photo tropes, no decorative hero images inside the app. Every bundled asset ships in WebP/AVIF with explicit dimensions.
+Real work, warm light. Avatars are user photos; job photos (when added) show the actual space to be cleaned — bright interiors, natural light. No stock-photo tropes, no decorative hero images inside the app. Every bundled asset ships in WebP/AVIF with explicit dimensions. On native, render photos with expo-image (memory-disk cache) and always pass explicit width and height so lists never shift.
 
 ## Accessibility
 
