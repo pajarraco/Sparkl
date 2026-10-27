@@ -10,6 +10,7 @@
 - Put ranking-signal changes behind the weights config and its feature flag.
 - Keep `README.md` and `CHANGELOG.md` in sync with scope and design changes.
 - Scan for secrets before every commit; commit only when the scan is clean.
+- Route low-thinking bulk work (advisory code reviews, doc reads/writes, dummy/seed data, CHANGELOG entries, prototype filler, i18n strings, boilerplate) to local `muse-glimmer:latest` first — see `.agents/skills/glimmer-delegate/`; the host plans, briefs, and verifies.
 
 ## Don't
 

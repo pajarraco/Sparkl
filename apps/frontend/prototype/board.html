@@ -13,6 +13,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sparkl prototype — ranked board</title>
+<link id="favicon" rel="icon" type="image/png" href="assets/logo-1.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Elms+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -83,6 +84,8 @@
   .chip{display:inline-block;background:var(--paper-2);border:1px solid var(--stone);
     border-radius:6px;padding:8px 12px;font-size:14px}
   .chip span{color:var(--ink-soft);font-variant-numeric:tabular-nums}
+  .brand{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .brand img{height:64px;width:auto;display:block}
   /* Floating switcher — obviously not part of the design */
   #switcher{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);
     background:var(--ink);color:#fff;border-radius:999px;display:flex;align-items:center;
@@ -95,11 +98,15 @@
 <body>
 <div class="wrap">
   <header class="screen">
+    <div class="brand"><img id="brandLogo" src="assets/logo-3.png" alt="Sparkl logo"></div>
     <p class="eyebrow">Sparkl prototype · cleaner</p>
     <h1 class="title">Board</h1>
   </header>
   <nav class="tabs"><span class="active">Board</span><span>My Jobs</span><span>Messages</span><span>Profile</span></nav>
   <p class="state" id="state">variant=A · explanations=canned · images=live (muse-image-1.0)</p>
+
+  <!-- Logo winner applied: option 3 wordmark in the header (64px), option 1 Spark S
+    as the fixed favicon. logo-2.png stays in assets/ for reference. -->
 
   <!-- Variant A: ranked cards, explanation inline in each card -->
   <section class="variant" id="vA">

@@ -22,6 +22,7 @@ No implementation exists yet — the `context/` files are the build spec.
 - Suggest ideas and improvements proactively.
 - Always consider security implications.
 - Keep documentation and change history updated.
+- For low-thinking bulk work, delegate to local `muse-glimmer:latest` per `.agents/skills/glimmer-delegate/` (routing rule in `context/rules.md`).
 
 ## Architecture Rules
 
