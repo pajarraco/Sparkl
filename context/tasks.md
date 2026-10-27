@@ -34,9 +34,9 @@
 
 ### 5. Frontend — shell & auth
 
-- [ ] Providers (auth, tRPC HTTP + WS, i18n) and theme tokens from `design.md`
-- [ ] Auth screens: welcome, sign in, sign up with role pick
-- [ ] Role-based tab bars (host vs cleaner)
+- [x] Providers (auth, tRPC HTTP + WS, i18n) and theme tokens from `design.md`
+- [x] Auth screens: welcome, sign in, sign up with role pick
+- [x] Role-based tab bars (host vs cleaner)
 
 ### 6. Frontend — host flow
 

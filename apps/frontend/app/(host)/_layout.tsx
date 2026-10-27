@@ -34,6 +34,7 @@ export default function HostTabsLayout() {
           }}
         />
       ))}
+      <Tabs.Screen name="job/[id]" options={{ href: null }} />
     </Tabs>
   );
 }

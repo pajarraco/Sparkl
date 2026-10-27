@@ -1,18 +1,170 @@
+import type { Job } from "@sparkl/shared";
+import { useRouter } from "expo-router";
+import { useCallback, useState } from "react";
+import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { BodyText } from "../../components/BodyText.js";
+import { JobCard } from "../../components/JobCard.js";
 import { Screen } from "../../components/Screen.js";
+import { SparklButton } from "../../components/SparklButton.js";
+import { sparklTrpc } from "../../providers/app-providers.js";
 import { getStrings } from "../../providers/i18n.js";
+import {
+  type MyJobsSegment,
+  filterJobsBySegment,
+  hostMetaLine,
+  statusLabelFor,
+} from "../../providers/my-jobs.js";
+import {
+  THEME_COLORS,
+  THEME_FONT,
+  THEME_RADII,
+  THEME_SPACING,
+} from "../../providers/theme.js";
 
-// Host My Jobs stub: real lists land in task 6; the designed empty state
-// ships now so the tab shell is complete.
+// Host My Jobs (design.md Screen Inventory): open / active / history
+// segments over one jobs.myJobs query, rows are memoized JobCards with
+// stable keyExtractor. Loading shows card-shaped skeletons, never a
+// full-screen spinner; errors stay inline with a retry.
+
+const SEGMENTS: MyJobsSegment[] = ["open", "active", "history"];
+
+const styles = StyleSheet.create({
+  segments: {
+    flexDirection: "row",
+    gap: THEME_SPACING.rowMax,
+    marginBottom: THEME_SPACING.rowMax,
+  },
+  segment: {
+    minHeight: THEME_SPACING.touchTarget,
+    justifyContent: "center",
+    paddingHorizontal: THEME_SPACING.rowMin,
+  },
+  segmentText: {
+    fontFamily: THEME_FONT.family,
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: "500",
+    color: THEME_COLORS.inkMute,
+  },
+  segmentTextActive: {
+    color: THEME_COLORS.indigo,
+    fontWeight: "600",
+  },
+  list: {
+    gap: THEME_SPACING.rowMax,
+  },
+  skeleton: {
+    height: 132,
+    backgroundColor: THEME_COLORS.paper2,
+    borderWidth: 1,
+    borderColor: THEME_COLORS.stone,
+    borderRadius: THEME_RADII.cardMax,
+  },
+  error: {
+    fontFamily: THEME_FONT.family,
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: "500",
+    color: THEME_COLORS.danger,
+  },
+});
+
 export default function HostMyJobsScreen() {
   const strings = getStrings();
+  const router = useRouter();
+  const [segment, setSegment] = useState<MyJobsSegment>("open");
+  const query = sparklTrpc.jobs.myJobs.useQuery({});
+
+  const segmentLabel = useCallback(
+    (value: MyJobsSegment): string => {
+      if (value === "active") return strings.myJobs.segmentActive;
+      if (value === "history") return strings.myJobs.segmentHistory;
+      return strings.myJobs.segmentOpen;
+    },
+    [strings],
+  );
+
+  const renderItem = useCallback(
+    ({ item }: { item: Job }) => (
+      <JobCard
+        address={item.address}
+        metaLine={hostMetaLine(item)}
+        onPress={() => {
+          router.push(`/(host)/job/${item.id}`);
+        }}
+        status={item.status}
+        statusLabel={statusLabelFor(item.status)}
+        testID={`host-job-card-${item.id}`}
+        title={strings.jobCard.title}
+      />
+    ),
+    [strings, router],
+  );
+
+  const jobs =
+    query.data === undefined
+      ? undefined
+      : filterJobsBySegment(query.data, segment);
+
   return (
-    <Screen
-      subtitle={strings.emptyStates.noMyJobs}
-      testID="host-my-jobs-screen"
-      title={strings.myJobs.title}
-    >
-      <BodyText>{strings.emptyStates.postFirst}</BodyText>
+    <Screen testID="host-my-jobs-screen" title={strings.myJobs.title}>
+      <View style={styles.segments}>
+        {SEGMENTS.map((value) => (
+          <Pressable
+            key={value}
+            accessibilityLabel={segmentLabel(value)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: segment === value }}
+            onPress={() => setSegment(value)}
+            style={styles.segment}
+            testID={`host-my-jobs-segment-${value}`}
+          >
+            <Text
+              style={[
+                styles.segmentText,
+                segment === value ? styles.segmentTextActive : null,
+              ]}
+            >
+              {segmentLabel(value)}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+      {query.isPending ? (
+        <View style={styles.list} testID="host-my-jobs-loading">
+          <View style={styles.skeleton} />
+          <View style={styles.skeleton} />
+          <View style={styles.skeleton} />
+        </View>
+      ) : query.isError || jobs === undefined ? (
+        <View style={styles.list}>
+          <Text accessibilityLiveRegion="polite" style={styles.error}>
+            {strings.errors.generic}
+          </Text>
+          <SparklButton
+            accessibilityLabel={strings.errors.retry}
+            onPress={() => {
+              void query.refetch();
+            }}
+            testID="host-my-jobs-retry"
+            title={strings.errors.retry}
+            variant="secondary"
+          />
+        </View>
+      ) : jobs.length === 0 ? (
+        <View style={styles.list}>
+          <BodyText>{strings.emptyStates.noMyJobs}</BodyText>
+          <BodyText soft>{strings.emptyStates.postFirst}</BodyText>
+        </View>
+      ) : (
+        <FlatList
+          contentContainerStyle={styles.list}
+          data={jobs}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          testID="host-my-jobs-list"
+        />
+      )}
     </Screen>
   );
 }
