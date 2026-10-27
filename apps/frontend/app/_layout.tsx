@@ -1,13 +1,13 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "react-native";
-import { getApiOrigin } from "../providers/app-config.js";
+import { getApiOrigin } from "../providers/app-config";
 import {
   SparklProviders,
   createAuthenticatedTrpcClient,
   createQueryClient,
-} from "../providers/app-providers.js";
-import { authClient } from "../providers/auth-instance.js";
-import { THEME_COLORS } from "../providers/theme.js";
+} from "../providers/app-providers";
+import { authClient } from "../providers/auth-instance";
+import { THEME_COLORS } from "../providers/theme";
 
 // Root composition: theme is token-driven (global.css + THEME_*), auth
 // session flows from SecureStore into tRPC headers via the stored cookie.

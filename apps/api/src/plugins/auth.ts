@@ -4,6 +4,7 @@ import { betterAuth } from "better-auth";
 import type { FastifyInstance } from "fastify";
 import { db } from "../db/client.js";
 import * as schema from "../db/schema.js";
+import "../env.js";
 
 // Kept private: the inferred instance type is not portable — the expo
 // plugin's endpoint types reach into zod/v4/core through a nested copy,

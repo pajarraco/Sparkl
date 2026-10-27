@@ -1,10 +1,10 @@
 import { useRouter } from "expo-router";
 import { StyleSheet, View } from "react-native";
-import { Screen } from "../../components/Screen.js";
-import { SparklButton } from "../../components/SparklButton.js";
-import { authClient } from "../../providers/auth-instance.js";
-import { getStrings } from "../../providers/i18n.js";
-import { THEME_SPACING } from "../../providers/theme.js";
+import { Screen } from "../../components/Screen";
+import { SparklButton } from "../../components/SparklButton";
+import { authClient } from "../../providers/auth-instance";
+import { getStrings } from "../../providers/i18n";
+import { THEME_SPACING } from "../../providers/theme";
 
 // Profile stub: photo, service area and availability editing land in
 // task 7; sign-out is real now so testers can switch roles between demo

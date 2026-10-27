@@ -1,23 +1,19 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { RolePicker } from "../../components/RolePicker.js";
-import { Screen } from "../../components/Screen.js";
-import { SparklButton } from "../../components/SparklButton.js";
-import { SparklTextField } from "../../components/SparklTextField.js";
+import { RolePicker } from "../../components/RolePicker";
+import { Screen } from "../../components/Screen";
+import { SparklButton } from "../../components/SparklButton";
+import { SparklTextField } from "../../components/SparklTextField";
+import type { AppRole } from "../../providers/auth";
 import {
   type AuthFieldErrors,
   validateSignUp,
-} from "../../providers/auth-forms.js";
-import { authClient } from "../../providers/auth-instance.js";
-import { getHomeRouteForRole } from "../../providers/auth-navigation.js";
-import type { AppRole } from "../../providers/auth.js";
-import { getStrings } from "../../providers/i18n.js";
-import {
-  THEME_COLORS,
-  THEME_FONT,
-  THEME_SPACING,
-} from "../../providers/theme.js";
+} from "../../providers/auth-forms";
+import { authClient } from "../../providers/auth-instance";
+import { getHomeRouteForRole } from "../../providers/auth-navigation";
+import { getStrings } from "../../providers/i18n";
+import { THEME_COLORS, THEME_FONT, THEME_SPACING } from "../../providers/theme";
 
 const styles = StyleSheet.create({
   form: {

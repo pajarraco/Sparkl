@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  STATUS_PILL,
-  THEME_COLORS,
-  THEME_RADII,
-  THEME_SPACING,
-} from "./theme.js";
+import { STATUS_PILL, THEME_COLORS, THEME_RADII, THEME_SPACING } from "./theme";
 
 describe("theme tokens", () => {
   it("matches the design.md palette and prototype :root", () => {

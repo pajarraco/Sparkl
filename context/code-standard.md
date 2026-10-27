@@ -19,6 +19,7 @@
 - Files are kebab-case, except components which are `PascalCase.tsx`. Tests are `<name>.test.ts(x)` colocated with the module.
 - Variables and functions are camelCase, types and interfaces PascalCase, constants UPPER_SNAKE_CASE.
 - Cross-package imports use workspace names (`@sparkl/shared`); inside a package use relative imports. No deep `../../../..` climbs — restructure instead.
+- Import suffixes differ by consumer: only `apps/api` internals keep `.js` suffixes (NodeNext/tsx resolution). The Expo frontend and the shared packages (`packages/shared`, `packages/i18n`) use extensionless relative imports, because Metro follows the workspace symlinks into shared sources and cannot resolve a `.js` suffix to its `.ts`/`.tsx` file.
 
 ## Validation
 

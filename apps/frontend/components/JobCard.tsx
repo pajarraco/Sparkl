@@ -1,14 +1,14 @@
 import type { JobStatus } from "@sparkl/shared";
 import { memo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { pillKeyForStatus } from "../providers/my-jobs.js";
+import { pillKeyForStatus } from "../providers/my-jobs";
 import {
   STATUS_PILL,
   THEME_COLORS,
   THEME_FONT,
   THEME_RADII,
   THEME_SPACING,
-} from "../providers/theme.js";
+} from "../providers/theme";
 
 // Signature job card (design.md): orange rail, uppercase address caption,
 // H3 title, tabular meta row, optional trust row, status pill. Stone

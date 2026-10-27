@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { jobSchema } from "./jobs.js";
-import { publicCleanerProfileSchema } from "./user-inputs.js";
+import { jobSchema } from "./jobs";
+import { publicCleanerProfileSchema } from "./user-inputs";
 
 // Ranking weights: one config object, tuned without deploys behind the
 // `ranking-weights-v2` flag (see RANKING_WEIGHTS_FLAG). Weights must sum to 1.

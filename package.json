@@ -13,7 +13,8 @@
     }
   },
   "scripts": {
-    "dev": "pnpm --recursive --parallel run dev",
+    "dev": "node scripts/dev-setup.mjs && pnpm --recursive --parallel run dev",
+    "verify": "pnpm test && pnpm lint && pnpm typecheck",
     "build": "pnpm --recursive run build",
     "test": "pnpm --recursive run test",
     "lint": "biome check .",

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { getStrings } from "./i18n.js";
-import { getTabsForRole } from "./tabs.js";
+import { getStrings } from "./i18n";
+import { getTabsForRole } from "./tabs";
 
 const tabs = getStrings().tabs;
 

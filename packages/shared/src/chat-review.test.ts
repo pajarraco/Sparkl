@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { SPARKL_ERROR_CODES } from "./errors.js";
-import { listMessagesInputSchema, sendMessageInputSchema } from "./messages.js";
-import { createReviewInputSchema, listReviewsInputSchema } from "./reviews.js";
+import { SPARKL_ERROR_CODES } from "./errors";
+import { listMessagesInputSchema, sendMessageInputSchema } from "./messages";
+import { createReviewInputSchema, listReviewsInputSchema } from "./reviews";
 
 describe("sendMessageInputSchema", () => {
   it("trims the body and rejects empty messages", () => {

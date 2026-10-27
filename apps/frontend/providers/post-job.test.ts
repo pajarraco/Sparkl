@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { validatePostJob } from "./post-job.js";
+import { validatePostJob } from "./post-job";
 
 function validForm() {
   return {

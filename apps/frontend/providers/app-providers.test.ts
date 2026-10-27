@@ -1,12 +1,12 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
-import { getApiOrigin } from "./app-config.js";
+import { getApiOrigin } from "./app-config";
 import {
   SparklProviders,
   createAuthenticatedTrpcClient,
   createQueryClient,
   sparklTrpc,
-} from "./app-providers.js";
+} from "./app-providers";
 
 describe("app providers", () => {
   it("creates a query client with library defaults", () => {

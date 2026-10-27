@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getHomeRouteForRole, getInitialRoute } from "./auth-navigation.js";
+import { getHomeRouteForRole, getInitialRoute } from "./auth-navigation";
 
 describe("auth navigation", () => {
   it("sends signed-out users to welcome", () => {

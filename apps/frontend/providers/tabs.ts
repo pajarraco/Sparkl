@@ -1,5 +1,5 @@
-import type { AppRole } from "./auth.js";
-import { getStrings } from "./i18n.js";
+import type { AppRole } from "./auth";
+import { getStrings } from "./i18n";
 
 // Role-based tab definitions (design.md Navigation). Titles come from the
 // i18n package; routes match the expo-router group layouts in app/.

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { userRoleSchema } from "./users.js";
+import { userRoleSchema } from "./users";
 
 // Client-side auth form validation. Better Auth owns the real checks on
 // the server (email/password rules live in apps/api/src/plugins/auth.ts);

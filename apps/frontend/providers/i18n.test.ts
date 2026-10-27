@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getStrings } from "./i18n.js";
+import { getStrings } from "./i18n";
 
 describe("i18n provider", () => {
   it("returns the English table with board and tab keys", () => {

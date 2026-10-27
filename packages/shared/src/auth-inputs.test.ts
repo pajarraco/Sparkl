@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { signInInputSchema, signUpInputSchema } from "./auth-inputs.js";
+import { signInInputSchema, signUpInputSchema } from "./auth-inputs";
 
 function validSignUp() {
   return {

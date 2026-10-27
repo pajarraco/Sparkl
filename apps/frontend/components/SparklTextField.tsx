@@ -6,7 +6,7 @@ import {
   THEME_FONT,
   THEME_RADII,
   THEME_SPACING,
-} from "../providers/theme.js";
+} from "../providers/theme";
 
 // Labelled text input (design.md Components): eyebrow label above, white
 // fill, stone border, 6pt radius. Focus shows a 2pt indigo border (React

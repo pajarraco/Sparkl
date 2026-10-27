@@ -1,11 +1,11 @@
-import type { AppRouter } from "@sparkl/api/src/trpc/router.js";
+import type { AppRouter } from "@sparkl/api/src/trpc/router";
 import {
   createTRPCClient,
   httpBatchLink,
   httpSubscriptionLink,
   splitLink,
 } from "@trpc/client";
-import { getTrpcUrl } from "./app-config.js";
+import { getTrpcUrl } from "./app-config";
 
 // Typed tRPC client for apps/frontend (vanilla — React Query wiring is the
 // next slice). Transport mirrors apps/api/src/index.ts: one Fastify origin

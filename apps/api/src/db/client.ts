@@ -1,5 +1,6 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import "../env.js";
 import * as schema from "./schema.js";
 
 function requireDatabaseUrl(): string {

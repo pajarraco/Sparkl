@@ -4,7 +4,7 @@ import {
   THEME_FONT,
   THEME_RADII,
   THEME_SPACING,
-} from "../providers/theme.js";
+} from "../providers/theme";
 
 // Buttons (design.md Components): primary indigo fill with white uppercase
 // label; secondary white fill with 2px indigo border; destructive danger

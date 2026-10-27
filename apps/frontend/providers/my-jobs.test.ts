@@ -8,7 +8,7 @@ import {
   pillKeyForStatus,
   segmentForStatus,
   statusLabelFor,
-} from "./my-jobs.js";
+} from "./my-jobs";
 
 function jobWithStatus(status: Job["status"]): Job {
   return {

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { userSchema } from "./users.js";
+import { userSchema } from "./users";
 
 const timeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 

@@ -1,4 +1,4 @@
-import type { AppRole } from "./auth.js";
+import type { AppRole } from "./auth";
 
 // Auth entry routing. Signed-out users land on welcome; signed-in users
 // land on their role home (host jobs, cleaner board). Session-aware

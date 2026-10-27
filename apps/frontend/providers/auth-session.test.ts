@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sessionHeaders } from "./auth-session.js";
+import { sessionHeaders } from "./auth-session";
 
 describe("session headers", () => {
   it("sends the stored session cookie", async () => {

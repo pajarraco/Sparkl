@@ -1,29 +1,31 @@
 import type { RankedCleaner } from "@sparkl/shared";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
-import { BodyText } from "../../../components/BodyText.js";
-import { Screen } from "../../../components/Screen.js";
-import { SparklButton } from "../../../components/SparklButton.js";
-import { sparklTrpc } from "../../../providers/app-providers.js";
-import { getStrings } from "../../../providers/i18n.js";
+import { BodyText } from "../../../components/BodyText";
+import { Screen } from "../../../components/Screen";
+import { SparklButton } from "../../../components/SparklButton";
+import { sparklTrpc } from "../../../providers/app-providers";
+import { getStrings } from "../../../providers/i18n";
 import {
   type HostJobAction,
   hostActionsForStatus,
+  hostChatAvailableForStatus,
+  hostReviewAvailableForStatus,
   suggestionTrustLine,
-} from "../../../providers/job-detail.js";
+} from "../../../providers/job-detail";
 import {
   formatJobWindow,
   formatPriceMinorUnits,
   statusLabelFor,
-} from "../../../providers/my-jobs.js";
-import { STATUS_PILL } from "../../../providers/theme.js";
+} from "../../../providers/my-jobs";
+import { STATUS_PILL } from "../../../providers/theme";
 import {
   THEME_COLORS,
   THEME_FONT,
   THEME_RADII,
   THEME_SPACING,
-} from "../../../providers/theme.js";
+} from "../../../providers/theme";
 
 // Host Job Detail (design.md Screen Inventory): status, ranked cleaner
 // suggestions from suggestions.forJob, lifecycle actions. The job itself
@@ -158,6 +160,7 @@ function SuggestionRow(props: {
 
 export default function HostJobDetailScreen() {
   const strings = getStrings();
+  const router = useRouter();
   const params = useLocalSearchParams<{ id: string }>();
   const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
   const jobId = rawId !== undefined && UUID_RE.test(rawId) ? rawId : null;
@@ -250,6 +253,28 @@ export default function HostJobDetailScreen() {
       <FlatList
         ListFooterComponent={
           <View style={styles.actions}>
+            {hostChatAvailableForStatus(job.status) ? (
+              <SparklButton
+                accessibilityLabel={strings.jobDetail.openChat}
+                onPress={() => {
+                  router.push(`/(host)/chat/${job.id}`);
+                }}
+                testID="host-job-open-chat"
+                title={strings.jobDetail.openChat}
+                variant="secondary"
+              />
+            ) : null}
+            {hostReviewAvailableForStatus(job.status) ? (
+              <SparklButton
+                accessibilityLabel={strings.review.title}
+                onPress={() => {
+                  router.push(`/(host)/review/${job.id}`);
+                }}
+                testID="host-job-leave-review"
+                title={strings.review.title}
+                variant="secondary"
+              />
+            ) : null}
             {actions.includes("complete") ? (
               <SparklButton
                 accessibilityLabel={strings.jobDetail.complete}

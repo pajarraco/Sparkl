@@ -1,6 +1,6 @@
 import * as SecureStore from "expo-secure-store";
-import { getApiOrigin } from "./app-config.js";
-import { createSparklAuthClient } from "./auth-client.js";
+import { getApiOrigin } from "./app-config";
+import { createSparklAuthClient } from "./auth-client";
 
 // Shared Better Auth singleton for screens and the root layout.
 // SecureStore persists the session cookie on native; the app shell passes

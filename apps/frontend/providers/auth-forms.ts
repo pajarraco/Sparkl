@@ -4,7 +4,7 @@ import {
   signInInputSchema,
   signUpInputSchema,
 } from "@sparkl/shared";
-import { getStrings } from "./i18n.js";
+import { getStrings } from "./i18n";
 
 // Thin Zod parsing for the auth screens so components stay free of
 // validation logic (rules.md). Every message comes from the i18n package.

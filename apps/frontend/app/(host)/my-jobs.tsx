@@ -2,24 +2,24 @@ import type { Job } from "@sparkl/shared";
 import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
-import { BodyText } from "../../components/BodyText.js";
-import { JobCard } from "../../components/JobCard.js";
-import { Screen } from "../../components/Screen.js";
-import { SparklButton } from "../../components/SparklButton.js";
-import { sparklTrpc } from "../../providers/app-providers.js";
-import { getStrings } from "../../providers/i18n.js";
+import { BodyText } from "../../components/BodyText";
+import { JobCard } from "../../components/JobCard";
+import { Screen } from "../../components/Screen";
+import { SparklButton } from "../../components/SparklButton";
+import { sparklTrpc } from "../../providers/app-providers";
+import { getStrings } from "../../providers/i18n";
 import {
   type MyJobsSegment,
   filterJobsBySegment,
   hostMetaLine,
   statusLabelFor,
-} from "../../providers/my-jobs.js";
+} from "../../providers/my-jobs";
 import {
   THEME_COLORS,
   THEME_FONT,
   THEME_RADII,
   THEME_SPACING,
-} from "../../providers/theme.js";
+} from "../../providers/theme";
 
 // Host My Jobs (design.md Screen Inventory): open / active / history
 // segments over one jobs.myJobs query, rows are memoized JobCards with

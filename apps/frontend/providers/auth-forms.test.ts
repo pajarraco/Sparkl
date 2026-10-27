@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { validateSignIn, validateSignUp } from "./auth-forms.js";
-import { getStrings } from "./i18n.js";
+import { validateSignIn, validateSignUp } from "./auth-forms";
+import { getStrings } from "./i18n";
 
 const strings = getStrings().errors;
 

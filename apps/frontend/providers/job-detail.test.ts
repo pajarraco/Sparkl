@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { hostActionsForStatus, suggestionTrustLine } from "./job-detail.js";
+import {
+  hostActionsForStatus,
+  hostChatAvailableForStatus,
+  hostReviewAvailableForStatus,
+  suggestionTrustLine,
+} from "./job-detail";
 
 describe("hostActionsForStatus", () => {
   it("offers cancel on pre-terminal states", () => {
@@ -14,6 +19,29 @@ describe("hostActionsForStatus", () => {
   it("offers nothing on terminal states", () => {
     expect(hostActionsForStatus("completed")).toEqual([]);
     expect(hostActionsForStatus("cancelled")).toEqual([]);
+  });
+});
+
+describe("hostChatAvailableForStatus", () => {
+  it("hides chat while the job is still open", () => {
+    expect(hostChatAvailableForStatus("open")).toBe(false);
+  });
+
+  it("offers chat once claimed and afterwards", () => {
+    expect(hostChatAvailableForStatus("claimed")).toBe(true);
+    expect(hostChatAvailableForStatus("in_progress")).toBe(true);
+    expect(hostChatAvailableForStatus("completed")).toBe(true);
+    expect(hostChatAvailableForStatus("cancelled")).toBe(true);
+  });
+});
+
+describe("hostReviewAvailableForStatus", () => {
+  it("offers reviews only on completed jobs", () => {
+    expect(hostReviewAvailableForStatus("completed")).toBe(true);
+    expect(hostReviewAvailableForStatus("open")).toBe(false);
+    expect(hostReviewAvailableForStatus("claimed")).toBe(false);
+    expect(hostReviewAvailableForStatus("in_progress")).toBe(false);
+    expect(hostReviewAvailableForStatus("cancelled")).toBe(false);
   });
 });
 

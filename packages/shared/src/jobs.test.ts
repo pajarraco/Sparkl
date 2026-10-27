@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { jobSchema } from "./jobs.js";
+import { jobSchema } from "./jobs";
 
 const baseJob = {
   id: "11111111-1111-4111-8111-111111111111",

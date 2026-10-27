@@ -1,5 +1,5 @@
 import { type CreateJobInput, createJobInput } from "@sparkl/shared";
-import { getStrings } from "./i18n.js";
+import { getStrings } from "./i18n";
 
 // Pure validation for the host Post Job form (rules.md: no logic in
 // components). Text inputs stay strings until here; this module coerces

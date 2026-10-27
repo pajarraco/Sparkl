@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { getApiOrigin } from "./app-config.js";
+import { getApiOrigin } from "./app-config";
 import {
   createTrpcClient,
   getTrpcClientUrl,
   isSubscriptionOperation,
-} from "./trpc-client.js";
+} from "./trpc-client";
 
 describe("trpc-client", () => {
   it("targets the /trpc prefix on the configured origin", () => {

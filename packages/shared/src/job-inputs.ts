@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { jobStatusSchema } from "./lifecycle.js";
+import { jobStatusSchema } from "./lifecycle";
 
 const isoDatetime = z.string().datetime();
 

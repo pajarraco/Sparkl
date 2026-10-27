@@ -48,7 +48,8 @@ No implementation exists yet — the `context/` files are the build spec.
 - `docker compose -f docker-compose.dev.yml up -d` — start local PostgreSQL, Redis and MinIO
 - `docker compose -f docker-compose.dev.yml down` — stop local services
 - `pnpm --filter @sparkl/api buckets` — create local MinIO buckets and smoke-test presigned uploads (after compose up)
-- `pnpm dev` — run all workspace dev scripts in parallel
+- `pnpm dev` — full local boot: install, compose up, migrate, buckets, then all workspace dev scripts in parallel
+- `pnpm verify` — `test` + `lint` + `typecheck` in one go
 - `pnpm test` — run the full test suite (recursive `vitest run`)
 - `pnpm typecheck` — recursive `tsc --noEmit`
 - `pnpm lint` — `biome check .`

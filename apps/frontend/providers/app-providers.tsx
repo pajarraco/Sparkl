@@ -1,9 +1,9 @@
-import type { AppRouter } from "@sparkl/api/src/trpc/router.js";
+import type { AppRouter } from "@sparkl/api/src/trpc/router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createTRPCReact } from "@trpc/react-query";
 import type { ReactNode } from "react";
-import { type GetSessionCookie, sessionHeaders } from "./auth-session.js";
-import { createTrpcClient } from "./trpc-client.js";
+import { type GetSessionCookie, sessionHeaders } from "./auth-session";
+import { createTrpcClient } from "./trpc-client";
 
 // React composition root. Hook-free so it stays directly unit-testable.
 // The auth client itself is created in auth-client.ts and passed in here

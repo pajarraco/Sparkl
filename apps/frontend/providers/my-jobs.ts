@@ -1,6 +1,6 @@
 import type { Job, JobStatus } from "@sparkl/shared";
-import { getStrings } from "./i18n.js";
-import type { JobStatusPill } from "./theme.js";
+import { getStrings } from "./i18n";
+import type { JobStatusPill } from "./theme";
 
 // Pure helpers for the host My Jobs list (rules.md: no logic in
 // components). Segments group lifecycle states the way the tab design

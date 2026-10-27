@@ -5,7 +5,7 @@ import {
   getAuthBaseUrl,
   getTrpcUrl,
   normalizeOrigin,
-} from "./app-config.js";
+} from "./app-config";
 
 describe("app-config", () => {
   it("defaults to the local API origin", () => {

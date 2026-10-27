@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { THEME_COLORS, THEME_FONT, THEME_SPACING } from "../providers/theme.js";
+import { THEME_COLORS, THEME_FONT, THEME_SPACING } from "../providers/theme";
 
 // Shared screen shell: single column, 16pt edges, title + optional
 // subtitle, generous section rhythm (design.md Spacing). Screens own

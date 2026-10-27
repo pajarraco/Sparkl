@@ -1,4 +1,4 @@
-import type { GetTrpcHeaders } from "./trpc-client.js";
+import type { GetTrpcHeaders } from "./trpc-client";
 
 // Session → tRPC header mapping (pure; the Better Auth client that
 // supplies getCookie lives in auth-client.ts).

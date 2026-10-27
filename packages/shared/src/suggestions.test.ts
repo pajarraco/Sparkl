@@ -6,7 +6,7 @@ import {
   rankJobsOutputSchema,
   rankingWeightsSchema,
   suggestCleanersInput,
-} from "./suggestions.js";
+} from "./suggestions";
 
 function sum(weights: Record<string, number>): number {
   return Object.values(weights).reduce((a, b) => a + b, 0);

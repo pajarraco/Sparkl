@@ -1,7 +1,7 @@
 import { Tabs } from "expo-router";
-import { TabBarIcon } from "../../components/TabBarIcon.js";
-import { getTabsForRole } from "../../providers/tabs.js";
-import { THEME_COLORS } from "../../providers/theme.js";
+import { TabBarIcon } from "../../components/TabBarIcon";
+import { getTabsForRole } from "../../providers/tabs";
+import { THEME_COLORS } from "../../providers/theme";
 
 // Cleaner tab shell (design.md Navigation): Board, My Jobs, Messages,
 // Profile. Real tab content lands in tasks 6–7; the screens below render

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getSignOutUrl, parseAppRole } from "./auth.js";
+import { getSignOutUrl, parseAppRole } from "./auth";
 
 describe("auth provider shell", () => {
   it("parses host/cleaner roles and rejects the rest", () => {

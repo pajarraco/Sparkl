@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { StyleSheet, Text } from "react-native";
-import { THEME_COLORS, THEME_FONT } from "../providers/theme.js";
+import { THEME_COLORS, THEME_FONT } from "../providers/theme";
 
 // Secondary copy (design.md Small/Body): empty states and hints under a
 // screen title. Keeps the eight tab stubs from duplicating one style.

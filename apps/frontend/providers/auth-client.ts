@@ -1,7 +1,7 @@
 import { expoClient } from "@better-auth/expo/client";
 import { inferAdditionalFields } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
-import { getAuthBaseUrl } from "./app-config.js";
+import { getAuthBaseUrl } from "./app-config";
 
 // Thin Better Auth wiring for Expo (email/password; session persisted in
 // SecureStore on native, cookies on web).

@@ -1,3 +1,4 @@
+import cors from "@fastify/cors";
 import { fastifyTRPCPlugin } from "@trpc/server/adapters/fastify";
 import Fastify from "fastify";
 import { closeDb } from "./db/client.js";
@@ -8,6 +9,12 @@ import { appRouter } from "./trpc/router.js";
 const port = Number(process.env.API_PORT ?? 3000);
 
 const app = Fastify({ logger: true });
+
+// Local-dev posture: the Expo web client (:8081) talks to the API
+// (:3000), so browsers send CORS preflights for auth + tRPC calls.
+// Reflect the caller origin and allow cookies (Better Auth session).
+// Revisit with an explicit origin allowlist before any production deploy.
+await app.register(cors, { origin: true, credentials: true });
 
 await app.register(authPlugin);
 await app.register(fastifyTRPCPlugin, {

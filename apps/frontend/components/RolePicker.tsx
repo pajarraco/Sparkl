@@ -1,12 +1,12 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { type AppRole, parseAppRole } from "../providers/auth.js";
-import { getStrings } from "../providers/i18n.js";
+import { type AppRole, parseAppRole } from "../providers/auth";
+import { getStrings } from "../providers/i18n";
 import {
   THEME_COLORS,
   THEME_FONT,
   THEME_RADII,
   THEME_SPACING,
-} from "../providers/theme.js";
+} from "../providers/theme";
 
 // Host / cleaner role pick (sign-up screen). Two radio options with
 // visible labels; screen readers get the group label plus selected state.

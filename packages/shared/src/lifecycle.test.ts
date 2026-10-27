@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { JOB_STATUS_TRANSITIONS, jobStatusSchema } from "./lifecycle.js";
+import { JOB_STATUS_TRANSITIONS, jobStatusSchema } from "./lifecycle";
 
 describe("jobStatusSchema", () => {
   it("accepts every lifecycle state", () => {

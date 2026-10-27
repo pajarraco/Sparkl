@@ -1,5 +1,5 @@
 import { Feather } from "@expo/vector-icons";
-import type { TabIconName } from "../providers/tabs.js";
+import type { TabIconName } from "../providers/tabs";
 
 // Decorative tab glyphs (text labels carry the accessible name, so icons
 // stay hidden from screen readers). Sizes follow the 4pt grid; the

@@ -1,6 +1,6 @@
-import { BodyText } from "../../components/BodyText.js";
-import { Screen } from "../../components/Screen.js";
-import { getStrings } from "../../providers/i18n.js";
+import { BodyText } from "../../components/BodyText";
+import { Screen } from "../../components/Screen";
+import { getStrings } from "../../providers/i18n";
 
 // Cleaner Board stub: the ranked board lands in task 7; the designed
 // empty state ships now so the tab shell is complete.

@@ -1,9 +1,9 @@
 import { useRouter } from "expo-router";
 import { StyleSheet, View } from "react-native";
-import { Screen } from "../../components/Screen.js";
-import { SparklButton } from "../../components/SparklButton.js";
-import { getStrings } from "../../providers/i18n.js";
-import { THEME_SPACING } from "../../providers/theme.js";
+import { Screen } from "../../components/Screen";
+import { SparklButton } from "../../components/SparklButton";
+import { getStrings } from "../../providers/i18n";
+import { THEME_SPACING } from "../../providers/theme";
 
 const styles = StyleSheet.create({
   actions: {

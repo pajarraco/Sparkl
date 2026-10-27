@@ -1,5 +1,5 @@
 import { type UserRole, userRoleSchema } from "@sparkl/shared";
-import { getAuthBaseUrl } from "./app-config.js";
+import { getAuthBaseUrl } from "./app-config";
 
 // Auth provider contract (pure TS shell — Expo/Better Auth wiring lands
 // when Expo is installed; prototype notes Expo is not installed yet).
