@@ -73,11 +73,16 @@ export const jobsRouter = router({
           code: "FORBIDDEN",
           message: "Role missing from session.",
         });
-      return jobsService.transitionJob(drizzleJobsStore(ctx.db), systemClock, {
-        ...input,
-        actorId: ctx.sessionUserId,
-        actorRole: ctx.role,
-      });
+      return jobsService.transitionJob(
+        drizzleJobsStore(ctx.db),
+        systemClock,
+        {
+          ...input,
+          actorId: ctx.sessionUserId,
+          actorRole: ctx.role,
+        },
+        drizzleUsersStore(ctx.db),
+      );
     }),
 
   // Host only; enforced inside the service.
@@ -89,11 +94,16 @@ export const jobsRouter = router({
           code: "FORBIDDEN",
           message: "Role missing from session.",
         });
-      return jobsService.cancelJob(drizzleJobsStore(ctx.db), systemClock, {
-        ...input,
-        actorId: ctx.sessionUserId,
-        actorRole: ctx.role,
-      });
+      return jobsService.cancelJob(
+        drizzleJobsStore(ctx.db),
+        systemClock,
+        {
+          ...input,
+          actorId: ctx.sessionUserId,
+          actorRole: ctx.role,
+        },
+        drizzleUsersStore(ctx.db),
+      );
     }),
 
   // Cleaner board: ranked by match instead of newest-first. Scoring lives in
@@ -120,5 +130,5 @@ export const jobsRouter = router({
           cleanerRole: ctx.role,
         },
       );
-    });
+    }),
 });

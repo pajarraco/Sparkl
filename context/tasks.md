@@ -27,10 +27,10 @@
 
 ### 4. Backend — matching, chat, reviews
 
-- [ ] Matching service: on-read scoring (rating, distance, availability, completed jobs, acceptance rate, response time) + suggestions router
-- [ ] Unleash flag for ranking weights
-- [ ] Chat: send / list + `onMessage` subscription with job-party checks
-- [ ] Reviews: create (completed-only, unique per job + author) + average recompute
+- [x] Matching service: on-read scoring (rating, distance, availability, completed jobs, acceptance rate, response time) + suggestions router
+- [x] Unleash flag for ranking weights
+- [x] Chat: send / list + `onMessage` subscription with job-party checks
+- [x] Reviews: create (completed-only, unique per job + author) + average recompute
 
 ### 5. Frontend — shell & auth
 

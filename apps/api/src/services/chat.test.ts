@@ -1,18 +1,17 @@
 import type { Job, Message, SparklErrorCode } from "@sparkl/shared";
 import { describe, expect, it } from "vitest";
 import {
+  ChatError,
   type ChatEvents,
   type ChatStore,
   type ChatStores,
-  type Clock,
-  ChatError,
   assertJobParty,
   createChatEvents,
   listMessages,
   listNewMessagesSince,
   sendMessage,
 } from "./chat.js";
-import type { JobsStore } from "./jobs.js";
+import type { Clock, JobsStore } from "./jobs.js";
 
 const HOST = "11111111-1111-4111-8111-111111111111";
 const CLEANER = "22222222-2222-4222-8222-222222222222";

@@ -1,15 +1,16 @@
 import type {
   CleanerAvailability,
   Job,
+  ListOpenJobsInput,
   Message,
   SparklErrorCode,
   User,
 } from "@sparkl/shared";
 import { describe, expect, it } from "vitest";
 import {
+  MatchingError,
   type MatchingStores,
   type RankingFlags,
-  MatchingError,
   acceptanceRate,
   availabilityOverlapFraction,
   rankJobsForCleaner,
@@ -101,8 +102,7 @@ function makeStores(seed: Seed): MatchingStores {
     jobs: {
       findJobById: async (jobId) =>
         seed.jobs.find((j) => j.id === jobId) ?? null,
-      listOpenJobs: async () =>
-        seed.jobs.filter((j) => j.status === "open"),
+      listOpenJobs: async () => seed.jobs.filter((j) => j.status === "open"),
       listJobsByCleaner: async (cleanerId) =>
         seed.jobs.filter((j) => j.claimedByCleanerId === cleanerId),
       listJobsByHost: async (hostId) =>
@@ -331,7 +331,10 @@ describe("matching service", () => {
 
   it("rejects non-hosts, strangers, and missing or non-open jobs", async () => {
     const open = makeJob();
-    const claimed = makeJob({ status: "claimed", claimedByCleanerId: CLEANER_A });
+    const claimed = makeJob({
+      status: "claimed",
+      claimedByCleanerId: CLEANER_A,
+    });
     const stores = makeStores({
       users: [makeUser({ id: CLEANER_A })],
       availability: {},
@@ -382,9 +385,7 @@ describe("matching service", () => {
     expect(responseTimeScore([1440 * 2])).toBe(0);
     const job = makeJob();
     expect(availabilityOverlapFraction(job, [])).toBe(0.5);
-    expect(
-      availabilityOverlapFraction(job, [coveringSlot(CLEANER_A)]),
-    ).toBe(1);
+    expect(availabilityOverlapFraction(job, [coveringSlot(CLEANER_A)])).toBe(1);
     expect(
       replyDelaysMinutes(
         job,

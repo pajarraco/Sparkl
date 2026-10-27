@@ -17,8 +17,7 @@ import { authedProcedure, router } from "../trpc.js";
 export function rankingFlags(): matchingService.RankingFlags {
   return {
     isEnabled: (flag: string) =>
-      flag === RANKING_WEIGHTS_FLAG &&
-      process.env.RANKING_WEIGHTS_V2 === "1",
+      flag === RANKING_WEIGHTS_FLAG && process.env.RANKING_WEIGHTS_V2 === "1",
   };
 }
 

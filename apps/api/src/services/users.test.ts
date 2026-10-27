@@ -67,6 +67,17 @@ class InMemoryUsersStore implements UsersStore {
   async listCleaners(): Promise<User[]> {
     return [...this.users.values()].filter((u) => u.role === "cleaner");
   }
+
+  async incrementCompletedJobs(userId: string): Promise<User | null> {
+    const existing = this.users.get(userId);
+    if (!existing) return null;
+    const updated = {
+      ...existing,
+      completedJobCount: existing.completedJobCount + 1,
+    };
+    this.users.set(userId, updated);
+    return { ...updated };
+  }
 }
 
 function storeWithCleaner(): InMemoryUsersStore {

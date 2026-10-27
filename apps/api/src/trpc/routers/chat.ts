@@ -5,7 +5,7 @@ import {
   onMessageInputSchema,
   sendMessageInputSchema,
 } from "@sparkl/shared";
-import { TRPCError, tracked } from "@trpc/server";
+import { TRPCError } from "@trpc/server";
 import {
   drizzleChatStore,
   drizzleJobsStore,
@@ -62,9 +62,13 @@ export const chatRouter = router({
   // Server-sent events over the existing HTTP transport (no WebSocket
   // adapter needed): listen first, then verify the party and replay
   // anything missed since lastEventId, then stream live.
+  //
+  // Note: tRPC v11 types do not compose .output() with async-generator
+  // resolvers (the output parser forces a MaybePromise return), so each
+  // event is validated inline with messageSchema.parse instead — the
+  // inferred subscription output is still Message.
   onMessage: authedProcedure
     .input(onMessageInputSchema)
-    .output(messageSchema)
     .subscription(async function* (opts) {
       if (!opts.ctx.role)
         throw new TRPCError({
@@ -84,10 +88,10 @@ export const chatRouter = router({
         },
       );
       for (const message of missed) {
-        yield tracked(message.id, message);
+        yield messageSchema.parse(message);
       }
       for await (const message of live) {
-        yield tracked(message.id, message);
+        yield messageSchema.parse(message);
       }
     }),
 });

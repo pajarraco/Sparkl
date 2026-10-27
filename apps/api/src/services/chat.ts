@@ -38,10 +38,7 @@ export interface ChatStores {
 export interface ChatEvents {
   publish(message: Message): void;
   subscribe(jobId: string, listener: (message: Message) => void): () => void;
-  iterate(
-    jobId: string,
-    signal?: AbortSignal,
-  ): AsyncIterableIterator<Message>;
+  iterate(jobId: string, signal?: AbortSignal): AsyncIterableIterator<Message>;
 }
 
 export function createChatEvents(): ChatEvents {
@@ -102,10 +99,7 @@ export async function sendMessage(
     userId: args.senderId,
   });
   if (job.status === "open") {
-    throw new ChatError(
-      "JOB_NOT_OPEN",
-      "Chat unlocks after a job is claimed.",
-    );
+    throw new ChatError("JOB_NOT_OPEN", "Chat unlocks after a job is claimed.");
   }
   const saved = await stores.chat.insertMessage({
     id: randomUUID(),

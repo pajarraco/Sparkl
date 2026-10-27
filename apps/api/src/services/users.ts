@@ -25,6 +25,7 @@ export interface ProfilePatch {
   serviceLat?: number | null;
   serviceLng?: number | null;
   serviceRadiusKm?: number | null;
+  avgRating?: number | null;
 }
 
 // Port the Drizzle implementation must satisfy. `update` applies only the
@@ -33,6 +34,12 @@ export interface ProfilePatch {
 export interface UsersStore {
   findById(userId: string): Promise<User | null>;
   update(userId: string, patch: ProfilePatch): Promise<User | null>;
+  /**
+   * Atomically bump completedJobCount by one; returns null when the user
+   * does not exist. A single UPDATE avoids the lost-update race a
+   * read-modify-write in the service would have on concurrent completions.
+   */
+  incrementCompletedJobs(userId: string): Promise<User | null>;
   replaceAvailability(
     cleanerId: string,
     slots: CleanerAvailability[],

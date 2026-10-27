@@ -42,12 +42,18 @@ async function smokeTest() {
   const body = "sparkl-storage-smoke";
   const url = await getSignedUrl(
     client,
-    new PutObjectCommand({ Bucket: "jobs", Key: key, ContentType: "text/plain" }),
+    new PutObjectCommand({
+      Bucket: "jobs",
+      Key: key,
+      ContentType: "text/plain",
+    }),
     { expiresIn: 300 },
   );
   const put = await fetch(url, { method: "PUT", body });
   if (!put.ok) throw new Error(`presigned PUT failed: ${put.status}`);
-  const got = await client.send(new GetObjectCommand({ Bucket: "jobs", Key: key }));
+  const got = await client.send(
+    new GetObjectCommand({ Bucket: "jobs", Key: key }),
+  );
   const text = await got.Body.transformToString();
   if (text !== body) throw new Error(`roundtrip mismatch: ${text}`);
   console.log(`smoke ok: presigned PUT + GET roundtrip on jobs/${key}`);

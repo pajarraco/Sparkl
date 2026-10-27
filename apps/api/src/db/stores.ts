@@ -3,19 +3,27 @@ import type {
   Job,
   JobStatus,
   Message,
+  Review,
   User,
 } from "@sparkl/shared";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
+import { ChatError, type ChatStore } from "../services/chat.js";
 import {
   type Clock,
   JobsServiceError,
   type JobsStore,
 } from "../services/jobs.js";
-import { ChatError, type ChatStore } from "../services/chat.js";
 import type { MessagesRead } from "../services/matching.js";
+import { ReviewsError, type ReviewsStore } from "../services/reviews.js";
 import type { ProfilePatch, UsersStore } from "../services/users.js";
 import type { Db } from "./client.js";
-import { cleanerAvailability, jobs, messages, user } from "./schema.js";
+import {
+  cleanerAvailability,
+  jobs,
+  messages,
+  reviews,
+  user,
+} from "./schema.js";
 
 export const systemClock: Clock = { nowIso: () => new Date().toISOString() };
 
@@ -183,6 +191,7 @@ export function drizzleUsersStore(db: Db): UsersStore {
       if (patch.serviceLng !== undefined) set.serviceLng = patch.serviceLng;
       if (patch.serviceRadiusKm !== undefined)
         set.serviceRadiusKm = patch.serviceRadiusKm;
+      if (patch.avgRating !== undefined) set.avgRating = patch.avgRating;
       if (Object.keys(set).length === 0) {
         const [row] = await db
           .select()
@@ -195,7 +204,18 @@ export function drizzleUsersStore(db: Db): UsersStore {
         .update(user)
         .set(set)
         .where(eq(user.id, userId))
-        .limit(1);
+        .returning();
+      return row ? toUser(row) : null;
+    },
+
+    async incrementCompletedJobs(userId) {
+      // No Drizzle increment helper exists: a single UPDATE with a SQL
+      // expression is the only race-free way to bump the counter.
+      const [row] = await db
+        .update(user)
+        .set({ completedJobCount: sql`${user.completedJobCount} + 1` })
+        .where(eq(user.id, userId))
+        .returning();
       return row ? toUser(row) : null;
     },
 
@@ -241,10 +261,7 @@ export function drizzleUsersStore(db: Db): UsersStore {
     },
 
     async listCleaners() {
-      const rows = await db
-        .select()
-        .from(user)
-        .where(eq(user.role, "cleaner"));
+      const rows = await db.select().from(user).where(eq(user.role, "cleaner"));
       return rows.map(toUser);
     },
   };
@@ -295,6 +312,56 @@ export function drizzleChatStore(db: Db): ChatStore {
         .returning();
       if (!row) throw new ChatError("NOT_FOUND", "Message insert failed.");
       return toMessage(row);
+    },
+  };
+}
+
+function toReview(row: typeof reviews.$inferSelect): Review {
+  return {
+    id: row.id,
+    jobId: row.jobId,
+    authorId: row.authorId,
+    subjectId: row.subjectId,
+    stars: row.stars,
+    comment: row.comment,
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
+export function drizzleReviewsStore(db: Db): ReviewsStore {
+  return {
+    async findReviewByJobAndAuthor(jobId, authorId) {
+      const [row] = await db
+        .select()
+        .from(reviews)
+        .where(and(eq(reviews.jobId, jobId), eq(reviews.authorId, authorId)))
+        .limit(1);
+      return row ? toReview(row) : null;
+    },
+
+    async insertReview(review) {
+      const [row] = await db
+        .insert(reviews)
+        .values({
+          id: review.id,
+          jobId: review.jobId,
+          authorId: review.authorId,
+          subjectId: review.subjectId,
+          stars: review.stars,
+          comment: review.comment,
+          createdAt: new Date(review.createdAt),
+        })
+        .returning();
+      if (!row) throw new ReviewsError("NOT_FOUND", "Review insert failed.");
+      return toReview(row);
+    },
+
+    async listReviewsBySubject(subjectId) {
+      const rows = await db
+        .select()
+        .from(reviews)
+        .where(eq(reviews.subjectId, subjectId));
+      return rows.map(toReview);
     },
   };
 }

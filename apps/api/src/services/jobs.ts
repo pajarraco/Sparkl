@@ -15,6 +15,7 @@ import type {
   TransitionJobInput,
   UserRole,
 } from "@sparkl/shared";
+import type { UsersStore } from "./users.js";
 
 export class JobsServiceError extends Error {
   readonly code: SparklErrorCode;
@@ -102,10 +103,7 @@ export function haversineKm(
 
 // Pure filter shared by listOpenJobs (newest-first board) and the ranked
 // board: date, price, and distance predicates only — no sorting, no paging.
-export function filterOpenJobs(
-  all: Job[],
-  filters: ListOpenJobsInput,
-): Job[] {
+export function filterOpenJobs(all: Job[], filters: ListOpenJobsInput): Job[] {
   return all.filter((job) => {
     if (job.status !== "open") return false;
     if (filters.dateFrom !== undefined && job.windowStart < filters.dateFrom)
@@ -222,6 +220,7 @@ export async function transitionJob(
   store: JobsStore,
   clock: Clock,
   args: TransitionJobInput & { actorId: string; actorRole: UserRole },
+  users: Pick<UsersStore, "incrementCompletedJobs">,
 ): Promise<Job> {
   void args.actorRole;
   const job = await requireJob(store, args.jobId);
@@ -244,20 +243,36 @@ export async function transitionJob(
     );
   }
   checkTransitionActor(job, args.actorId, args.toStatus);
-  return store.saveJob({
+  const saved = await store.saveJob({
     ...job,
     status: args.toStatus,
     updatedAt: clock.nowIso(),
   });
+  if (args.toStatus === "completed") {
+    // completed and cancelled are terminal (see JOB_STATUS_TRANSITIONS), so
+    // this fires exactly once per job: both parties earn a completed job,
+    // feeding the ranking's completed-jobs signal.
+    const earners = [saved.hostId, saved.claimedByCleanerId].filter(
+      (id): id is string => id !== null,
+    );
+    for (const userId of earners) {
+      const updated = await users.incrementCompletedJobs(userId);
+      if (updated === null) {
+        throw new JobsServiceError("NOT_FOUND", "Job party not found.");
+      }
+    }
+  }
+  return saved;
 }
 
 export async function cancelJob(
   store: JobsStore,
   clock: Clock,
   args: CancelJobInput & { actorId: string; actorRole: UserRole },
+  users: Pick<UsersStore, "incrementCompletedJobs">,
 ): Promise<Job> {
   // Host-only by construction: transitionJob rejects non-host cancellers
   // (cleaner party -> FORBIDDEN, stranger -> NOT_JOB_PARTY) and rejects
   // terminal states via JOB_STATUS_TRANSITIONS.
-  return transitionJob(store, clock, { ...args, toStatus: "cancelled" });
+  return transitionJob(store, clock, { ...args, toStatus: "cancelled" }, users);
 }

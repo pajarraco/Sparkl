@@ -3,15 +3,15 @@
 // Scores are computed fresh on every call — no precompute pipeline in MVP.
 // Every signal scores 0..1; missing data scores a neutral 0.5.
 import {
-  RANKING_WEIGHTS_FLAG,
-  RANKING_WEIGHTS_V1,
-  RANKING_WEIGHTS_V2,
   type CleanerAvailability,
   type Job,
   type ListOpenJobsInput,
   type MatchBreakdown,
   type Message,
   type PublicCleanerProfile,
+  RANKING_WEIGHTS_FLAG,
+  RANKING_WEIGHTS_V1,
+  RANKING_WEIGHTS_V2,
   type RankedCleaner,
   type RankedJob,
   type RankingWeights,
@@ -131,8 +131,7 @@ export function acceptanceRate(claimedJobs: Job[]): number {
 
 export function responseTimeScore(delaysMinutes: number[]): number {
   if (delaysMinutes.length === 0) return NEUTRAL;
-  const avg =
-    delaysMinutes.reduce((a, b) => a + b, 0) / delaysMinutes.length;
+  const avg = delaysMinutes.reduce((a, b) => a + b, 0) / delaysMinutes.length;
   return clamp01(
     1 - Math.min(avg, RESPONSE_TIME_CAP_MINUTES) / RESPONSE_TIME_CAP_MINUTES,
   );
@@ -151,9 +150,7 @@ export function replyDelaysMinutes(
   for (let i = 0; i < sorted.length; i++) {
     const msg = sorted[i];
     if (msg === undefined || msg.senderId !== job.hostId) continue;
-    const reply = sorted
-      .slice(i + 1)
-      .find((m) => m.senderId === cleanerId);
+    const reply = sorted.slice(i + 1).find((m) => m.senderId === cleanerId);
     if (reply !== undefined) {
       delays.push(
         (new Date(reply.createdAt).getTime() -
@@ -223,10 +220,7 @@ export async function suggestCleanersForJob(
     );
   }
   if (job.status !== "open") {
-    throw new MatchingError(
-      "JOB_NOT_OPEN",
-      `Job is ${job.status}, not open.`,
-    );
+    throw new MatchingError("JOB_NOT_OPEN", `Job is ${job.status}, not open.`);
   }
   const weights = resolveWeights(flags);
   const cleaners = await stores.users.listCleaners();

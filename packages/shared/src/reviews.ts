@@ -30,3 +30,23 @@ export const createReviewInputSchema = z
   .strict();
 
 export type CreateReviewInput = z.infer<typeof createReviewInputSchema>;
+
+// reviews.listBySubject input: paged newest-first history for one user.
+export const listReviewsInputSchema = z
+  .object({
+    subjectId: z.string().uuid(),
+    limit: z.number().int().min(1).max(100).default(20),
+    offset: z.number().int().min(0).default(0),
+  })
+  .strict();
+
+export type ListReviewsInput = z.infer<typeof listReviewsInputSchema>;
+
+export const listReviewsOutputSchema = z
+  .object({
+    reviews: z.array(reviewSchema),
+    total: z.number().int().min(0),
+  })
+  .strict();
+
+export type ListReviewsOutput = z.infer<typeof listReviewsOutputSchema>;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { SPARKL_ERROR_CODES } from "./errors.js";
-import { sendMessageInputSchema } from "./messages.js";
-import { createReviewInputSchema } from "./reviews.js";
+import { listMessagesInputSchema, sendMessageInputSchema } from "./messages.js";
+import { createReviewInputSchema, listReviewsInputSchema } from "./reviews.js";
 
 describe("sendMessageInputSchema", () => {
   it("trims the body and rejects empty messages", () => {
@@ -35,6 +35,20 @@ describe("createReviewInputSchema", () => {
         stars: 6,
       }),
     ).toThrow();
+  });
+});
+
+describe("list inputs", () => {
+  it("default paging for chat and review lists", () => {
+    const id = "11111111-1111-4111-8111-111111111111";
+    expect(listMessagesInputSchema.parse({ jobId: id })).toMatchObject({
+      limit: 50,
+      offset: 0,
+    });
+    expect(listReviewsInputSchema.parse({ subjectId: id })).toMatchObject({
+      limit: 20,
+      offset: 0,
+    });
   });
 });
 

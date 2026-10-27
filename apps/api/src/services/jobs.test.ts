@@ -1,4 +1,4 @@
-import type { Job, SparklErrorCode } from "@sparkl/shared";
+import type { Job, SparklErrorCode, User } from "@sparkl/shared";
 import { describe, expect, it } from "vitest";
 import {
   type Clock,
@@ -9,6 +9,7 @@ import {
   createJob,
   transitionJob,
 } from "./jobs.js";
+import type { UsersStore } from "./users.js";
 
 const HOST_ID = "11111111-1111-4111-8111-111111111111";
 const CLEANER_A = "22222222-2222-4222-8222-222222222222";
@@ -53,9 +54,7 @@ function makeFakeStore(seed: Job[] = []): JobsStore {
     listJobsByHost: async (hostId) =>
       [...jobs.values()].filter((job) => job.hostId === hostId),
     listJobsByCleaner: async (cleanerId) =>
-      [...jobs.values()].filter(
-        (job) => job.claimedByCleanerId === cleanerId,
-      ),
+      [...jobs.values()].filter((job) => job.claimedByCleanerId === cleanerId),
     claimIfOpen: async (jobId, cleanerId, nowIso) => {
       const current = jobs.get(jobId);
       if (current === undefined)
@@ -86,6 +85,33 @@ function makeFakeStore(seed: Job[] = []): JobsStore {
       return { ...job };
     },
   };
+}
+
+function makeStatsUser(id: string): User {
+  return {
+    id,
+    role: "host",
+    name: "Stats User",
+    photoUrl: null,
+    serviceLat: null,
+    serviceLng: null,
+    serviceRadiusKm: null,
+    avgRating: null,
+    completedJobCount: 0,
+    createdAt: "2026-01-01T10:00:00.000Z",
+    updatedAt: "2026-01-01T10:00:00.000Z",
+  };
+}
+
+function makeStatsStub() {
+  const counts = new Map<string, number>();
+  const store: Pick<UsersStore, "incrementCompletedJobs"> = {
+    incrementCompletedJobs: async (userId: string) => {
+      counts.set(userId, (counts.get(userId) ?? 0) + 1);
+      return makeStatsUser(userId);
+    },
+  };
+  return { counts, store };
 }
 
 async function captureCode(
@@ -192,15 +218,21 @@ describe("jobs service", () => {
   it("transitionJob enforces JOB_STATUS_TRANSITIONS and the right party", async () => {
     const store = makeFakeStore([makeJob()]);
     const jobId = (await store.listOpenJobs())[0]?.id as string;
+    const stats = makeStatsStub();
 
     expect(
       await captureCode(
-        transitionJob(store, clock, {
-          jobId,
-          toStatus: "completed",
-          actorId: HOST_ID,
-          actorRole: "host",
-        }),
+        transitionJob(
+          store,
+          clock,
+          {
+            jobId,
+            toStatus: "completed",
+            actorId: HOST_ID,
+            actorRole: "host",
+          },
+          stats.store,
+        ),
       ),
     ).toBe("INVALID_TRANSITION");
 
@@ -209,30 +241,45 @@ describe("jobs service", () => {
       cleanerId: CLEANER_A,
       cleanerRole: "cleaner",
     });
-    const started = await transitionJob(store, clock, {
-      jobId,
-      toStatus: "in_progress",
-      actorId: CLEANER_A,
-      actorRole: "cleaner",
-    });
+    const started = await transitionJob(
+      store,
+      clock,
+      {
+        jobId,
+        toStatus: "in_progress",
+        actorId: CLEANER_A,
+        actorRole: "cleaner",
+      },
+      stats.store,
+    );
     expect(started.status).toBe("in_progress");
 
-    const done = await transitionJob(store, clock, {
-      jobId,
-      toStatus: "completed",
-      actorId: HOST_ID,
-      actorRole: "host",
-    });
+    const done = await transitionJob(
+      store,
+      clock,
+      {
+        jobId,
+        toStatus: "completed",
+        actorId: HOST_ID,
+        actorRole: "host",
+      },
+      stats.store,
+    );
     expect(done.status).toBe("completed");
 
     expect(
       await captureCode(
-        transitionJob(store, clock, {
-          jobId,
-          toStatus: "in_progress",
-          actorId: CLEANER_B,
-          actorRole: "cleaner",
-        }),
+        transitionJob(
+          store,
+          clock,
+          {
+            jobId,
+            toStatus: "in_progress",
+            actorId: CLEANER_B,
+            actorRole: "cleaner",
+          },
+          stats.store,
+        ),
       ),
     ).toBe("NOT_JOB_PARTY");
   });
@@ -240,28 +287,109 @@ describe("jobs service", () => {
   it("cancelJob cancels for the host only, rejects terminal states", async () => {
     const store = makeFakeStore([makeJob()]);
     const jobId = (await store.listOpenJobs())[0]?.id as string;
+    const stats = makeStatsStub();
 
     expect(
       await captureCode(
-        cancelJob(store, clock, {
-          jobId,
-          actorId: CLEANER_A,
-          actorRole: "cleaner",
-        }),
+        cancelJob(
+          store,
+          clock,
+          {
+            jobId,
+            actorId: CLEANER_A,
+            actorRole: "cleaner",
+          },
+          stats.store,
+        ),
       ),
     ).toBe("NOT_JOB_PARTY");
 
-    const cancelled = await cancelJob(store, clock, {
-      jobId,
-      actorId: HOST_ID,
-      actorRole: "host",
-    });
+    const cancelled = await cancelJob(
+      store,
+      clock,
+      {
+        jobId,
+        actorId: HOST_ID,
+        actorRole: "host",
+      },
+      stats.store,
+    );
     expect(cancelled.status).toBe("cancelled");
 
     expect(
       await captureCode(
-        cancelJob(store, clock, { jobId, actorId: HOST_ID, actorRole: "host" }),
+        cancelJob(
+          store,
+          clock,
+          { jobId, actorId: HOST_ID, actorRole: "host" },
+          stats.store,
+        ),
       ),
     ).toBe("INVALID_TRANSITION");
+  });
+
+  it("completion increments both parties once; cancellation increments none", async () => {
+    const store = makeFakeStore([makeJob()]);
+    const jobId = (await store.listOpenJobs())[0]?.id as string;
+    const stats = makeStatsStub();
+
+    await claimJob(store, clock, {
+      jobId,
+      cleanerId: CLEANER_A,
+      cleanerRole: "cleaner",
+    });
+    await transitionJob(
+      store,
+      clock,
+      {
+        jobId,
+        toStatus: "in_progress",
+        actorId: CLEANER_A,
+        actorRole: "cleaner",
+      },
+      stats.store,
+    );
+    expect(stats.counts.size).toBe(0);
+    await transitionJob(
+      store,
+      clock,
+      {
+        jobId,
+        toStatus: "completed",
+        actorId: HOST_ID,
+        actorRole: "host",
+      },
+      stats.store,
+    );
+    expect(stats.counts.get(HOST_ID)).toBe(1);
+    expect(stats.counts.get(CLEANER_A)).toBe(1);
+
+    expect(
+      await captureCode(
+        transitionJob(
+          store,
+          clock,
+          {
+            jobId,
+            toStatus: "in_progress",
+            actorId: CLEANER_A,
+            actorRole: "cleaner",
+          },
+          stats.store,
+        ),
+      ),
+    ).toBe("INVALID_TRANSITION");
+    expect(stats.counts.get(HOST_ID)).toBe(1);
+
+    const cancelled = makeFakeStore([makeJob()]);
+    const cancelledId = (await cancelled.listOpenJobs())[0]?.id as string;
+    const cancelledStats = makeStatsStub();
+    await cancelJob(
+      cancelled,
+      clock,
+      { jobId: cancelledId, actorId: HOST_ID, actorRole: "host" },
+      cancelledStats.store,
+    );
+    expect(cancelledStats.counts.size).toBe(0);
   });
 });
