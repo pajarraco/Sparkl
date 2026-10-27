@@ -77,6 +77,10 @@ Append-only: add a new entry under `## [Unreleased]` for any change, stamped `YY
 
 - `2026-10-28 00:56` — fix sign-up from web (`OPTIONS /api/auth/*` 404 on preflight): registered `@fastify/cors ^11.3.1` (new dep justification: Fastify has no built-in CORS; v11 targets Fastify v5) in `apps/api/src/index.ts` with reflected origin + credentials for the local-dev web client. Marked explicitly as local-dev posture to revisit before production. Needs `pnpm install` + `pnpm dev` in your terminal to confirm.
 
+- `2026-10-28 01:02` — fix sign-up 403 (`Invalid origin: http://localhost:8081`): added `trustedOrigins` to the Better Auth config (`apps/api/src/plugins/auth.ts`, `TRUSTED_ORIGINS` env with `:8081` dev default; also documented in `.env.example`). The API dev server hot-reloads, so retry sign-up without restarting.
+
+- `2026-10-28 01:06` — docs sync: `context/tasks.md` marks the host flow built this session (My Jobs, Post, Job Detail, chat thread, Leave Review) with Profile left as the one pending item, and corrects the stale `HTTP + WS` label; `context/architecture.md` drops the never-installed `@fastify/websocket` claim (subscriptions ride SSE) and documents `pnpm dev` / `pnpm verify`; `README.md` gains a minimal Run Locally section. No code changes.
+
 ### Changed
 
 - `2026-10-27 05:12` — `context/hackathon.md`: verified schedule, submission, judging rubric, prizes and credit forms from details guide.

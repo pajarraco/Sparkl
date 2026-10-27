@@ -24,6 +24,18 @@ Full scope: `context/project.md`.
 - **Data & Infra:** PostgreSQL, Docker, Unleash
 - **Tooling:** Node.js 24, TypeScript, pnpm, Vitest
 
+## Run Locally
+
+Prerequisites: pnpm `12.15.0`, Docker Desktop, Node 24.
+
+```powershell
+pnpm install
+# copy .env.example to .env and set a real BETTER_AUTH_SECRET
+pnpm dev    # installs, starts Postgres/Redis/MinIO, migrates, then runs API (:3000) + Expo
+```
+
+Press `w` in the Expo terminal for web. `pnpm verify` runs `test` + `lint` + `typecheck`. All commands: `AGENTS.md`.
+
 ## Project Structure (Planned)
 
 ```

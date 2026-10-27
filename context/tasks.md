@@ -34,14 +34,15 @@
 
 ### 5. Frontend — shell & auth
 
-- [x] Providers (auth, tRPC HTTP + WS, i18n) and theme tokens from `design.md`
+- [x] Providers (auth, tRPC HTTP + SSE, i18n) and theme tokens from `design.md`
 - [x] Auth screens: welcome, sign in, sign up with role pick
 - [x] Role-based tab bars (host vs cleaner)
 
 ### 6. Frontend — host flow
 
-- [ ] My Jobs list, Post Job form, Job Detail with ranked suggestions, lifecycle actions
-- [ ] Chat thread UI, Leave Review screen, Profile screen
+- [x] My Jobs list, Post Job form, Job Detail with ranked suggestions, lifecycle actions
+- [x] Chat thread UI, Leave Review screen (entries from Job Detail; reachable from history)
+- [ ] Profile screen (stub with sign-out only)
 
 ### 7. Frontend — cleaner flow
 

@@ -34,7 +34,7 @@ Expo app ──HTTP + WebSocket──▶ Fastify + tRPC ──▶ Service layer 
 | `plugins/` | Fastify plugins: auth, CORS, WebSocket, error handling. |
 | `jobs/` | BullMQ workers (stat recomputation, cleanup). Minimal in MVP. |
 
-- **Framework:** Fastify with `@fastify/websocket` for tRPC subscriptions.
+- **Framework:** Fastify; chat subscriptions ride SSE over HTTP (`httpSubscriptionLink`), so no WebSocket adapter is installed.
 - **Auth:** Better Auth (Fastify plugin), email/password, with `role` (`host` / `cleaner`) on the user. OAuth is post-MVP.
 - **Flags:** Unleash for feature flags (e.g. ranking weight tuning).
 
@@ -71,7 +71,7 @@ Every input and output is validated with the shared Zod schemas. No public REST 
 
 ## Realtime Chat
 
-- tRPC `onMessage` subscription over WebSocket, one channel per job.
+- tRPC `onMessage` subscription over SSE (same HTTP endpoint), one channel per job.
 - Client subscribes when the chat screen opens and refetches history on reconnect (covers dropped Expo Go connections).
 - Single API instance in MVP; Redis pubsub only if scaled horizontally later.
 
@@ -108,7 +108,7 @@ Every input and output is validated with the shared Zod schemas. No public REST 
 
 ## Local Development
 
-`docker-compose.dev.yml` runs PostgreSQL, Redis (BullMQ) and MinIO. Typical flow: `pnpm install` → start Docker services → run Drizzle migrations → `pnpm dev` (API + Expo).
+`docker-compose.dev.yml` runs PostgreSQL, Redis (BullMQ) and MinIO. Typical flow: `pnpm dev` (installs, starts services, migrates, ensures buckets, then runs API + Expo) and `pnpm verify` (`test` + `lint` + `typecheck`). See `AGENTS.md` Commands.
 
 ## Key Decisions
 

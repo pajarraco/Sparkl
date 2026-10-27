@@ -13,6 +13,13 @@ import "../env.js";
 const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
   database: drizzleAdapter(db, { provider: "pg", schema }),
+  // The Expo web client runs on :8081 while the API is on :3000, which
+  // Better Auth treats as cross-origin and rejects without this list.
+  // Override with TRUSTED_ORIGINS (comma-separated) for other setups.
+  trustedOrigins: (process.env.TRUSTED_ORIGINS ?? "http://localhost:8081")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter((origin) => origin !== ""),
   // Native session-cookie protocol (SecureStore-backed cookie storage on
   // the client). Web behavior is unchanged; the plugin only adds
   // trusted origins and origin handling for native schemes.

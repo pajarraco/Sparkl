@@ -67,3 +67,9 @@ Pick one as the primary scored integration; a second only if time allows.
 - [x] Submission format verified (portal, public repo, 3-min video, live product).
 - [x] Track and theme confirmed (Startup / Build for Your World).
 - [x] Confirm eligibility (jurisdiction, no Meta/CV affiliation) — confirmed by participant.
+
+## Comments on the Models
+
+- Working on the sandbox is difficult for testing new skill, libraries and autonomy testing.
+- find and fixing issue take a long time.
+- Issues installing Nodejs and pnpm inside the sandbox. it took a lot of tokens
