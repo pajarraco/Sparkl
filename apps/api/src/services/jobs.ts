@@ -31,6 +31,7 @@ export interface JobsStore {
   findJobById(jobId: string): Promise<Job | null>;
   listOpenJobs(): Promise<Job[]>;
   listJobsByHost(hostId: string): Promise<Job[]>;
+  listJobsByCleaner(cleanerId: string): Promise<Job[]>;
   /**
    * Atomically claim an open job. MUST re-check `status = open` inside a
    * single transaction so exactly one concurrent claim wins. Throws
@@ -84,7 +85,7 @@ export async function createJob(
   });
 }
 
-function haversineKm(
+export function haversineKm(
   aLat: number,
   aLng: number,
   bLat: number,
@@ -99,11 +100,13 @@ function haversineKm(
   return 2 * 6371 * Math.asin(Math.sqrt(s));
 }
 
-export async function listOpenJobs(
-  store: JobsStore,
+// Pure filter shared by listOpenJobs (newest-first board) and the ranked
+// board: date, price, and distance predicates only — no sorting, no paging.
+export function filterOpenJobs(
+  all: Job[],
   filters: ListOpenJobsInput,
-): Promise<Job[]> {
-  const kept = (await store.listOpenJobs()).filter((job) => {
+): Job[] {
+  return all.filter((job) => {
     if (job.status !== "open") return false;
     if (filters.dateFrom !== undefined && job.windowStart < filters.dateFrom)
       return false;
@@ -136,6 +139,13 @@ export async function listOpenJobs(
     }
     return true;
   });
+}
+
+export async function listOpenJobs(
+  store: JobsStore,
+  filters: ListOpenJobsInput,
+): Promise<Job[]> {
+  const kept = filterOpenJobs(await store.listOpenJobs(), filters);
   kept.sort((a, b) =>
     a.windowStart < b.windowStart ? -1 : a.windowStart > b.windowStart ? 1 : 0,
   );

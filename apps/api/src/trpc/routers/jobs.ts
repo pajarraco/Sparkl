@@ -4,12 +4,20 @@ import {
   createJobInput,
   listOpenJobsInput,
   myJobsInput,
+  rankJobsOutputSchema,
   transitionJobInput,
 } from "@sparkl/shared";
 import { TRPCError } from "@trpc/server";
-import { drizzleJobsStore, systemClock } from "../../db/stores.js";
+import {
+  drizzleJobsStore,
+  drizzleMessagesRead,
+  drizzleUsersStore,
+  systemClock,
+} from "../../db/stores.js";
 import * as jobsService from "../../services/jobs.js";
+import * as matchingService from "../../services/matching.js";
 import { authedProcedure, router } from "../trpc.js";
+import { rankingFlags } from "./suggestions.js";
 
 export const jobsRouter = router({
   create: authedProcedure
@@ -87,4 +95,30 @@ export const jobsRouter = router({
         actorRole: ctx.role,
       });
     }),
+
+  // Cleaner board: ranked by match instead of newest-first. Scoring lives in
+  // the matching service; the cleaner role is re-checked there.
+  listRanked: authedProcedure
+    .input(listOpenJobsInput)
+    .output(rankJobsOutputSchema)
+    .query(async ({ ctx, input }) => {
+      if (!ctx.role)
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Role missing from session.",
+        });
+      return matchingService.rankJobsForCleaner(
+        {
+          jobs: drizzleJobsStore(ctx.db),
+          users: drizzleUsersStore(ctx.db),
+          messages: drizzleMessagesRead(ctx.db),
+        },
+        rankingFlags(),
+        {
+          ...input,
+          cleanerId: ctx.sessionUserId,
+          cleanerRole: ctx.role,
+        },
+      );
+    });
 });

@@ -1,13 +1,21 @@
-import type { CleanerAvailability, Job, JobStatus, User } from "@sparkl/shared";
+import type {
+  CleanerAvailability,
+  Job,
+  JobStatus,
+  Message,
+  User,
+} from "@sparkl/shared";
 import { and, eq } from "drizzle-orm";
 import {
   type Clock,
   JobsServiceError,
   type JobsStore,
 } from "../services/jobs.js";
+import { ChatError, type ChatStore } from "../services/chat.js";
+import type { MessagesRead } from "../services/matching.js";
 import type { ProfilePatch, UsersStore } from "../services/users.js";
 import type { Db } from "./client.js";
-import { cleanerAvailability, jobs, user } from "./schema.js";
+import { cleanerAvailability, jobs, messages, user } from "./schema.js";
 
 export const systemClock: Clock = { nowIso: () => new Date().toISOString() };
 
@@ -88,6 +96,14 @@ export function drizzleJobsStore(db: Db): JobsStore {
 
     async listJobsByHost(hostId) {
       const rows = await db.select().from(jobs).where(eq(jobs.hostId, hostId));
+      return rows.map(toJob);
+    },
+
+    async listJobsByCleaner(cleanerId) {
+      const rows = await db
+        .select()
+        .from(jobs)
+        .where(eq(jobs.claimedByCleanerId, cleanerId));
       return rows.map(toJob);
     },
 
@@ -179,7 +195,7 @@ export function drizzleUsersStore(db: Db): UsersStore {
         .update(user)
         .set(set)
         .where(eq(user.id, userId))
-        .returning();
+        .limit(1);
       return row ? toUser(row) : null;
     },
 
@@ -222,6 +238,63 @@ export function drizzleUsersStore(db: Db): UsersStore {
         startTime: r.startTime,
         endTime: r.endTime,
       }));
+    },
+
+    async listCleaners() {
+      const rows = await db
+        .select()
+        .from(user)
+        .where(eq(user.role, "cleaner"));
+      return rows.map(toUser);
+    },
+  };
+}
+
+function toMessage(row: typeof messages.$inferSelect): Message {
+  return {
+    id: row.id,
+    jobId: row.jobId,
+    senderId: row.senderId,
+    body: row.body,
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
+export function drizzleMessagesRead(db: Db): MessagesRead {
+  return {
+    async listMessagesByJob(jobId) {
+      const rows = await db
+        .select()
+        .from(messages)
+        .where(eq(messages.jobId, jobId));
+      return rows.map(toMessage);
+    },
+  };
+}
+
+export function drizzleChatStore(db: Db): ChatStore {
+  return {
+    async listMessagesByJob(jobId) {
+      const rows = await db
+        .select()
+        .from(messages)
+        .where(eq(messages.jobId, jobId));
+      return rows.map(toMessage);
+    },
+
+    async insertMessage(message) {
+      const [row] = await db
+        .insert(messages)
+        .values({
+          id: message.id,
+          jobId: message.jobId,
+          senderId: message.senderId,
+          body: message.body,
+          createdAt: new Date(message.createdAt),
+        })
+        .returning();
+      if (!row) throw new ChatError("NOT_FOUND", "Message insert failed.");
+      return toMessage(row);
     },
   };
 }

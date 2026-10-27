@@ -38,6 +38,7 @@ export interface UsersStore {
     slots: CleanerAvailability[],
   ): Promise<CleanerAvailability[]>;
   listAvailability(cleanerId: string): Promise<CleanerAvailability[]>;
+  listCleaners(): Promise<User[]>;
 }
 
 function notFound(what: string): UsersError {

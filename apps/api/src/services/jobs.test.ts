@@ -52,6 +52,10 @@ function makeFakeStore(seed: Job[] = []): JobsStore {
       [...jobs.values()].filter((job) => job.status === "open"),
     listJobsByHost: async (hostId) =>
       [...jobs.values()].filter((job) => job.hostId === hostId),
+    listJobsByCleaner: async (cleanerId) =>
+      [...jobs.values()].filter(
+        (job) => job.claimedByCleanerId === cleanerId,
+      ),
     claimIfOpen: async (jobId, cleanerId, nowIso) => {
       const current = jobs.get(jobId);
       if (current === undefined)

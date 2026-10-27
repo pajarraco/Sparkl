@@ -63,6 +63,10 @@ class InMemoryUsersStore implements UsersStore {
   async listAvailability(cleanerId: string): Promise<CleanerAvailability[]> {
     return [...(this.availability.get(cleanerId) ?? [])];
   }
+
+  async listCleaners(): Promise<User[]> {
+    return [...this.users.values()].filter((u) => u.role === "cleaner");
+  }
 }
 
 function storeWithCleaner(): InMemoryUsersStore {
