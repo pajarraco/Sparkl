@@ -9,10 +9,20 @@
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
+  "dependencies": {
+    "@trpc/client": "^11.19.0",
+    "expo": "~52.0.0",
+    "expo-router": "~4.0.0",
+    "react": "18.3.1",
+    "react-native": "^0.76.0"
+  },
   "devDependencies": {
+    "@sparkl/api": "workspace:*",
     "@sparkl/config": "workspace:*",
     "@sparkl/shared": "workspace:*",
     "@sparkl/i18n": "workspace:*",
+    "@types/react": "~18.3.0",
+    "babel-preset-expo": "~12.0.0",
     "typescript": "^5.9.2",
     "vitest": "^3.0.5"
   }
