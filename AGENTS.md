@@ -43,4 +43,11 @@ No implementation exists yet — the `context/` files are the build spec.
 
 ## Commands
 
-- `pnpm test` — run the full test suite
+- `pnpm install` — install all workspace dependencies (requires pnpm `12.15.0`)
+- `docker compose -f docker-compose.dev.yml up -d` — start local PostgreSQL, Redis and MinIO
+- `docker compose -f docker-compose.dev.yml down` — stop local services
+- `pnpm dev` — run all workspace dev scripts in parallel
+- `pnpm test` — run the full test suite (recursive `vitest run`)
+- `pnpm typecheck` — recursive `tsc --noEmit`
+- `pnpm lint` — `biome check .`
+- `pnpm format` — `biome check --write .`

@@ -1,0 +1,55 @@
+name: sparkl-dev
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sparkl-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: sparkl
+      POSTGRES_PASSWORD: sparkl
+      POSTGRES_DB: sparkl
+    volumes:
+      - sparkl-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sparkl -d sparkl"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: sparkl-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - sparkl-redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    container_name: sparkl-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: sparkl
+      MINIO_ROOT_PASSWORD: sparkl1234
+    volumes:
+      - sparkl-miniodata:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  sparkl-pgdata:
+  sparkl-redisdata:
+  sparkl-miniodata:

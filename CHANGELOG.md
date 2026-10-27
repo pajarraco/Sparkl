@@ -18,6 +18,7 @@ Append-only: add a new entry under `## [Unreleased]` for any change, stamped `YY
 - `2026-10-27 04:43` — `context/tasks.md`: code-standard and rules moved to done.
 - `2026-10-27 04:48` — `context/hackathon.md`: hackathon facts, Meta AI candidates, open questions.
 - `2026-10-27 04:49` — `context/hackathon.md`: entry confirmed (Startup / Build for Your World / match explanations).
+- `2026-10-27 06:30` — scaffolding: pnpm workspaces (`apps/api`, `apps/frontend`, `packages/*`), shared TS + Biome config, `docker-compose.dev.yml` (PostgreSQL, Redis, MinIO), `.env.example`, `AGENTS.md` commands. Deps: typescript (strict types per code-standard), vitest (colocated service tests), zod (shared schemas), biome (sole formatter/linter).
 
 ### Changed
 

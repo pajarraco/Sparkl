@@ -1,0 +1,19 @@
+{
+  "name": "@sparkl/frontend",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "expo start",
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@sparkl/config": "workspace:*",
+    "@sparkl/shared": "workspace:*",
+    "@sparkl/i18n": "workspace:*",
+    "typescript": "^5.9.2",
+    "vitest": "^3.0.5"
+  }
+}

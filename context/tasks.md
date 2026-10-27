@@ -6,10 +6,10 @@
 
 ### 1. Scaffolding & tooling
 
-- [ ] pnpm monorepo: `apps/frontend`, `apps/api`, `packages/*`
-- [ ] Shared TS + Biome config in `packages/config`
-- [ ] `docker-compose.dev.yml`: PostgreSQL, Redis, MinIO
-- [ ] `.env.example` + Commands section in `AGENTS.md`
+- [x] pnpm monorepo: `apps/frontend`, `apps/api`, `packages/*`
+- [x] Shared TS + Biome config in `packages/config`
+- [x] `docker-compose.dev.yml`: PostgreSQL, Redis, MinIO
+- [x] `.env.example` + Commands section in `AGENTS.md`
 
 ### 2. Shared contracts
 

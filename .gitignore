@@ -1,2 +1,12 @@
 .agents/skills/
-skills-lock.json
+node_modules/
+dist/
+build/
+coverage/
+.env
+.env.local
+.expo/
+.expo-shared/
+.turbo/
+*.tsbuildinfo
+.DS_Store

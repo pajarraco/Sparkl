@@ -1,14 +1,10 @@
 {
   "name": "Sparkl",
   "version": "1.0.0",
+  "private": true,
   "description": "A two-sided marketplace connecting vacation-rental hosts with cleaning professionals",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "Ernesto La Fontaine",
-  "license": "ISC",
+  "type": "module",
+  "packageManager": "pnpm@12.15.0",
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
@@ -16,6 +12,19 @@
       "onFail": "download"
     }
   },
-  "packageManager": "pnpm@12.15.0",
-  "type": "module"
+  "scripts": {
+    "dev": "pnpm --recursive --parallel run dev",
+    "build": "pnpm --recursive run build",
+    "test": "pnpm --recursive run test",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "typecheck": "pnpm --recursive run typecheck"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "typescript": "^5.9.2",
+    "vitest": "^3.0.5"
+  },
+  "author": "Ernesto La Fontaine",
+  "license": "ISC"
 }
