@@ -1,4 +1,5 @@
 .agents/skills/
+.tools/
 node_modules/
 dist/
 build/

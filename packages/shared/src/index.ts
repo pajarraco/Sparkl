@@ -1,3 +1,7 @@
-// Shared contracts live here (task 2): Zod schemas, types, constants.
-// Placeholder so the workspace resolves before contracts land.
-export const SPARKL_PLACEHOLDER = "sparkl-shared" as const;
+export * from "./users.js";
+export * from "./availability.js";
+export * from "./lifecycle.js";
+export * from "./jobs.js";
+export * from "./messages.js";
+export * from "./reviews.js";
+export * from "./errors.js";

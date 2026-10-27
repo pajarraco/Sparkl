@@ -13,9 +13,9 @@
 
 ### 2. Shared contracts
 
-- [ ] `packages/shared`: user / job / message / review Zod schemas + types
-- [ ] `packages/i18n`: English strings wired into the frontend
-- [ ] Shared job-lifecycle states and error codes
+- [x] `packages/shared`: user / job / message / review Zod schemas + types
+- [x] `packages/i18n`: English strings (frontend wiring lands with task 5)
+- [x] Shared job-lifecycle states and error codes
 
 ### 3. Backend — core
 

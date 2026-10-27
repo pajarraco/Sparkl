@@ -19,6 +19,8 @@ Append-only: add a new entry under `## [Unreleased]` for any change, stamped `YY
 - `2026-10-27 04:48` — `context/hackathon.md`: hackathon facts, Meta AI candidates, open questions.
 - `2026-10-27 04:49` — `context/hackathon.md`: entry confirmed (Startup / Build for Your World / match explanations).
 - `2026-10-27 06:30` — scaffolding: pnpm workspaces (`apps/api`, `apps/frontend`, `packages/*`), shared TS + Biome config, `docker-compose.dev.yml` (PostgreSQL, Redis, MinIO), `.env.example`, `AGENTS.md` commands. Deps: typescript (strict types per code-standard), vitest (colocated service tests), zod (shared schemas), biome (sole formatter/linter).
+- `2026-10-27 06:45` — shared contracts: Zod schemas + types for users, availability, jobs, messages, reviews; job-lifecycle states and transitions; shared error codes; English string table in `packages/i18n`. Timestamps standardized on ISO datetime strings; review comment is `undefined` on input, `null` in storage.
+- `2026-10-27 07:00` — `apps/api`: added `@types/node` devDependency so `pnpm typecheck` passes (`tsconfig.json` already referenced node types). New dep justification: the Fastify backend needs Node type definitions.
 
 ### Changed
 
