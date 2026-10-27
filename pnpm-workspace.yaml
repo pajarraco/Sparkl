@@ -4,3 +4,6 @@ packages:
 allowBuilds:
   '@biomejs/biome': false
   esbuild: false
+permissions:
+  '@trpc/server':
+    skills: true

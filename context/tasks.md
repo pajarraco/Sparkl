@@ -19,11 +19,11 @@
 
 ### 3. Backend — core
 
-- [ ] Better Auth with `host` / `cleaner` roles
-- [ ] Drizzle schema + migrations (users, availability, jobs, messages, reviews)
-- [ ] Users router + service (profiles, availability, service area)
-- [ ] Jobs router + service (create, list, transactional claim, lifecycle, cancel)
-- [ ] Storage router + service (presigned URLs against local MinIO)
+- [x] Better Auth with `host` / `cleaner` roles
+- [x] Drizzle schema + migrations (users, availability, jobs, messages, reviews)
+- [x] Users router + service (profiles, availability, service area)
+- [x] Jobs router + service (create, list, transactional claim, lifecycle, cancel)
+- [x] Storage router + service (presigned URLs against local MinIO)
 
 ### 4. Backend — matching, chat, reviews
 

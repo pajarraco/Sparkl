@@ -32,7 +32,10 @@ services:
       retries: 10
 
   minio:
-    image: minio/minio:latest
+    # MinIO deleted minio/minio from Docker Hub (Sep 2026); Chainguard's
+    # rebuild tracks the last community release. No shell in this image, so
+    # no container healthcheck — the API retries S3 calls instead.
+    image: cgr.dev/chainguard/minio:latest
     container_name: sparkl-minio
     ports:
       - "9000:9000"
@@ -43,11 +46,6 @@ services:
     volumes:
       - sparkl-miniodata:/data
     command: server /data --console-address ":9001"
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
 volumes:
   sparkl-pgdata:

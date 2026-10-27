@@ -3,8 +3,5 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "files": [
-    "biome.json",
-    "tsconfig.base.json"
-  ]
+  "files": ["biome.json", "tsconfig.base.json"]
 }

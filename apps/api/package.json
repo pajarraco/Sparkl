@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "buckets": "node scripts/ensure-buckets.mjs",
     "build": "tsc -p tsconfig.json",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit -p tsconfig.json"
@@ -13,7 +14,19 @@
     "@sparkl/config": "workspace:*",
     "@sparkl/shared": "workspace:*",
     "@types/node": "^24.0.0",
+    "drizzle-kit": "^0.31.11",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.2",
     "vitest": "^3.0.5"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1156.0",
+    "@aws-sdk/s3-request-presigner": "^3.1156.0",
+    "@better-auth/drizzle-adapter": "^1.7.13",
+    "@trpc/server": "^11.19.0",
+    "better-auth": "^1.7.13",
+    "drizzle-orm": "^0.45.4",
+    "fastify": "^5.12.7",
+    "postgres": "^3.4.9"
   }
 }

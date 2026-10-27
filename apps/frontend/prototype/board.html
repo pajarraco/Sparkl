@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<!-- PROTOTYPE — throwaway, not production.
+  Plan: "Three variants of the cleaner Board, switchable via ?variant=, in one file."
+  Question: what should the ranked board with AI match explanations look like?
+  Assumption: Expo is not installed yet, so this is a single self-contained HTML
+  file instead of an Expo route. Open it by double-clicking. Delete after a
+  variant wins; the winner gets rewritten properly in the real app.
+  Data is fake (demo lane / sample st). Explanations are canned until you press
+  "Rewrite with local Glimmer", which calls Ollama at http://localhost:11434.
+  Photo blocks are placeholders labelled with the Muse Image prompt to use. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sparkl prototype — ranked board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Elms+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FFFFFF; --paper-2:#F8FAFC; --ink:#1E293B; --ink-soft:#64748B;
+    --ink-mute:#94A3B8; --indigo:#2205A4; --indigo-deep:#1A0480;
+    --orange:#FF6B00; --orange-deep:#C24E00; --orange-tint:#FFF0E6;
+    --stone:#E2E8F0; --success:#16A34A;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:"Elms Sans",-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.5}
+  .wrap{max-width:640px;margin:0 auto;padding:0 16px 120px}
+  header.screen{padding:20px 0 8px}
+  h1.title{font-size:32px;line-height:38px;letter-spacing:-0.02em;margin:0}
+  .eyebrow{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--ink-soft);margin:0 0 4px}
+  nav.tabs{display:flex;border-bottom:1px solid var(--stone);margin:12px 0 20px}
+  nav.tabs span{flex:1;text-align:center;padding:12px 0;font-size:14px;font-weight:500;
+    color:var(--ink-mute);min-height:44px}
+  nav.tabs span.active{color:var(--indigo);font-weight:600;border-bottom:2px solid var(--indigo)}
+  .state{font-size:12px;color:var(--ink-soft);background:var(--paper-2);
+    border:1px solid var(--stone);border-radius:6px;padding:8px 12px;margin-bottom:16px}
+  .card{background:var(--paper);border:1px solid var(--stone);border-radius:14px;
+    border-left:4px solid var(--orange);padding:16px;margin-bottom:16px}
+  .card .addr{font-size:12px;font-weight:500;letter-spacing:.05em;text-transform:uppercase;
+    color:var(--ink-soft);margin:0 0 4px}
+  .card h3{font-size:20px;line-height:26px;font-weight:600;margin:0 0 8px}
+  .meta{font-size:14px;color:var(--ink-soft);font-variant-numeric:tabular-nums;margin:0 0 8px}
+  .pill{display:inline-block;font-size:12px;font-weight:500;border-radius:999px;
+    padding:2px 10px;background:#DCFCE7;color:#15803D;margin-bottom:8px}
+  .photo{background:var(--paper-2);border:1px dashed var(--stone);border-radius:6px;
+    padding:20px 12px;text-align:center;color:var(--ink-mute);font-size:12px;margin:8px 0}
+  .photo b{display:block;color:var(--ink-soft);font-size:12px;margin-bottom:4px}
+  .why{background:var(--orange-tint);border-radius:6px;padding:12px;margin:8px 0;font-size:14px}
+  .why .k{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--orange-deep);margin:0 0 4px}
+  .why p{margin:0}
+  .why .src{font-size:12px;color:var(--ink-soft);margin-top:6px}
+  .row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  button{font:inherit;cursor:pointer;min-height:44px;border-radius:6px;padding:10px 18px}
+  .btn-primary{background:var(--indigo);color:#fff;border:none;font-weight:600;
+    text-transform:uppercase;letter-spacing:.03em;font-size:14px}
+  .btn-primary:active{background:var(--indigo-deep)}
+  .btn-secondary{background:#fff;color:var(--indigo);border:2px solid var(--indigo);
+    font-size:14px;font-weight:500}
+  .err{font-size:14px;color:#B91C1C;margin-top:8px}
+  .variant{display:none}
+  .variant.on{display:block}
+  /* Variant B: spotlight + compact rows */
+  .spot{border:1px solid var(--stone);border-radius:14px;border-left:4px solid var(--orange);
+    padding:16px;margin-bottom:16px}
+  .spot .photo{padding:48px 12px}
+  .crow{display:flex;align-items:center;gap:12px;border:1px solid var(--stone);
+    border-radius:6px;padding:12px;margin-bottom:8px;background:var(--paper)}
+  .crow .rank{font-size:20px;font-weight:700;color:var(--ink-mute);min-width:28px;text-align:center}
+  .crow .t{flex:1}
+  .crow .t b{display:block;font-size:16px}
+  .crow .t span{font-size:14px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+  /* Variant C: briefing first */
+  .brief{border-bottom:1px solid var(--stone);padding:16px 0}
+  .brief .n{font-size:12px;font-weight:600;letter-spacing:.14em;color:var(--orange-deep);
+    text-transform:uppercase;margin:0 0 4px}
+  .brief p.lead{font-size:16px;font-weight:500;margin:0 0 8px}
+  .chip{display:inline-block;background:var(--paper-2);border:1px solid var(--stone);
+    border-radius:6px;padding:8px 12px;font-size:14px}
+  .chip span{color:var(--ink-soft);font-variant-numeric:tabular-nums}
+  /* Floating switcher — obviously not part of the design */
+  #switcher{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);
+    background:var(--ink);color:#fff;border-radius:999px;display:flex;align-items:center;
+    gap:4px;padding:6px 8px;box-shadow:0 4px 16px rgba(30,41,59,.35);z-index:99}
+  #switcher button{background:none;border:none;color:#fff;font-size:18px;min-width:44px;min-height:44px}
+  #switcher .lbl{font-size:14px;font-weight:600;white-space:nowrap;padding:0 6px}
+  #switcher .proto{font-size:11px;background:var(--orange);border-radius:999px;padding:2px 8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="screen">
+    <p class="eyebrow">Sparkl prototype · cleaner</p>
+    <h1 class="title">Board</h1>
+  </header>
+  <nav class="tabs"><span class="active">Board</span><span>My Jobs</span><span>Messages</span><span>Profile</span></nav>
+  <p class="state" id="state">variant=A · explanations=canned · images=placeholder</p>
+
+  <!-- Variant A: ranked cards, explanation inline in each card -->
+  <section class="variant" id="vA">
+    <div class="card" data-job="job1">
+      <p class="addr">123 Demo Lane Apt 4B</p>
+      <h3>Turnover clean · 2bd condo</h3>
+      <p class="meta">Fri 10:00–13:00 · $85 · 1.2 mi · host Dana K. 4.9★</p>
+      <span class="pill">open</span>
+      <div class="photo"><b>Property photo — Muse Image</b>Prompt: bright 2-bedroom condo living room, natural daylight, tidy, photorealistic, wide angle</div>
+      <div class="why"><p class="k">Why this matches</p><p class="txt">Shortest trip on your Friday (1.2 mi) from a 4.9-star host you have cleaned for twice. High acceptance chance.</p><p class="src">source: canned</p></div>
+      <div class="row"><button class="btn-primary">Claim</button><button class="btn-secondary glimmer">Rewrite with local Glimmer</button></div>
+      <p class="err" hidden></p>
+    </div>
+    <div class="card" data-job="job2">
+      <p class="addr">456 Sample St Unit 2</p>
+      <h3>Checkout clean · 3bd house</h3>
+      <p class="meta">Sat 9:00–12:00 · $120 · 3.8 mi · host Sam R. 4.7★</p>
+      <span class="pill">open</span>
+      <div class="photo"><b>Property photo — Muse Image</b>Prompt: suburban 3-bedroom house exterior at morning, welcoming, photorealistic</div>
+      <div class="why"><p class="k">Why this matches</p><p class="txt">Best Saturday pay ($120) and overlaps your morning availability. This host replies in about 5 minutes.</p><p class="src">source: canned</p></div>
+      <div class="row"><button class="btn-primary">Claim</button><button class="btn-secondary glimmer">Rewrite with local Glimmer</button></div>
+      <p class="err" hidden></p>
+    </div>
+    <div class="card" data-job="job3">
+      <p class="addr">789 Placeholder Ave</p>
+      <h3>Studio refresh</h3>
+      <p class="meta">Sun 14:00–16:00 · $64 · 0.6 mi · new host, no reviews yet</p>
+      <span class="pill">open</span>
+      <div class="photo"><b>Property photo — Muse Image</b>Prompt: small bright studio apartment, compact kitchen, natural light, photorealistic</div>
+      <div class="why"><p class="k">Why this matches</p><p class="txt">Closest job to you (0.6 mi) from a brand-new host. No reviews yet, so an easy first booking to fill Sunday.</p><p class="src">source: canned</p></div>
+      <div class="row"><button class="btn-primary">Claim</button><button class="btn-secondary glimmer">Rewrite with local Glimmer</button></div>
+      <p class="err" hidden></p>
+    </div>
+  </section>
+
+  <!-- Variant B: top-match spotlight, rest as compact ranked rows -->
+  <section class="variant" id="vB">
+    <div class="spot" data-job="job1">
+      <p class="eyebrow">Top match for you</p>
+      <h3 style="font-size:24px;line-height:30px;margin:0 0 8px">Turnover clean · 2bd condo — $85</h3>
+      <p class="meta">Fri 10:00–13:00 · 1.2 mi · host Dana K. 4.9★</p>
+      <div class="photo"><b>Property photo — Muse Image</b>Prompt: bright 2-bedroom condo living room, natural daylight, tidy, photorealistic, wide angle</div>
+      <div class="why"><p class="k">Why this matches</p><p class="txt">Shortest trip on your Friday (1.2 mi) from a 4.9-star host you have cleaned for twice. High acceptance chance.</p><p class="src">source: canned</p></div>
+      <div class="row"><button class="btn-primary">Claim this job</button><button class="btn-secondary glimmer">Rewrite with local Glimmer</button></div>
+      <p class="err" hidden></p>
+    </div>
+    <p class="eyebrow">Also ranked for you</p>
+    <div class="crow"><span class="rank">2</span><div class="t"><b>Checkout clean · 3bd house</b><span>Sat · $120 · 3.8 mi · 4.7★ host</span></div></div>
+    <div class="crow"><span class="rank">3</span><div class="t"><b>Studio refresh</b><span>Sun · $64 · 0.6 mi · new host</span></div></div>
+  </section>
+
+  <!-- Variant C: matcher briefing — reasons lead, job details follow -->
+  <section class="variant" id="vC">
+    <div class="brief" data-job="job1">
+      <p class="n">Pick 1 · shortest trip</p>
+      <p class="lead">Only 1.2 miles on Friday, from a 4.9-star host who already trusts your work.</p>
+      <div class="chip">Turnover clean · 2bd condo <span>· Fri 10–13 · $85</span></div>
+      <div class="row"><button class="btn-secondary glimmer">Rewrite with local Glimmer</button></div>
+      <p class="txt" hidden>Shortest trip on your Friday (1.2 mi) from a 4.9-star host you have cleaned for twice. High acceptance chance.</p>
+      <p class="err" hidden></p>
+    </div>
+    <div class="brief" data-job="job2">
+      <p class="n">Pick 2 · best Saturday pay</p>
+      <p class="lead">$120, inside your Saturday morning window, with a host who replies in minutes.</p>
+      <div class="chip">Checkout clean · 3bd house <span>· Sat 9–12 · $120 · 3.8 mi</span></div>
+      <div class="row"><button class="btn-secondary glimmer">Rewrite with local Glimmer</button></div>
+      <p class="txt" hidden>Best Saturday pay ($120) and overlaps your morning availability. This host replies in about 5 minutes.</p>
+      <p class="err" hidden></p>
+    </div>
+    <div class="brief" data-job="job3">
+      <p class="n">Pick 3 · easiest fill</p>
+      <p class="lead">A 6-minute trip to a new host with no reviews — quick Sunday money, low stakes.</p>
+      <div class="chip">Studio refresh <span>· Sun 14–16 · $64 · 0.6 mi</span></div>
+      <div class="row"><button class="btn-secondary glimmer">Rewrite with local Glimmer</button></div>
+      <p class="txt" hidden>Closest job to you (0.6 mi) from a brand-new host. No reviews yet, so an easy first booking to fill Sunday.</p>
+      <p class="err" hidden></p>
+    </div>
+  </section>
+
+  <div id="switcher" aria-label="prototype variant switcher">
+    <button id="prev" aria-label="previous variant">‹</button>
+    <span class="proto">PROTO</span><span class="lbl" id="lbl">A</span>
+    <button id="next" aria-label="next variant">›</button>
+  </div>
+</div>
+<script>
+(function(){
+  var order = ["A","B","C"];
+  var names = {A:"Inline cards", B:"Spotlight", C:"Briefing first"};
+  var facts = {
+    job1: "2bd condo turnover, Fri 10-13, $85, 1.2 miles away, host Dana K rated 4.9 from 12 jobs, cleaner worked for her twice",
+    job2: "3bd house checkout, Sat 9-12, $120, 3.8 miles away, host Sam R rated 4.7, replies in ~5 min, overlaps cleaner Saturday morning availability",
+    job3: "studio refresh, Sun 14-16, $64, 0.6 miles away, brand-new host with no reviews yet"
+  };
+  function current(){
+    var v = new URLSearchParams(location.search).get("variant");
+    return order.indexOf(v) === -1 ? "A" : v;
+  }
+  function show(v){
+    order.forEach(function(k){
+      document.getElementById("v"+k).classList.toggle("on", k === v);
+    });
+    document.getElementById("lbl").textContent = v + " · " + names[v];
+    try {
+      var u = new URL(location.href); u.searchParams.set("variant", v);
+      history.replaceState(null, "", u);
+    } catch(e){}
+    updateState();
+  }
+  function liveCount(){
+    return document.querySelectorAll(".why .src.live, .brief .src.live").length;
+  }
+  function updateState(){
+    var n = liveCount();
+    document.getElementById("state").textContent =
+      "variant=" + current() + " · explanations=" +
+      (n ? "live x" + n + " (muse-glimmer)" : "canned") +
+      " · images=placeholder (Muse Image prompts shown)";
+  }
+  document.getElementById("prev").onclick = function(){
+    var i = (order.indexOf(current()) + order.length - 1) % order.length;
+    show(order[i]);
+  };
+  document.getElementById("next").onclick = function(){
+    var i = (order.indexOf(current()) + 1) % order.length;
+    show(order[i]);
+  };
+  document.addEventListener("keydown", function(e){
+    var t = e.target.tagName;
+    if (t === "INPUT" || t === "TEXTAREA" || e.target.isContentEditable) return;
+    if (e.key === "ArrowLeft") document.getElementById("prev").click();
+    if (e.key === "ArrowRight") document.getElementById("next").click();
+  });
+  document.querySelectorAll("button.glimmer").forEach(function(btn){
+    btn.onclick = function(){
+      var card = btn.closest("[data-job]");
+      var key = card.getAttribute("data-job");
+      var txt = card.querySelector(".txt");
+      var err = card.querySelector(".err");
+      var src = card.querySelector(".src");
+      var lead = card.querySelector(".lead");
+      err.hidden = true; btn.disabled = true; btn.textContent = "Asking Glimmer…";
+      fetch("http://localhost:11434/api/generate", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          model: "muse-glimmer",
+          stream: false,
+          system: "You are the Sparkl matcher. You write one-sentence job-match explanations for cleaners.",
+          options: {temperature: 0.3, num_predict: 60},
+          prompt: "Job: " + facts[key] + ". Output ONLY the explanation sentence, under 25 words. " +
+            "No intro, no quotes, no preamble, never use the word review."
+        })
+      }).then(function(r){
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      }).then(function(j){
+        txt.textContent = (j.response || "").trim();
+        txt.hidden = false;
+        if (lead) lead.textContent = (j.response || "").trim();
+        if (src) { src.textContent = "source: live · muse-glimmer"; src.classList.add("live"); }
+        else { var s = document.createElement("p"); s.className = "src live";
+          s.textContent = "source: live · muse-glimmer"; card.querySelector(".chip").after(s); }
+        updateState();
+      }).catch(function(){
+        err.textContent = "Ollama unreachable at localhost:11434 — is Ollama running with muse-glimmer pulled?";
+        err.hidden = false;
+      }).finally(function(){
+        btn.disabled = false; btn.textContent = "Rewrite with local Glimmer";
+      });
+    };
+  });
+  show(current());
+})();
+</script>
+</body>
+</html>
