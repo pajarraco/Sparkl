@@ -3,7 +3,7 @@ import type { CreateFastifyContextOptions } from "@trpc/server/adapters/fastify"
 import { fromNodeHeaders } from "better-auth/node";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { type Db, db } from "../db/client.js";
-import { auth } from "../plugins/auth.js";
+import { getAuthSession } from "../plugins/auth.js";
 
 // Service singletons only; business logic stays in apps/api/src/services/.
 export interface Services {
@@ -23,7 +23,7 @@ export async function createContext({
   req,
   res,
 }: CreateFastifyContextOptions): Promise<Context> {
-  const data = await auth.api.getSession({
+  const data = await getAuthSession({
     headers: fromNodeHeaders(req.headers),
   });
   const parsed = userRoleSchema.safeParse(

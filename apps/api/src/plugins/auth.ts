@@ -1,12 +1,21 @@
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
+import { expo } from "@better-auth/expo";
 import { betterAuth } from "better-auth";
 import type { FastifyInstance } from "fastify";
 import { db } from "../db/client.js";
 import * as schema from "../db/schema.js";
 
-export const auth = betterAuth({
+// Kept private: the inferred instance type is not portable — the expo
+// plugin's endpoint types reach into zod/v4/core through a nested copy,
+// which declaration emit cannot name (TS2742). The wrappers below expose
+// exactly what the API uses, with nameable inferred types.
+const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
   database: drizzleAdapter(db, { provider: "pg", schema }),
+  // Native session-cookie protocol (SecureStore-backed cookie storage on
+  // the client). Web behavior is unchanged; the plugin only adds
+  // trusted origins and origin handling for native schemes.
+  plugins: [expo()],
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
@@ -21,7 +30,13 @@ export const auth = betterAuth({
   session: { expiresIn: 60 * 60 * 24 * 7, updateAge: 60 * 60 * 24 },
 });
 
-export type Auth = typeof auth;
+export function getAuthSession(options: { headers: Headers }) {
+  return auth.api.getSession(options);
+}
+
+export function handleAuthRequest(request: Request): Promise<Response> {
+  return auth.handler(request);
+}
 
 export async function authPlugin(fastify: FastifyInstance): Promise<void> {
   fastify.route({
@@ -36,7 +51,7 @@ export async function authPlugin(fastify: FastifyInstance): Promise<void> {
       }
       const hasBody =
         req.method !== "GET" && req.method !== "HEAD" && req.body !== undefined;
-      const request = new Request(url, {
+      const request = new Request(url.toString(), {
         method: req.method,
         headers,
         ...(hasBody
@@ -48,9 +63,9 @@ export async function authPlugin(fastify: FastifyInstance): Promise<void> {
             }
           : {}),
       });
-      const res = await auth.handler(request);
+      const res = await handleAuthRequest(request);
       reply.status(res.status);
-      res.headers.forEach((v, k) => reply.header(k, v));
+      res.headers.forEach((v: string, k: string) => reply.header(k, v));
       return reply.send(
         res.body ? Buffer.from(await res.arrayBuffer()) : undefined,
       );

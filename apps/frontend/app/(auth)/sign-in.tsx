@@ -1,0 +1,121 @@
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { Screen } from "../../components/Screen.js";
+import { SparklButton } from "../../components/SparklButton.js";
+import { SparklTextField } from "../../components/SparklTextField.js";
+import {
+  type AuthFieldErrors,
+  validateSignIn,
+} from "../../providers/auth-forms.js";
+import { authClient } from "../../providers/auth-instance.js";
+import { getHomeRouteForRole } from "../../providers/auth-navigation.js";
+import { parseAppRole } from "../../providers/auth.js";
+import { getStrings } from "../../providers/i18n.js";
+import {
+  THEME_COLORS,
+  THEME_FONT,
+  THEME_SPACING,
+} from "../../providers/theme.js";
+
+const styles = StyleSheet.create({
+  form: {
+    gap: THEME_SPACING.rowMax,
+    marginTop: THEME_SPACING.section,
+  },
+  formError: {
+    fontFamily: THEME_FONT.family,
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: "500",
+    color: THEME_COLORS.danger,
+  },
+});
+
+export default function SignInScreen() {
+  const strings = getStrings();
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState<AuthFieldErrors>({});
+  const [formError, setFormError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function handleSignIn(): Promise<void> {
+    const result = validateSignIn({ email, password });
+    setErrors(result.errors);
+    if (result.data === null) return;
+    setLoading(true);
+    setFormError(null);
+    try {
+      const signIn = await authClient.signIn.email({
+        email: result.data.email,
+        password: result.data.password,
+      });
+      if (signIn.error !== null) {
+        setFormError(strings.errors.generic);
+        return;
+      }
+      const session = await authClient.getSession();
+      const role = parseAppRole(
+        (session?.data as { user?: { role?: unknown } } | null)?.user?.role,
+      );
+      if (role === null) {
+        setFormError(strings.errors.generic);
+        return;
+      }
+      router.replace(getHomeRouteForRole(role));
+    } catch {
+      setFormError(strings.errors.generic);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <Screen testID="sign-in-screen" title={strings.auth.signIn}>
+      <View style={styles.form}>
+        <SparklTextField
+          autoCapitalize="none"
+          error={errors.email}
+          keyboardType="email-address"
+          label={strings.auth.emailLabel}
+          onChangeText={setEmail}
+          testID="sign-in-email"
+          value={email}
+        />
+        <SparklTextField
+          error={errors.password}
+          label={strings.auth.passwordLabel}
+          onChangeText={setPassword}
+          secureTextEntry
+          testID="sign-in-password"
+          value={password}
+        />
+        {formError === null ? null : (
+          <Text accessibilityLiveRegion="polite" style={styles.formError}>
+            {formError}
+          </Text>
+        )}
+        <SparklButton
+          accessibilityLabel={strings.auth.signIn}
+          loading={loading}
+          onPress={() => {
+            void handleSignIn();
+          }}
+          testID="sign-in-submit"
+          title={strings.auth.signIn}
+        />
+        <SparklButton
+          accessibilityLabel={strings.auth.needAccount}
+          onPress={() => {
+            router.replace("/(auth)/sign-up");
+          }}
+          testID="sign-in-to-sign-up"
+          title={strings.auth.needAccount}
+          variant="secondary"
+        />
+      </View>
+    </Screen>
+  );
+}
