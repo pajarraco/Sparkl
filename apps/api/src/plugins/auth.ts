@@ -18,8 +18,8 @@ const auth = betterAuth({
   // Override with TRUSTED_ORIGINS (comma-separated) for other setups.
   trustedOrigins: (process.env.TRUSTED_ORIGINS ?? "http://localhost:8081")
     .split(",")
-    .map((origin) => origin.trim())
-    .filter((origin) => origin !== ""),
+    .map((origin: string) => origin.trim())
+    .filter((origin: string) => origin !== ""),
   // Native session-cookie protocol (SecureStore-backed cookie storage on
   // the client). Web behavior is unchanged; the plugin only adds
   // trusted origins and origin handling for native schemes.

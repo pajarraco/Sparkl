@@ -363,7 +363,7 @@ export default function HostJobDetailScreen() {
             ) : (
               <BodyText>{strings.emptyStates.noSuggestions}</BodyText>
             )
-          ) : null
+          ) : undefined
         }
         renderItem={renderSuggestion}
         style={styles.flatList}

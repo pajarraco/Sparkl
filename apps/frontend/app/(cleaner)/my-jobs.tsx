@@ -198,7 +198,7 @@ export default function CleanerMyJobsScreen() {
       ) : (
         <FlatList
           ListHeaderComponent={
-            spotlight === null ? null : (
+            spotlight === null ? undefined : (
               <View style={styles.spotlight}>
                 <Text style={styles.spotlightEyebrow}>
                   {strings.myJobs.spotlightNextUp}

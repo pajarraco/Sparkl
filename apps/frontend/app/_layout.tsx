@@ -18,7 +18,6 @@ import {
   isSessionExpiredError,
   selectCookieGetter,
 } from "../providers/auth-session";
-import { THEME_COLORS } from "../providers/theme";
 
 // Root composition: theme is token-driven (global.css + THEME_*), auth
 // session flows from SecureStore into tRPC headers via the stored cookie.
@@ -59,7 +58,7 @@ export default function RootLayout() {
   if (!fontsLoaded) return null;
   return (
     <SparklProviders queryClient={queryClient} trpcClient={trpcClient}>
-      <StatusBar backgroundColor={THEME_COLORS.paper} barStyle="dark-content" />
+      <StatusBar barStyle="dark-content" />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="(auth)" />

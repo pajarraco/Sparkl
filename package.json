@@ -13,7 +13,7 @@
     }
   },
   "scripts": {
-    "dev": "node scripts/dev-setup.mjs && pnpm --recursive --parallel run dev",
+    "dev": "node scripts/dev-setup.mjs && turbo run dev --parallel",
     "verify": "pnpm test && pnpm lint && pnpm typecheck",
     "build": "pnpm --recursive run build",
     "test": "pnpm --recursive run test",
@@ -23,6 +23,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "turbo": "^2.11.10",
     "typescript": "^5.9.2",
     "vitest": "^3.0.5"
   },
