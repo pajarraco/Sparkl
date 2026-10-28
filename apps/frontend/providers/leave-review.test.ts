@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  cleanerReviewSubjectForJob,
   hostReviewSubjectForJob,
   reviewSubmitErrorMessage,
   validateReviewForm,
@@ -49,6 +50,12 @@ describe("hostReviewSubjectForJob", () => {
 
   it("has no subject before a claim", () => {
     expect(hostReviewSubjectForJob({ claimedByCleanerId: null })).toBe(null);
+  });
+});
+
+describe("cleanerReviewSubjectForJob", () => {
+  it("reviews the host", () => {
+    expect(cleanerReviewSubjectForJob({ hostId: "host-id" })).toBe("host-id");
   });
 });
 

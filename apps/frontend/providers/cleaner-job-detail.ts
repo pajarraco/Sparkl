@@ -10,6 +10,18 @@ export function cleanerClaimAvailableForStatus(status: JobStatus): boolean {
   return status === "open";
 }
 
+// Chat unlocks once the job is claimed (the service rejects sends on open
+// jobs); the thread stays readable afterwards, including history.
+export function cleanerChatAvailableForStatus(status: JobStatus): boolean {
+  return status !== "open";
+}
+
+// Reviews open once the job is completed (the service rejects earlier
+// reviews); the form stays reachable from history afterwards.
+export function cleanerReviewAvailableForStatus(status: JobStatus): boolean {
+  return status === "completed";
+}
+
 function isConflictError(err: unknown): boolean {
   if (typeof err !== "object" || err === null) return false;
   const data = (err as { data?: unknown }).data;

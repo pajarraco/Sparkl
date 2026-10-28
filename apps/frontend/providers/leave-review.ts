@@ -6,7 +6,8 @@ import { getStrings } from "./i18n";
 // job-party author, other-party subject, one review per job+author —
 // see apps/api/src/services/reviews.ts); this module only validates
 // the form before sending and maps the duplicate error to its string.
-// A host always reviews the claiming cleaner.
+// A host always reviews the claiming cleaner; a cleaner always reviews
+// the host.
 
 export const REVIEW_STARS = [1, 2, 3, 4, 5] as const;
 
@@ -61,6 +62,10 @@ export function hostReviewSubjectForJob(
   job: Pick<Job, "claimedByCleanerId">,
 ): string | null {
   return job.claimedByCleanerId;
+}
+
+export function cleanerReviewSubjectForJob(job: Pick<Job, "hostId">): string {
+  return job.hostId;
 }
 
 function isConflictError(err: unknown): boolean {

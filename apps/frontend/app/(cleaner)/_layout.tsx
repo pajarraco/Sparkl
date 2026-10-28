@@ -35,6 +35,8 @@ export default function CleanerTabsLayout() {
         />
       ))}
       <Tabs.Screen name="job/[id]" options={{ href: null }} />
+      <Tabs.Screen name="chat/[jobId]" options={{ href: null }} />
+      <Tabs.Screen name="review/[jobId]" options={{ href: null }} />
     </Tabs>
   );
 }

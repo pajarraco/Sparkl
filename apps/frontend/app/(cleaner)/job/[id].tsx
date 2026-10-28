@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Screen } from "../../../components/Screen";
@@ -6,7 +6,9 @@ import { SparklButton } from "../../../components/SparklButton";
 import { sparklTrpc } from "../../../providers/app-providers";
 import {
   claimSubmitErrorMessage,
+  cleanerChatAvailableForStatus,
   cleanerClaimAvailableForStatus,
+  cleanerReviewAvailableForStatus,
 } from "../../../providers/cleaner-job-detail";
 import { getStrings } from "../../../providers/i18n";
 import {
@@ -95,6 +97,7 @@ const styles = StyleSheet.create({
 
 export default function CleanerJobDetailScreen() {
   const strings = getStrings();
+  const router = useRouter();
   const params = useLocalSearchParams<{ id: string }>();
   const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
   const jobId = rawId !== undefined && UUID_RE.test(rawId) ? rawId : null;
@@ -207,6 +210,28 @@ export default function CleanerJobDetailScreen() {
         </View>
       )}
       <View style={styles.actions}>
+        {cleanerChatAvailableForStatus(job.status) ? (
+          <SparklButton
+            accessibilityLabel={strings.jobDetail.openChat}
+            onPress={() => {
+              router.push(`/(cleaner)/chat/${job.id}`);
+            }}
+            testID="cleaner-job-open-chat"
+            title={strings.jobDetail.openChat}
+            variant="secondary"
+          />
+        ) : null}
+        {cleanerReviewAvailableForStatus(job.status) ? (
+          <SparklButton
+            accessibilityLabel={strings.review.title}
+            onPress={() => {
+              router.push(`/(cleaner)/review/${job.id}`);
+            }}
+            testID="cleaner-job-leave-review"
+            title={strings.review.title}
+            variant="secondary"
+          />
+        ) : null}
         {cleanerClaimAvailableForStatus(job.status) && !claimed ? (
           <SparklButton
             accessibilityLabel={strings.jobDetail.claim}

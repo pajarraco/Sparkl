@@ -97,6 +97,8 @@ export const en = {
     nameLabel: "Name",
     photoLabel: "Photo",
     areaLabel: "Service area",
+    radiusLabel: "Radius (km)",
+    saveArea: "Save service area",
     ratingHeading: "Rating",
     jobsDoneHeading: "Jobs completed",
     viewPublic: "View public profile",
@@ -109,6 +111,7 @@ export const en = {
     weekdaysLabel: "Weekdays",
     weekendLabel: "Weekends",
     save: "Save availability",
+    saved: "Availability saved.",
   },
   filters: {
     title: "Filters",
