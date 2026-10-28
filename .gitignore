@@ -11,3 +11,5 @@ coverage/
 .turbo/
 *.tsbuildinfo
 .DS_Store
+.pnpm-store/
+.pnpm-store/*

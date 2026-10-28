@@ -3,7 +3,7 @@ import { StyleSheet, Text, TextInput, View } from "react-native";
 import type { KeyboardTypeOptions } from "react-native";
 import {
   THEME_COLORS,
-  THEME_FONT,
+  THEME_FONT_FAMILY,
   THEME_RADII,
   THEME_SPACING,
 } from "../providers/theme";
@@ -27,16 +27,15 @@ export interface SparklTextFieldProps {
 
 const styles = StyleSheet.create({
   label: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.semiBold,
     fontSize: 12,
-    fontWeight: "600",
     letterSpacing: 1.68,
     textTransform: "uppercase",
     color: THEME_COLORS.ink,
     marginBottom: THEME_SPACING.rowMin,
   },
   input: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.regular,
     fontSize: 16,
     lineHeight: 24,
     color: THEME_COLORS.ink,
@@ -52,10 +51,9 @@ const styles = StyleSheet.create({
     borderColor: THEME_COLORS.indigo,
   },
   error: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.medium,
     fontSize: 12,
     lineHeight: 16,
-    fontWeight: "500",
     color: THEME_COLORS.danger,
     marginTop: THEME_SPACING.rowMin,
   },

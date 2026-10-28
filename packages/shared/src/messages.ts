@@ -1,11 +1,12 @@
 import { z } from "zod";
+import { userIdSchema } from "./users";
 
 // DB row: messages(id, job_id, sender_id, body, created_at).
 export const messageSchema = z
   .object({
     id: z.string().uuid(),
     jobId: z.string().uuid(),
-    senderId: z.string().uuid(),
+    senderId: userIdSchema,
     body: z.string().trim().min(1).max(2000),
     createdAt: z.string().datetime(),
   })

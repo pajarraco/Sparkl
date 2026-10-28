@@ -46,6 +46,24 @@ export const THEME_FONT = {
   fallback: '-apple-system, "Segoe UI", system-ui, sans-serif' as const,
 } as const;
 
+// Native font families (expo-font static cuts from
+// @expo-google-fonts/elms-sans, loaded in app/_layout.tsx). React Native
+// cannot synthesize weights from one custom family, so every StyleSheet
+// uses the cut matching its former fontWeight and sets NO fontWeight —
+// Android would otherwise faux-bolden an already-bold cut. Keys mirror
+// the package export names so a rename breaks loudly at the import.
+// Web resolves the same names through expo-font's injected @font-face;
+// global.css --font-sans carries the Regular cut for plain body text.
+export const THEME_FONT_FAMILY = {
+  regular: "ElmsSans_400Regular",
+  medium: "ElmsSans_500Medium",
+  semiBold: "ElmsSans_600SemiBold",
+  bold: "ElmsSans_700Bold",
+} as const;
+
+export type ThemeFontFamilyName =
+  (typeof THEME_FONT_FAMILY)[keyof typeof THEME_FONT_FAMILY];
+
 // Status pill mapping per design.md. Uses only tokens above — no new
 // colours introduced (rules.md). Claimed / in-progress reuse paper2 as
 // the tint so no indigo-tint token is needed.

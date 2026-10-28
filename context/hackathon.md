@@ -70,6 +70,11 @@ Pick one as the primary scored integration; a second only if time allows.
 
 ## Comments on the Models
 
+**Issues**: 
 - Working on the sandbox is difficult for testing new skill, libraries and autonomy testing.
 - find and fixing issue take a long time.
 - Issues installing Nodejs and pnpm inside the sandbox. it took a lot of tokens
+
+**Features**:
+- Muse Code CLI. I like the way it keeps clear visualization on the task or job it is working on.
+- I used Muse Image to create a sample pics and some icons and the result was pretty impressive. i like so far.

@@ -48,6 +48,23 @@ export const jobsRouter = router({
     });
   }),
 
+  // Cleaner My Jobs: jobs the caller claimed, newest first. The cleaner
+  // role is re-checked inside the service.
+  myClaimed: authedProcedure
+    .input(myJobsInput)
+    .query(async ({ ctx, input }) => {
+      if (!ctx.role)
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Role missing from session.",
+        });
+      return jobsService.listMyClaimedJobs(drizzleJobsStore(ctx.db), {
+        cleanerId: ctx.sessionUserId,
+        cleanerRole: ctx.role,
+        input,
+      });
+    }),
+
   // Cleaners only; enforced again inside the service. Hosts and strangers fail.
   claim: authedProcedure
     .input(claimJobInput)

@@ -3,7 +3,7 @@ import { type AppRole, parseAppRole } from "../providers/auth";
 import { getStrings } from "../providers/i18n";
 import {
   THEME_COLORS,
-  THEME_FONT,
+  THEME_FONT_FAMILY,
   THEME_RADII,
   THEME_SPACING,
 } from "../providers/theme";
@@ -19,9 +19,8 @@ export interface RolePickerProps {
 
 const styles = StyleSheet.create({
   groupLabel: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.semiBold,
     fontSize: 12,
-    fontWeight: "600",
     letterSpacing: 1.68,
     textTransform: "uppercase",
     color: THEME_COLORS.ink,
@@ -48,13 +47,12 @@ const styles = StyleSheet.create({
     backgroundColor: THEME_COLORS.paper2,
   },
   optionLabel: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.semiBold,
     fontSize: 16,
-    fontWeight: "600",
     color: THEME_COLORS.ink,
   },
   hint: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.regular,
     fontSize: 14,
     lineHeight: 20,
     color: THEME_COLORS.inkSoft,

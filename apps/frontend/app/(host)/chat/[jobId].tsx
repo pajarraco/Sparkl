@@ -16,7 +16,7 @@ import {
 import { getStrings } from "../../../providers/i18n";
 import {
   THEME_COLORS,
-  THEME_FONT,
+  THEME_FONT_FAMILY,
   THEME_RADII,
   THEME_SPACING,
 } from "../../../providers/theme";
@@ -39,6 +39,9 @@ const UUID_RE =
 const styles = StyleSheet.create({
   list: {
     gap: THEME_SPACING.rowMin,
+  },
+  flatList: {
+    flex: 1,
   },
   row: {
     flexDirection: "row",
@@ -63,10 +66,9 @@ const styles = StyleSheet.create({
     borderColor: THEME_COLORS.stone,
   },
   bubbleText: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.regular,
     fontSize: 14,
     lineHeight: 20,
-    fontWeight: "400",
   },
   bubbleTextOwn: {
     color: THEME_COLORS.paper,
@@ -75,10 +77,9 @@ const styles = StyleSheet.create({
     color: THEME_COLORS.ink,
   },
   time: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.medium,
     fontSize: 12,
     lineHeight: 16,
-    fontWeight: "500",
     color: THEME_COLORS.inkMute,
   },
   timeOwn: {
@@ -93,10 +94,9 @@ const styles = StyleSheet.create({
     borderRadius: THEME_RADII.cardMax,
   },
   error: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.medium,
     fontSize: 14,
     lineHeight: 20,
-    fontWeight: "500",
     color: THEME_COLORS.danger,
   },
   composer: {
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     marginTop: THEME_SPACING.section,
   },
   input: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.regular,
     fontSize: 16,
     lineHeight: 24,
     color: THEME_COLORS.ink,
@@ -226,7 +226,11 @@ export default function HostChatThreadScreen() {
   const messages = mergeChatMessages(historyQuery.data?.messages ?? [], live);
 
   return (
-    <Screen testID="host-chat-thread-screen" title={strings.chat.title}>
+    <Screen
+      scroll={false}
+      testID="host-chat-thread-screen"
+      title={strings.chat.title}
+    >
       {historyQuery.isPending ? (
         <View style={styles.list} testID="chat-loading">
           <View style={styles.skeleton} />
@@ -263,6 +267,7 @@ export default function HostChatThreadScreen() {
           }}
           ref={listRef}
           renderItem={renderItem}
+          style={styles.flatList}
           testID="chat-list"
         />
       )}

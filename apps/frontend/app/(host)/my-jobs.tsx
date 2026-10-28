@@ -16,7 +16,7 @@ import {
 } from "../../providers/my-jobs";
 import {
   THEME_COLORS,
-  THEME_FONT,
+  THEME_FONT_FAMILY,
   THEME_RADII,
   THEME_SPACING,
 } from "../../providers/theme";
@@ -40,18 +40,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: THEME_SPACING.rowMin,
   },
   segmentText: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.medium,
     fontSize: 14,
     lineHeight: 20,
-    fontWeight: "500",
     color: THEME_COLORS.inkMute,
   },
   segmentTextActive: {
+    fontFamily: THEME_FONT_FAMILY.semiBold,
     color: THEME_COLORS.indigo,
-    fontWeight: "600",
   },
   list: {
     gap: THEME_SPACING.rowMax,
+  },
+  flatList: {
+    flex: 1,
   },
   skeleton: {
     height: 132,
@@ -61,10 +63,9 @@ const styles = StyleSheet.create({
     borderRadius: THEME_RADII.cardMax,
   },
   error: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.medium,
     fontSize: 14,
     lineHeight: 20,
-    fontWeight: "500",
     color: THEME_COLORS.danger,
   },
 });
@@ -107,7 +108,11 @@ export default function HostMyJobsScreen() {
       : filterJobsBySegment(query.data, segment);
 
   return (
-    <Screen testID="host-my-jobs-screen" title={strings.myJobs.title}>
+    <Screen
+      scroll={false}
+      testID="host-my-jobs-screen"
+      title={strings.myJobs.title}
+    >
       <View style={styles.segments}>
         {SEGMENTS.map((value) => (
           <Pressable
@@ -162,6 +167,7 @@ export default function HostMyJobsScreen() {
           data={jobs}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
+          style={styles.flatList}
           testID="host-my-jobs-list"
         />
       )}

@@ -7,6 +7,7 @@ import {
   cancelJob,
   claimJob,
   createJob,
+  listMyClaimedJobs,
   transitionJob,
 } from "./jobs.js";
 import type { UsersStore } from "./users.js";
@@ -391,5 +392,73 @@ describe("jobs service", () => {
       cancelledStats.store,
     );
     expect(cancelledStats.counts.size).toBe(0);
+  });
+});
+
+describe("listMyClaimedJobs", () => {
+  function claimedSeed(): JobsStore {
+    return makeFakeStore([
+      makeJob({
+        status: "claimed",
+        claimedByCleanerId: CLEANER_A,
+        createdAt: "2026-01-03T10:00:00.000Z",
+      }),
+      makeJob({
+        status: "in_progress",
+        claimedByCleanerId: CLEANER_A,
+        createdAt: "2026-01-02T10:00:00.000Z",
+      }),
+      makeJob({
+        status: "claimed",
+        claimedByCleanerId: CLEANER_B,
+        createdAt: "2026-01-04T10:00:00.000Z",
+      }),
+      makeJob({ status: "open", createdAt: "2026-01-05T10:00:00.000Z" }),
+    ]);
+  }
+
+  it("returns only the caller's claimed jobs, newest first", async () => {
+    const mine = await listMyClaimedJobs(claimedSeed(), {
+      cleanerId: CLEANER_A,
+      cleanerRole: "cleaner",
+      input: { limit: 20, offset: 0 },
+    });
+    expect(mine).toHaveLength(2);
+    expect(mine.map((job) => job.createdAt)).toEqual([
+      "2026-01-03T10:00:00.000Z",
+      "2026-01-02T10:00:00.000Z",
+    ]);
+  });
+
+  it("filters by status and paginates", async () => {
+    const store = claimedSeed();
+    const args = {
+      cleanerId: CLEANER_A,
+      cleanerRole: "cleaner" as const,
+    };
+    const claimed = await listMyClaimedJobs(store, {
+      ...args,
+      input: { status: "claimed", limit: 20, offset: 0 },
+    });
+    expect(claimed).toHaveLength(1);
+    expect(claimed[0]?.status).toBe("claimed");
+
+    const page = await listMyClaimedJobs(store, {
+      ...args,
+      input: { limit: 1, offset: 1 },
+    });
+    expect(page).toHaveLength(1);
+    expect(page[0]?.createdAt).toBe("2026-01-02T10:00:00.000Z");
+  });
+
+  it("rejects non-cleaner roles", async () => {
+    const code = await captureCode(
+      listMyClaimedJobs(claimedSeed(), {
+        cleanerId: HOST_ID,
+        cleanerRole: "host",
+        input: { limit: 20, offset: 0 },
+      }),
+    );
+    expect(code).toBe("FORBIDDEN");
   });
 });

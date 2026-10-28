@@ -38,4 +38,13 @@ describe("jobSchema", () => {
       jobSchema.parse({ ...baseJob, priceMinorUnits: -100 }),
     ).toThrow();
   });
+
+  it("accepts Better Auth opaque ids for host and claimer (not UUIDs)", () => {
+    const parsed = jobSchema.parse({
+      ...baseJob,
+      hostId: "1ullxuRzS50XrQvV9XgDJuswd5m6jxOS",
+      claimedByCleanerId: "9abcDEFghI2kL3mNOpQR4sTUVW5xYzA1",
+    });
+    expect(parsed.hostId).toBe("1ullxuRzS50XrQvV9XgDJuswd5m6jxOS");
+  });
 });

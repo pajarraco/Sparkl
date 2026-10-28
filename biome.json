@@ -2,6 +2,6 @@
   "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
   "extends": ["./packages/config/biome.json"],
   "files": {
-    "ignore": ["apps/api/drizzle/**", ".agents/**", ".tools/**"]
+    "ignore": ["apps/api/drizzle/**", ".agents/**", ".tools/**", "**/dist/**"]
   }
 }

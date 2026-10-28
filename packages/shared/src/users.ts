@@ -2,9 +2,16 @@ import { z } from "zod";
 
 export const userRoleSchema = z.enum(["host", "cleaner"]);
 
+// User ids are minted by Better Auth (opaque non-UUID strings) — the users
+// table IS Better Auth's table (see apps/api/src/db/schema.ts). Every
+// user-id field across the contracts uses this; entity ids (jobs,
+// messages, reviews) stay uuid() because services mint them with
+// randomUUID().
+export const userIdSchema = z.string().min(1).max(256);
+
 export const userSchema = z
   .object({
-    id: z.string().uuid(),
+    id: userIdSchema,
     role: userRoleSchema,
     name: z.string().min(1).max(100),
     photoUrl: z.string().url().max(2048).nullable(),

@@ -13,7 +13,11 @@ import {
 import { authClient } from "../../providers/auth-instance";
 import { getHomeRouteForRole } from "../../providers/auth-navigation";
 import { getStrings } from "../../providers/i18n";
-import { THEME_COLORS, THEME_FONT, THEME_SPACING } from "../../providers/theme";
+import {
+  THEME_COLORS,
+  THEME_FONT_FAMILY,
+  THEME_SPACING,
+} from "../../providers/theme";
 
 const styles = StyleSheet.create({
   form: {
@@ -21,10 +25,9 @@ const styles = StyleSheet.create({
     marginTop: THEME_SPACING.section,
   },
   formError: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.medium,
     fontSize: 14,
     lineHeight: 20,
-    fontWeight: "500",
     color: THEME_COLORS.danger,
   },
 });

@@ -165,6 +165,27 @@ export async function listMyJobs(
   return kept.slice(args.input.offset, args.input.offset + args.input.limit);
 }
 
+export async function listMyClaimedJobs(
+  store: JobsStore,
+  args: { cleanerId: string; cleanerRole: UserRole; input: MyJobsInput },
+): Promise<Job[]> {
+  if (args.cleanerRole !== "cleaner") {
+    throw new JobsServiceError(
+      "FORBIDDEN",
+      "Only cleaners can list claimed jobs.",
+    );
+  }
+  const jobs = await store.listJobsByCleaner(args.cleanerId);
+  const kept =
+    args.input.status === undefined
+      ? [...jobs]
+      : jobs.filter((job) => job.status === args.input.status);
+  kept.sort((a, b) =>
+    a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0,
+  );
+  return kept.slice(args.input.offset, args.input.offset + args.input.limit);
+}
+
 export async function claimJob(
   store: JobsStore,
   clock: Clock,

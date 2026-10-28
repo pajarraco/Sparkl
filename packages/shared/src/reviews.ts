@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { userIdSchema } from "./users";
 
 // DB row: reviews(id, job_id, author_id, subject_id, stars, comment).
 // Uniqueness on (jobId, authorId) is a DB constraint + service check
@@ -7,8 +8,8 @@ export const reviewSchema = z
   .object({
     id: z.string().uuid(),
     jobId: z.string().uuid(),
-    authorId: z.string().uuid(),
-    subjectId: z.string().uuid(),
+    authorId: userIdSchema,
+    subjectId: userIdSchema,
     stars: z.number().int().min(1).max(5),
     comment: z.string().trim().min(1).max(1000).nullable(),
     createdAt: z.string().datetime(),
@@ -23,7 +24,7 @@ export type Review = z.infer<typeof reviewSchema>;
 export const createReviewInputSchema = z
   .object({
     jobId: z.string().uuid(),
-    subjectId: z.string().uuid(),
+    subjectId: userIdSchema,
     stars: z.number().int().min(1).max(5),
     comment: z.string().trim().min(1).max(1000).optional(),
   })
@@ -34,7 +35,7 @@ export type CreateReviewInput = z.infer<typeof createReviewInputSchema>;
 // reviews.listBySubject input: paged newest-first history for one user.
 export const listReviewsInputSchema = z
   .object({
-    subjectId: z.string().uuid(),
+    subjectId: userIdSchema,
     limit: z.number().int().min(1).max(100).default(20),
     offset: z.number().int().min(0).default(0),
   })

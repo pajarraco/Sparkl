@@ -17,7 +17,7 @@ import {
 } from "../../../providers/leave-review";
 import {
   THEME_COLORS,
-  THEME_FONT,
+  THEME_FONT_FAMILY,
   THEME_RADII,
   THEME_SPACING,
 } from "../../../providers/theme";
@@ -42,9 +42,8 @@ const styles = StyleSheet.create({
     marginTop: THEME_SPACING.section,
   },
   groupLabel: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.semiBold,
     fontSize: 12,
-    fontWeight: "600",
     letterSpacing: 1.68,
     textTransform: "uppercase",
     color: THEME_COLORS.ink,
@@ -61,10 +60,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   starGlyph: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.medium,
     fontSize: 32,
     lineHeight: 38,
-    fontWeight: "500",
   },
   starSelected: {
     color: THEME_COLORS.orangeDeep,
@@ -80,10 +78,9 @@ const styles = StyleSheet.create({
     borderRadius: THEME_RADII.cardMax,
   },
   formError: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.medium,
     fontSize: 14,
     lineHeight: 20,
-    fontWeight: "500",
     color: THEME_COLORS.danger,
   },
   success: {

@@ -22,7 +22,7 @@ import {
 import { STATUS_PILL } from "../../../providers/theme";
 import {
   THEME_COLORS,
-  THEME_FONT,
+  THEME_FONT_FAMILY,
   THEME_RADII,
   THEME_SPACING,
 } from "../../../providers/theme";
@@ -42,26 +42,23 @@ const styles = StyleSheet.create({
     marginBottom: THEME_SPACING.section,
   },
   heading: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.semiBold,
     fontSize: 12,
     lineHeight: 16,
-    fontWeight: "600",
     letterSpacing: 1.68,
     textTransform: "uppercase",
     color: THEME_COLORS.ink,
   },
   body: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.regular,
     fontSize: 16,
     lineHeight: 24,
-    fontWeight: "400",
     color: THEME_COLORS.ink,
   },
   hint: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.regular,
     fontSize: 14,
     lineHeight: 20,
-    fontWeight: "400",
     color: THEME_COLORS.inkSoft,
   },
   pill: {
@@ -71,10 +68,9 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   pillText: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.medium,
     fontSize: 12,
     lineHeight: 16,
-    fontWeight: "500",
   },
   suggestion: {
     backgroundColor: THEME_COLORS.paper,
@@ -85,17 +81,15 @@ const styles = StyleSheet.create({
     gap: THEME_SPACING.rowMin,
   },
   suggestionName: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.semiBold,
     fontSize: 20,
     lineHeight: 26,
-    fontWeight: "600",
     color: THEME_COLORS.ink,
   },
   suggestionTrust: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.regular,
     fontSize: 14,
     lineHeight: 20,
-    fontWeight: "400",
     color: THEME_COLORS.inkSoft,
   },
   suggestionStars: {
@@ -110,10 +104,9 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   bestMatchText: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.medium,
     fontSize: 12,
     lineHeight: 16,
-    fontWeight: "500",
     color: THEME_COLORS.orangeDeep,
   },
   skeleton: {
@@ -127,11 +120,13 @@ const styles = StyleSheet.create({
     gap: THEME_SPACING.rowMax,
     marginTop: THEME_SPACING.section,
   },
+  flatList: {
+    flex: 1,
+  },
   formError: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.medium,
     fontSize: 14,
     lineHeight: 20,
-    fontWeight: "500",
     color: THEME_COLORS.danger,
   },
 });
@@ -246,6 +241,7 @@ export default function HostJobDetailScreen() {
 
   return (
     <Screen
+      scroll={false}
       subtitle={job.address}
       testID="host-job-detail-screen"
       title={strings.jobDetail.title}
@@ -370,6 +366,7 @@ export default function HostJobDetailScreen() {
           ) : null
         }
         renderItem={renderSuggestion}
+        style={styles.flatList}
         testID="host-job-detail-suggestions"
       />
     </Screen>

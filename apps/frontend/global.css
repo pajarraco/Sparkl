@@ -18,7 +18,8 @@
   --color-orange-tint: #fff0e6;
   --color-stone: #e2e8f0;
   --color-success: #16a34a;
-  --font-sans: "Elms Sans", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --font-sans: "ElmsSans_400Regular", -apple-system, "Segoe UI", system-ui,
+    sans-serif;
 }
 
 body {

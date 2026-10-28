@@ -41,9 +41,29 @@ export function createTrpcClient(options: TrpcClientOptions) {
     links: [
       splitLink({
         condition: isSubscriptionOperation,
-        true: httpSubscriptionLink({ url }),
-        false: httpBatchLink({ url, headers }),
+        true: httpSubscriptionLink({
+          url,
+          eventSourceOptions: { withCredentials: true },
+        }),
+        false: httpBatchLink({
+          url,
+          headers,
+          fetch: fetchWithCredentials,
+        }),
       }),
     ],
   });
+}
+
+// Cross-origin web (Expo web on :8081 → API on :3000) sends no cookies by
+// default, and browsers forbid setting Cookie via fetch — so without this
+// every authed call 401s on web while native works. credentials:include
+// carries the Better Auth session cookie from the browser jar; React
+// Native ignores the option (no cookie jar — the explicit header carries
+// the session there instead).
+function fetchWithCredentials(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+): Promise<Response> {
+  return fetch(input, { ...init, credentials: "include" });
 }

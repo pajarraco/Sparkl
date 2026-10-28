@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { STATUS_PILL, THEME_COLORS, THEME_RADII, THEME_SPACING } from "./theme";
+import {
+  STATUS_PILL,
+  THEME_COLORS,
+  THEME_FONT_FAMILY,
+  THEME_RADII,
+  THEME_SPACING,
+} from "./theme";
 
 describe("theme tokens", () => {
   it("matches the design.md palette and prototype :root", () => {
@@ -46,5 +52,14 @@ describe("theme tokens", () => {
 
   it("keeps touch targets at 44pt", () => {
     expect(THEME_SPACING.touchTarget).toBe(44);
+  });
+
+  it("maps one loaded Elms Sans cut per weight (no synthesized weights)", () => {
+    expect(THEME_FONT_FAMILY).toEqual({
+      regular: "ElmsSans_400Regular",
+      medium: "ElmsSans_500Medium",
+      semiBold: "ElmsSans_600SemiBold",
+      bold: "ElmsSans_700Bold",
+    });
   });
 });

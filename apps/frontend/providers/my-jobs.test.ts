@@ -1,16 +1,23 @@
 import type { Job } from "@sparkl/shared";
 import { describe, expect, it } from "vitest";
 import {
+  cleanerMetaLine,
+  cleanerSegmentForStatus,
+  filterCleanerJobsBySegment,
   filterJobsBySegment,
   formatJobWindow,
   formatPriceMinorUnits,
   hostMetaLine,
   pillKeyForStatus,
   segmentForStatus,
+  spotlightCleanerJob,
   statusLabelFor,
 } from "./my-jobs";
 
-function jobWithStatus(status: Job["status"]): Job {
+function jobWithStatus(
+  status: Job["status"],
+  overrides: Partial<Job> = {},
+): Job {
   return {
     id: "11111111-1111-4111-8111-111111111111",
     hostId: "22222222-2222-4222-8222-222222222222",
@@ -26,6 +33,7 @@ function jobWithStatus(status: Job["status"]): Job {
     claimedByCleanerId: null,
     createdAt: "2026-10-27T20:00:00Z",
     updatedAt: "2026-10-27T20:00:00Z",
+    ...overrides,
   };
 }
 
@@ -85,5 +93,57 @@ describe("my-jobs formatting", () => {
   it("omits size from the meta line when absent", () => {
     const job = { ...jobWithStatus("open"), sizeSqm: null };
     expect(hostMetaLine(job)).toBe("Sat, Nov 7 · 9:00 AM–1:00 PM · $75.00");
+  });
+});
+
+describe("cleaner my-jobs segments", () => {
+  it("maps every lifecycle state to a cleaner segment", () => {
+    expect(cleanerSegmentForStatus("claimed")).toBe("claimed");
+    expect(cleanerSegmentForStatus("in_progress")).toBe("active");
+    expect(cleanerSegmentForStatus("completed")).toBe("history");
+    expect(cleanerSegmentForStatus("cancelled")).toBe("history");
+    expect(cleanerSegmentForStatus("open")).toBe("history");
+  });
+
+  it("filters claimed jobs by segment", () => {
+    const jobs = [
+      jobWithStatus("claimed"),
+      jobWithStatus("in_progress"),
+      jobWithStatus("completed"),
+    ];
+    expect(filterCleanerJobsBySegment(jobs, "claimed")).toHaveLength(1);
+    expect(filterCleanerJobsBySegment(jobs, "active")).toHaveLength(1);
+    expect(filterCleanerJobsBySegment(jobs, "history")).toHaveLength(1);
+  });
+
+  it("spotlights the earliest window in claimed/active, never history", () => {
+    const early = jobWithStatus("claimed", {
+      id: "early",
+      windowStart: "2026-11-01T09:00:00Z",
+      windowEnd: "2026-11-01T11:00:00Z",
+    });
+    const late = jobWithStatus("claimed", {
+      id: "late",
+      windowStart: "2026-11-09T09:00:00Z",
+      windowEnd: "2026-11-09T11:00:00Z",
+    });
+    // Newest-first input order must not decide: earliest window wins.
+    expect(spotlightCleanerJob([late, early], "claimed")?.id).toBe("early");
+    const active = jobWithStatus("in_progress", { id: "active" });
+    expect(spotlightCleanerJob([active, early], "active")?.id).toBe("active");
+    expect(spotlightCleanerJob([late, early], "history")).toBeNull();
+  });
+
+  it("returns no spotlight when the segment is empty", () => {
+    expect(spotlightCleanerJob([], "claimed")).toBeNull();
+    expect(
+      spotlightCleanerJob([jobWithStatus("completed")], "claimed"),
+    ).toBeNull();
+  });
+
+  it("builds the cleaner meta line like the host card", () => {
+    expect(cleanerMetaLine(jobWithStatus("claimed"))).toBe(
+      hostMetaLine(jobWithStatus("claimed")),
+    );
   });
 });

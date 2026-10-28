@@ -1,45 +1,57 @@
 import type { ReactNode } from "react";
-import { StyleSheet, Text, View } from "react-native";
-import { THEME_COLORS, THEME_FONT, THEME_SPACING } from "../providers/theme";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  THEME_COLORS,
+  THEME_FONT_FAMILY,
+  THEME_SPACING,
+} from "../providers/theme";
 
 // Shared screen shell: single column, 16pt edges, title + optional
 // subtitle, generous section rhythm (design.md Spacing). Screens own
 // their content; this owns the frame.
+//
+// Static content scrolls by default (small screens clip otherwise —
+// the tab navigator bounds every screen to the viewport). Screens that
+// own a FlatList pass scroll={false} and give the list flex: 1 instead:
+// a virtualized list inside a ScrollView loses windowing and its own
+// scroll on native. keyboardShouldPersistTaps keeps form buttons
+// tappable while the keyboard is open.
 
 export interface ScreenProps {
   title: string;
   subtitle?: string | undefined;
   children: ReactNode;
   testID?: string | undefined;
+  scroll?: boolean | undefined;
 }
 
 const styles = StyleSheet.create({
-  container: {
+  frame: {
     flex: 1,
     backgroundColor: THEME_COLORS.paper,
+  },
+  container: {
     padding: THEME_SPACING.edge,
     gap: THEME_SPACING.rowMax,
   },
   title: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.bold,
     fontSize: 32,
     lineHeight: 38,
-    fontWeight: "700",
     letterSpacing: -0.64,
     color: THEME_COLORS.ink,
   },
   subtitle: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.regular,
     fontSize: 16,
     lineHeight: 24,
-    fontWeight: "400",
     color: THEME_COLORS.inkSoft,
   },
 });
 
 export function Screen(props: ScreenProps) {
-  return (
-    <View style={styles.container} testID={props.testID}>
+  const body = (
+    <>
       <Text accessibilityRole="header" style={styles.title}>
         {props.title}
       </Text>
@@ -47,6 +59,23 @@ export function Screen(props: ScreenProps) {
         <Text style={styles.subtitle}>{props.subtitle}</Text>
       )}
       {props.children}
-    </View>
+    </>
+  );
+  if (props.scroll === false) {
+    return (
+      <View style={[styles.frame, styles.container]} testID={props.testID}>
+        {body}
+      </View>
+    );
+  }
+  return (
+    <ScrollView
+      contentContainerStyle={styles.container}
+      keyboardShouldPersistTaps="handled"
+      style={styles.frame}
+      testID={props.testID}
+    >
+      {body}
+    </ScrollView>
   );
 }

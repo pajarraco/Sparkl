@@ -85,6 +85,60 @@ export function formatJobWindow(
   return `${day} · ${formatTimeUtc(windowStart)}–${formatTimeUtc(windowEnd)}`;
 }
 
+// Cleaner segments per design.md Screen Inventory: claimed jobs waiting to
+// start, active work in progress, and terminal history. The myClaimed
+// endpoint only ever returns jobs claimed by the caller, so there is no
+// open segment — unlike the host list.
+
+export type CleanerMyJobsSegment = "claimed" | "active" | "history";
+
+export const CLEANER_SEGMENT_STATUSES: Record<
+  CleanerMyJobsSegment,
+  JobStatus[]
+> = {
+  claimed: ["claimed"],
+  active: ["in_progress"],
+  history: ["completed", "cancelled"],
+};
+
+export function cleanerSegmentForStatus(
+  status: JobStatus,
+): CleanerMyJobsSegment {
+  if (status === "claimed") return "claimed";
+  if (status === "in_progress") return "active";
+  return "history";
+}
+
+export function filterCleanerJobsBySegment(
+  jobs: Job[],
+  segment: CleanerMyJobsSegment,
+): Job[] {
+  const kept = new Set<JobStatus>(CLEANER_SEGMENT_STATUSES[segment]);
+  return jobs.filter((job) => kept.has(job.status));
+}
+
+// Variant B spotlight (prototype/board.html §vB): the next-up job — earliest
+// windowStart — in the claimed/active segments. History never spotlights;
+// match explanations and photos arrive with the board prototype fold-in,
+// myClaimed carries no scores.
+export function spotlightCleanerJob(
+  jobs: Job[],
+  segment: CleanerMyJobsSegment,
+): Job | null {
+  if (segment === "history") return null;
+  const kept = filterCleanerJobsBySegment(jobs, segment);
+  if (kept.length === 0) return null;
+  return kept.reduce((earliest, job) =>
+    job.windowStart < earliest.windowStart ? job : earliest,
+  );
+}
+
+// Cleaner card meta line: same card spec as the host (date/time · price ·
+// size), separate name so cleaner screens never import host helpers.
+export function cleanerMetaLine(job: Job): string {
+  return hostMetaLine(job);
+}
+
 // Host meta line per design.md job card: date/time · price · size.
 export function hostMetaLine(job: Job): string {
   const parts = [

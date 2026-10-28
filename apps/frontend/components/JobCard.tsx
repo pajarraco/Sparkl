@@ -5,7 +5,7 @@ import { pillKeyForStatus } from "../providers/my-jobs";
 import {
   STATUS_PILL,
   THEME_COLORS,
-  THEME_FONT,
+  THEME_FONT_FAMILY,
   THEME_RADII,
   THEME_SPACING,
 } from "../providers/theme";
@@ -47,24 +47,21 @@ const styles = StyleSheet.create({
     gap: THEME_SPACING.rowMin,
   },
   caption: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.medium,
     fontSize: 12,
     lineHeight: 16,
-    fontWeight: "500",
     color: THEME_COLORS.inkSoft,
   },
   title: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.semiBold,
     fontSize: 20,
     lineHeight: 26,
-    fontWeight: "600",
     color: THEME_COLORS.ink,
   },
   meta: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.medium,
     fontSize: 14,
     lineHeight: 20,
-    fontWeight: "500",
     color: THEME_COLORS.inkSoft,
     fontVariant: ["tabular-nums"],
   },
@@ -72,10 +69,9 @@ const styles = StyleSheet.create({
     color: THEME_COLORS.indigo,
   },
   trust: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.regular,
     fontSize: 14,
     lineHeight: 20,
-    fontWeight: "400",
     color: THEME_COLORS.inkSoft,
   },
   trustStars: {
@@ -89,10 +85,9 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   pillText: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.medium,
     fontSize: 12,
     lineHeight: 16,
-    fontWeight: "500",
   },
 });
 

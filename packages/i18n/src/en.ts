@@ -45,6 +45,7 @@ export const en = {
     title: "Open jobs",
     subtitle: "Ranked by best match",
     viewDetails: "View details",
+    matchWord: "match",
   },
   jobCard: {
     title: "Turnover cleaning",
@@ -70,8 +71,10 @@ export const en = {
   myJobs: {
     title: "My jobs",
     segmentOpen: "Open",
+    segmentClaimed: "Claimed",
     segmentActive: "Active",
     segmentHistory: "History",
+    spotlightNextUp: "Next up",
   },
   chat: {
     title: "Chat",
@@ -114,6 +117,7 @@ export const en = {
     priceLabel: "Minimum price",
     clear: "Clear all",
     apply: "Show results",
+    noLocation: "Set your service area in Profile to filter by distance.",
   },
   status: {
     open: "Open",

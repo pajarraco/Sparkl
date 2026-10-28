@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { StyleSheet, Text } from "react-native";
-import { THEME_COLORS, THEME_FONT } from "../providers/theme";
+import { THEME_COLORS, THEME_FONT_FAMILY } from "../providers/theme";
 
 // Secondary copy (design.md Small/Body): empty states and hints under a
 // screen title. Keeps the eight tab stubs from duplicating one style.
@@ -13,10 +13,9 @@ export interface BodyTextProps {
 
 const styles = StyleSheet.create({
   base: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.regular,
     fontSize: 16,
     lineHeight: 24,
-    fontWeight: "400",
     color: THEME_COLORS.ink,
   },
   soft: {

@@ -1,7 +1,7 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text } from "react-native";
 import {
   THEME_COLORS,
-  THEME_FONT,
+  THEME_FONT_FAMILY,
   THEME_RADII,
   THEME_SPACING,
 } from "../providers/theme";
@@ -49,9 +49,8 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   label: {
-    fontFamily: THEME_FONT.family,
+    fontFamily: THEME_FONT_FAMILY.semiBold,
     fontSize: 16,
-    fontWeight: "600",
     letterSpacing: 0.48,
     textTransform: "uppercase",
   },

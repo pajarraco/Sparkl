@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { userSchema } from "./users";
+import { userIdSchema, userSchema } from "./users";
 
 const timeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 
@@ -59,7 +59,7 @@ export const serviceAreaInputSchema = z
 export type ServiceAreaInput = z.infer<typeof serviceAreaInputSchema>;
 
 export const publicCleanerProfileInputSchema = z
-  .object({ cleanerId: z.string().uuid() })
+  .object({ cleanerId: userIdSchema })
   .strict();
 
 export type PublicCleanerProfileInput = z.infer<

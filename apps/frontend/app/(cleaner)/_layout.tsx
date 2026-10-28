@@ -4,8 +4,8 @@ import { getTabsForRole } from "../../providers/tabs";
 import { THEME_COLORS } from "../../providers/theme";
 
 // Cleaner tab shell (design.md Navigation): Board, My Jobs, Messages,
-// Profile. Real tab content lands in tasks 6–7; the screens below render
-// the designed empty states until then.
+// Profile. Board, My Jobs and job detail are real; Messages and Profile
+// still render their designed empty states until their slices land.
 const tabs = getTabsForRole("cleaner");
 
 export default function CleanerTabsLayout() {
@@ -34,6 +34,7 @@ export default function CleanerTabsLayout() {
           }}
         />
       ))}
+      <Tabs.Screen name="job/[id]" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -26,12 +26,13 @@
 - Every tRPC input and output is validated with a Zod schema from `packages/shared`.
 - Frontend forms reuse the same schemas. Never duplicate a schema — import it.
 
-## Testing (Vitest)
+## Testing (Vitest and Playwright)
 
 - Colocated `*.test.ts(x)` next to the module under test.
 - Test services directly — that is where the logic lives. Routers stay thin and are covered by integration tests.
 - Factories over static fixtures. No network calls in unit tests; mock at the service boundary.
 - CI enforces minimum 80% lines and functions. A change that drops below the gate fails.
+- On the frontend do a fully end-to-end testing on routes, forms, bottoms, scroll and navigation. also test the logins, logout and registration. Using Vitest and Playwright.
 
 ## Errors and Logging
 
