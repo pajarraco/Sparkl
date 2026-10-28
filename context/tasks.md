@@ -51,7 +51,7 @@
 
 ### 8. Demo gate
 
-- [ ] Seed script for demo accounts and jobs
+- [x] Seed script for demo accounts and jobs (`pnpm --filter @sparkl/api seed:demo`)
 - [ ] Full demo script passing on web + one native target
 
 ### Stretch (only if time allows)
