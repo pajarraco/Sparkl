@@ -36,6 +36,14 @@ pnpm dev    # installs, starts Postgres/Redis/MinIO, migrates, then runs API (:3
 
 Press `w` in the Expo terminal for web. `pnpm verify` runs `test` + `lint` + `typecheck`. `pnpm --filter @sparkl/frontend e2e` runs the Playwright web suites (local stack only, kept out of `pnpm verify`); `pnpm --filter @sparkl/api clean:e2e` wipes fake E2E rows (also runs automatically before each `e2e`). All commands: `AGENTS.md`.
 
+## Phone Testing (Expo Go)
+
+Phone and PC must be on the same WiFi. Three gotchas from real debugging:
+
+- Expo reads `apps/frontend/.env`, not the repo-root `.env`. Put `EXPO_PUBLIC_API_URL=http://<PC-LAN-IP>:3000` there (gitignored). Fully restart Expo after changing it.
+- `TRUSTED_ORIGINS` in the root `.env` must include the Expo Go origin: `exp://<PC-LAN-IP>:8081`. Restart the API after changing it.
+- On web the app uses the page's own host for the API (same-site cookies); on native it uses `EXPO_PUBLIC_API_URL`. No per-device switching needed.
+
 ## Demo Logins (Testing)
 
 Seed with `pnpm --filter @sparkl/api seed:demo`, then sign in with:

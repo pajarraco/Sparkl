@@ -9,27 +9,25 @@ import type { GetTrpcHeaders } from "./trpc-client";
 
 export type GetSessionCookie = () => Promise<string>;
 
-// Session snapshot shape (structural — works with the Better Auth client
-// and with test fakes).
-export interface SessionSnapshot {
-  user?: { email?: unknown; role?: unknown } | null;
-}
-
-// After sign-in the native client persists the session cookie
-// asynchronously. When switching accounts (sign out → sign in as someone
-// else), the first getSession can still return the stale session or none
-// at all, which used to bounce the user back to the login screen while a
-// retry worked. Poll until the session belongs to the signed-in email
-// (bounded, so the worst case is the same generic error as before).
-export async function waitForSessionUser(
-  getSession: () => Promise<{ data: SessionSnapshot | null }>,
+// After sign-in the client persists the session cookie asynchronously,
+// and a direct getSession does not update the shared session atom that
+// useSession subscribers (like the tab layouts) read. When switching
+// accounts, the layout can therefore still see the signed-out state and
+// bounce back to welcome while a retry works. Poll until the fetched
+// session belongs to the signed-in email (bounded, so the worst case is
+// the same generic error as before); the caller hydrates the shared store
+// with the result before navigating.
+export async function waitForSessionEmail<
+  TData extends { user?: { email?: unknown } | null },
+>(
+  getSession: () => Promise<{ data: TData | null }>,
   email: string,
   options?: {
     attempts?: number;
     delayMs?: number;
     sleep?: (ms: number) => Promise<void>;
   },
-): Promise<SessionSnapshot["user"] | null> {
+): Promise<TData | null> {
   const attempts = options?.attempts ?? 10;
   const delayMs = options?.delayMs ?? 150;
   const sleep =
@@ -37,12 +35,10 @@ export async function waitForSessionUser(
     ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
   const wanted = email.trim().toLowerCase();
   for (let attempt = 0; attempt < attempts; attempt++) {
-    const user = (await getSession())?.data?.user ?? null;
-    if (
-      typeof user?.email === "string" &&
-      user.email.toLowerCase() === wanted
-    ) {
-      return user;
+    const data = (await getSession())?.data ?? null;
+    const address = data?.user?.email;
+    if (typeof address === "string" && address.toLowerCase() === wanted) {
+      return data;
     }
     if (attempt < attempts - 1) await sleep(delayMs);
   }

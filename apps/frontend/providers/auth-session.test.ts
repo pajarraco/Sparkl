@@ -3,7 +3,7 @@ import {
   isSessionExpiredError,
   selectCookieGetter,
   sessionHeaders,
-  waitForSessionUser,
+  waitForSessionEmail,
 } from "./auth-session";
 
 describe("session headers", () => {
@@ -39,36 +39,42 @@ describe("selectCookieGetter", () => {
   });
 });
 
-describe("waitForSessionUser", () => {
+describe("waitForSessionEmail", () => {
   it("resolves immediately when the session already matches", async () => {
-    const user = { email: "demo-cleaner@example.com", role: "cleaner" };
-    const getSession = async () => ({ data: { user } });
+    const data = {
+      user: { email: "demo-cleaner@example.com", role: "cleaner" },
+    };
+    const getSession = async () => ({ data });
     const sleep = async () => {
       throw new Error("should not sleep");
     };
     await expect(
-      waitForSessionUser(getSession, "demo-cleaner@example.com", { sleep }),
-    ).resolves.toBe(user);
+      waitForSessionEmail(getSession, "demo-cleaner@example.com", { sleep }),
+    ).resolves.toBe(data);
   });
 
   it("matches case-insensitively", async () => {
-    const user = { email: "Demo-Cleaner@Example.com", role: "cleaner" };
-    const found = await waitForSessionUser(
-      async () => ({ data: { user } }),
+    const data = {
+      user: { email: "Demo-Cleaner@Example.com", role: "cleaner" },
+    };
+    const found = await waitForSessionEmail(
+      async () => ({ data }),
       "demo-cleaner@example.com",
       { sleep: async () => {} },
     );
-    expect(found).toBe(user);
+    expect(found).toBe(data);
   });
 
   it("retries past a stale session until the new user appears", async () => {
-    const stale = { email: "demo-host@example.com", role: "host" };
-    const fresh = { email: "demo-cleaner@example.com", role: "cleaner" };
-    const snapshots = [{ user: stale }, { data: null }, { user: fresh }];
+    const stale = { user: { email: "demo-host@example.com", role: "host" } };
+    const fresh = {
+      user: { email: "demo-cleaner@example.com", role: "cleaner" },
+    };
+    const snapshots = [stale, null, fresh];
     let calls = 0;
     const sleeps: number[] = [];
-    const found = await waitForSessionUser(
-      async () => ({ data: snapshots[calls++] }) as never,
+    const found = await waitForSessionEmail(
+      async () => ({ data: snapshots[calls++] ?? null }),
       "demo-cleaner@example.com",
       { attempts: 5, delayMs: 150, sleep: async (ms) => void sleeps.push(ms) },
     );
@@ -79,7 +85,7 @@ describe("waitForSessionUser", () => {
 
   it("gives up after the bounded attempts", async () => {
     let calls = 0;
-    const found = await waitForSessionUser(
+    const found = await waitForSessionEmail(
       async () => {
         calls++;
         return { data: null };
