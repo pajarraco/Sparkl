@@ -36,6 +36,16 @@ pnpm dev    # installs, starts Postgres/Redis/MinIO, migrates, then runs API (:3
 
 Press `w` in the Expo terminal for web. `pnpm verify` runs `test` + `lint` + `typecheck`. `pnpm --filter @sparkl/frontend e2e` runs the Playwright web suites (local stack only, kept out of `pnpm verify`); `pnpm --filter @sparkl/api clean:e2e` wipes fake E2E rows (also runs automatically before each `e2e`). All commands: `AGENTS.md`.
 
+## Demo Logins (Testing)
+
+Seed with `pnpm --filter @sparkl/api seed:demo`, then sign in with:
+
+- Host: `demo-host@example.com`
+- Cleaner: `demo-cleaner@example.com`
+- Password for both: `demo-password-123` (or `$DEMO_PASSWORD` when set)
+
+The seed also sets the cleaner service area + Friday availability and creates one open Friday turnover job at `1 Demo Lane Apt 4 (demo)`. Reruns reuse existing accounts and never duplicate.
+
 ## Project Structure (Planned)
 
 ```

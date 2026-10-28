@@ -23,6 +23,7 @@ export interface ScreenProps {
   children: ReactNode;
   testID?: string | undefined;
   scroll?: boolean | undefined;
+  center?: boolean | undefined;
 }
 
 const styles = StyleSheet.create({
@@ -31,8 +32,17 @@ const styles = StyleSheet.create({
     backgroundColor: THEME_COLORS.paper,
   },
   container: {
-    padding: THEME_SPACING.edge,
+    paddingTop: THEME_SPACING.extraEdge,
+    paddingBottom: THEME_SPACING.edge,
+    paddingHorizontal: THEME_SPACING.edge,
     gap: THEME_SPACING.rowMax,
+  },
+  centeredContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+  },
+  centeredText: {
+    textAlign: "center",
   },
   title: {
     fontFamily: THEME_FONT_FAMILY.bold,
@@ -50,27 +60,43 @@ const styles = StyleSheet.create({
 });
 
 export function Screen(props: ScreenProps) {
+  const centered = props.center === true;
   const body = (
     <>
-      <Text accessibilityRole="header" style={styles.title}>
+      <Text
+        accessibilityRole="header"
+        style={[styles.title, centered ? styles.centeredText : null]}
+      >
         {props.title}
       </Text>
       {props.subtitle === undefined ? null : (
-        <Text style={styles.subtitle}>{props.subtitle}</Text>
+        <Text style={[styles.subtitle, centered ? styles.centeredText : null]}>
+          {props.subtitle}
+        </Text>
       )}
       {props.children}
     </>
   );
   if (props.scroll === false) {
     return (
-      <View style={[styles.frame, styles.container]} testID={props.testID}>
+      <View
+        style={[
+          styles.frame,
+          styles.container,
+          centered ? styles.centeredContent : null,
+        ]}
+        testID={props.testID}
+      >
         {body}
       </View>
     );
   }
   return (
     <ScrollView
-      contentContainerStyle={styles.container}
+      contentContainerStyle={[
+        styles.container,
+        centered ? styles.centeredContent : null,
+      ]}
       keyboardShouldPersistTaps="handled"
       style={styles.frame}
       testID={props.testID}

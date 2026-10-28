@@ -69,7 +69,7 @@ export default function SignUpScreen() {
   }
 
   return (
-    <Screen testID="sign-up-screen" title={strings.auth.signUp}>
+    <Screen center testID="sign-up-screen" title={strings.auth.signUp}>
       <View style={styles.form}>
         <SparklTextField
           error={errors.name}

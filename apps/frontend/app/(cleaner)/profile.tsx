@@ -1,4 +1,3 @@
-import { useRouter } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Switch, Text, View } from "react-native";
 import { Screen } from "../../components/Screen";
@@ -140,7 +139,6 @@ function ToggleRow(props: {
 
 export default function CleanerProfileScreen() {
   const strings = getStrings();
-  const router = useRouter();
 
   const profileQuery = sparklTrpc.users.getProfile.useQuery();
   const session = authClient.useSession();
@@ -168,12 +166,10 @@ export default function CleanerProfileScreen() {
   }>({});
   const [areaError, setAreaError] = useState<string | null>(null);
 
+  // No explicit navigation here: the tab layout redirects to welcome once
+  // the session clears. Navigating too caused a visible double reload.
   async function handleSignOut(): Promise<void> {
-    try {
-      await authClient.signOut();
-    } finally {
-      router.replace("/(auth)/welcome");
-    }
+    await authClient.signOut();
   }
 
   async function handleSaveArea(): Promise<void> {

@@ -1,4 +1,3 @@
-import { useRouter } from "expo-router";
 import { StyleSheet, View } from "react-native";
 import { Screen } from "../../components/Screen";
 import { SparklButton } from "../../components/SparklButton";
@@ -16,14 +15,11 @@ const styles = StyleSheet.create({
 
 export default function HostProfileScreen() {
   const strings = getStrings();
-  const router = useRouter();
 
+  // No explicit navigation here: the tab layout redirects to welcome once
+  // the session clears. Navigating too caused a visible double reload.
   async function handleSignOut(): Promise<void> {
-    try {
-      await authClient.signOut();
-    } finally {
-      router.replace("/(auth)/welcome");
-    }
+    await authClient.signOut();
   }
 
   return (

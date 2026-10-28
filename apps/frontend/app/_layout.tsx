@@ -7,7 +7,7 @@ import {
 } from "@expo-google-fonts/elms-sans";
 import { Stack, router } from "expo-router";
 import { Platform, StatusBar } from "react-native";
-import { getApiOrigin } from "../providers/app-config";
+import { getApiOrigin, getPageHostname } from "../providers/app-config";
 import {
   SparklProviders,
   createAuthenticatedTrpcClient,
@@ -21,7 +21,10 @@ import {
 
 // Root composition: theme is token-driven (global.css + THEME_*), auth
 // session flows from SecureStore into tRPC headers via the stored cookie.
-const origin = getApiOrigin();
+// Same localhost note as providers/auth-instance: read the bundled env so
+// physical devices can target the dev PC's LAN address. On web the page
+// hostname wins so cookies stay same-site.
+const origin = getApiOrigin(process.env, getPageHostname());
 const queryClient = createQueryClient({
   onQueryError: handleExpiredSession,
   onMutationError: handleExpiredSession,

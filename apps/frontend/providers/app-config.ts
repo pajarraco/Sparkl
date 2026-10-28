@@ -14,11 +14,41 @@ export function normalizeOrigin(origin: string): string {
   return origin.replace(/\/+$/, "");
 }
 
-export function getApiOrigin(env?: {
-  EXPO_PUBLIC_API_URL?: string | undefined;
-}): string {
+export function getApiOrigin(
+  env?: {
+    EXPO_PUBLIC_API_URL?: string | undefined;
+  },
+  pageHostname?: string | undefined,
+): string {
   const raw = env?.EXPO_PUBLIC_API_URL?.trim() || DEFAULT_API_ORIGIN;
+  const host = pageHostname?.trim();
+  if (host) {
+    // Web only: the page and the API share a host so the session cookie
+    // stays same-site (a baked LAN address breaks login on localhost web
+    // because the browser drops the cross-site SameSite=Lax cookie).
+    // Protocol and port still come from configuration.
+    try {
+      const configured = new URL(raw);
+      const port = configured.port !== "" ? `:${configured.port}` : "";
+      return `${configured.protocol}//${host}${port}`;
+    } catch {
+      return normalizeOrigin(raw);
+    }
+  }
   return normalizeOrigin(raw);
+}
+
+// Page hostname on web, undefined on native (no window). Keeps call sites
+// platform-agnostic: getApiOrigin(env, getPageHostname()).
+export function getPageHostname(): string | undefined {
+  const candidate = (
+    globalThis as unknown as {
+      window?: { location?: { hostname?: unknown } | undefined };
+    }
+  ).window?.location?.hostname;
+  return typeof candidate === "string" && candidate !== ""
+    ? candidate
+    : undefined;
 }
 
 export function getTrpcUrl(origin: string): string {

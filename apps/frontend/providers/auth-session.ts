@@ -9,6 +9,46 @@ import type { GetTrpcHeaders } from "./trpc-client";
 
 export type GetSessionCookie = () => Promise<string>;
 
+// Session snapshot shape (structural — works with the Better Auth client
+// and with test fakes).
+export interface SessionSnapshot {
+  user?: { email?: unknown; role?: unknown } | null;
+}
+
+// After sign-in the native client persists the session cookie
+// asynchronously. When switching accounts (sign out → sign in as someone
+// else), the first getSession can still return the stale session or none
+// at all, which used to bounce the user back to the login screen while a
+// retry worked. Poll until the session belongs to the signed-in email
+// (bounded, so the worst case is the same generic error as before).
+export async function waitForSessionUser(
+  getSession: () => Promise<{ data: SessionSnapshot | null }>,
+  email: string,
+  options?: {
+    attempts?: number;
+    delayMs?: number;
+    sleep?: (ms: number) => Promise<void>;
+  },
+): Promise<SessionSnapshot["user"] | null> {
+  const attempts = options?.attempts ?? 10;
+  const delayMs = options?.delayMs ?? 150;
+  const sleep =
+    options?.sleep ??
+    ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
+  const wanted = email.trim().toLowerCase();
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    const user = (await getSession())?.data?.user ?? null;
+    if (
+      typeof user?.email === "string" &&
+      user.email.toLowerCase() === wanted
+    ) {
+      return user;
+    }
+    if (attempt < attempts - 1) await sleep(delayMs);
+  }
+  return null;
+}
+
 export function sessionHeaders(getCookie: GetSessionCookie): GetTrpcHeaders {
   return async () => {
     const cookie = await getCookie();

@@ -11,6 +11,7 @@ import {
 } from "../../providers/auth-forms";
 import { authClient } from "../../providers/auth-instance";
 import { getHomeRouteForRole } from "../../providers/auth-navigation";
+import { waitForSessionUser } from "../../providers/auth-session";
 import { getStrings } from "../../providers/i18n";
 import {
   THEME_COLORS,
@@ -55,10 +56,11 @@ export default function SignInScreen() {
         setFormError(strings.errors.generic);
         return;
       }
-      const session = await authClient.getSession();
-      const role = parseAppRole(
-        (session?.data as { user?: { role?: unknown } } | null)?.user?.role,
+      const sessionUser = await waitForSessionUser(
+        () => authClient.getSession(),
+        result.data.email,
       );
+      const role = parseAppRole(sessionUser?.role);
       if (role === null) {
         setFormError(strings.errors.generic);
         return;
@@ -72,7 +74,7 @@ export default function SignInScreen() {
   }
 
   return (
-    <Screen testID="sign-in-screen" title={strings.auth.signIn}>
+    <Screen center testID="sign-in-screen" title={strings.auth.signIn}>
       <View style={styles.form}>
         <SparklTextField
           autoCapitalize="none"

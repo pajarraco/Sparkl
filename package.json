@@ -13,7 +13,7 @@
     }
   },
   "scripts": {
-    "dev": "node scripts/dev-setup.mjs && turbo run dev",
+    "dev": "node scripts/dev-setup.mjs && turbo run dev --ui=tui",
     "verify": "pnpm test && pnpm lint && pnpm typecheck",
     "build": "pnpm --recursive run build",
     "test": "pnpm --recursive run test",

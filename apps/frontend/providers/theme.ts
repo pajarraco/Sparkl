@@ -35,10 +35,11 @@ export const THEME_RADII = {
 export const THEME_SPACING = {
   edge: 16,
   edgeWide: 20,
+  extraEdge: 32,
   section: 24,
   rowMin: 8,
   rowMax: 12,
-  touchTarget: 44,
+  touchTarget: 48,
 } as const;
 
 export const THEME_FONT = {

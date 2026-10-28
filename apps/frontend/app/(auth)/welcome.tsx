@@ -17,6 +17,7 @@ export default function WelcomeScreen() {
   const router = useRouter();
   return (
     <Screen
+      center
       subtitle={strings.welcomeSubtitle}
       testID="welcome-screen"
       title={strings.welcomeTitle}

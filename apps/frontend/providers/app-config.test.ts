@@ -3,6 +3,7 @@ import {
   DEFAULT_API_ORIGIN,
   getApiOrigin,
   getAuthBaseUrl,
+  getPageHostname,
   getTrpcUrl,
   normalizeOrigin,
 } from "./app-config";
@@ -18,6 +19,28 @@ describe("app-config", () => {
       getApiOrigin({ EXPO_PUBLIC_API_URL: "http://192.168.1.5:3000///" }),
     ).toBe("http://192.168.1.5:3000");
     expect(normalizeOrigin("http://x:3000/")).toBe("http://x:3000");
+  });
+
+  it("uses the page hostname on web so cookies stay same-site", () => {
+    expect(
+      getApiOrigin(
+        { EXPO_PUBLIC_API_URL: "http://192.168.0.13:3000" },
+        "localhost",
+      ),
+    ).toBe("http://localhost:3000");
+    expect(getApiOrigin(undefined, "192.168.0.13")).toBe(
+      "http://192.168.0.13:3000",
+    );
+  });
+
+  it("ignores a blank page hostname", () => {
+    expect(
+      getApiOrigin({ EXPO_PUBLIC_API_URL: "http://192.168.0.13:3000" }, "  "),
+    ).toBe("http://192.168.0.13:3000");
+  });
+
+  it("reads no page hostname on native", () => {
+    expect(getPageHostname()).toBeUndefined();
   });
 
   it("builds tRPC and auth URLs on the same origin", () => {
