@@ -32,7 +32,9 @@
 - Test services directly — that is where the logic lives. Routers stay thin and are covered by integration tests.
 - Factories over static fixtures. No network calls in unit tests; mock at the service boundary.
 - CI enforces minimum 80% lines and functions. A change that drops below the gate fails.
-- On the frontend do a fully end-to-end testing on routes, forms, bottoms, scroll and navigation. also test the logins, logout and registration. Using Vitest and Playwright.
+- On the frontend do fully end-to-end testing on routes, forms, buttons, scroll and navigation. Also test the logins, logout and registration. Using Vitest and Playwright.
+- Playwright covers Expo web only (it cannot drive native) and runs local-only as a separate `e2e` command, kept out of `pnpm verify`. Tests run against the local dockerized stack with timestamped seed-shaped accounts; chat assertions use history refetch, never socket timing.
+- E2E selectors use accessibility labels or `testID` first, never CSS or text. Failure artifacts (traces, screenshots) go under gitignored `test-results/` and are never committed. Playwright is additive: the 80% Vitest gate is unchanged.
 
 ## Errors and Logging
 

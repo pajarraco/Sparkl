@@ -46,6 +46,7 @@ Sparkl/
 │   │   ├── components/  # UI components (atomic design)
 │   │   ├── hooks/       # React hooks
 │   │   ├── providers/   # Auth, tRPC providers
+│   │   ├── e2e/         # Playwright E2E (Expo web, local-only)
 │   │   └── utils/       # Utilities
 │   │
 │   ├── api/             # Fastify + tRPC backend
@@ -63,7 +64,6 @@ Sparkl/
 │   ├── i18n/            # Translations (English, Spanish)
 │   └── config/          # Shared TypeScript and Biome config
 │
-├── e2e/                 # End-to-end tests (Maestro)
 ├── context/             # Context, rules, specs and plans
 ├── scripts/             # Setup scripts
 └── docker-compose.dev.yml
