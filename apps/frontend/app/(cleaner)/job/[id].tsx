@@ -9,6 +9,7 @@ import {
   cleanerChatAvailableForStatus,
   cleanerClaimAvailableForStatus,
   cleanerReviewAvailableForStatus,
+  cleanerStartAvailableForStatus,
 } from "../../../providers/cleaner-job-detail";
 import { getStrings } from "../../../providers/i18n";
 import {
@@ -102,8 +103,10 @@ export default function CleanerJobDetailScreen() {
   const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
   const jobId = rawId !== undefined && UUID_RE.test(rawId) ? rawId : null;
 
+  // Wide scan window (not the board's 20): detail must resolve deep links
+  // and filtered-board rows even when the shared open-job pool is large.
   const boardQuery = sparklTrpc.jobs.listRanked.useQuery({
-    limit: 20,
+    limit: 100,
     offset: 0,
   });
   // My Jobs rows land here too, but claimed jobs are gone from the ranked
@@ -120,9 +123,10 @@ export default function CleanerJobDetailScreen() {
   const job = ranked?.job ?? claimedJob;
 
   const claimJob = sparklTrpc.jobs.claim.useMutation();
+  const transitionJob = sparklTrpc.jobs.transition.useMutation();
   const [claimed, setClaimed] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const busy = claimJob.isPending;
+  const busy = claimJob.isPending || transitionJob.isPending;
 
   async function handleClaim(): Promise<void> {
     if (jobId === null) return;
@@ -134,6 +138,18 @@ export default function CleanerJobDetailScreen() {
       await claimedQuery.refetch();
     } catch (err) {
       setFormError(claimSubmitErrorMessage(err));
+    }
+  }
+
+  async function handleStart(): Promise<void> {
+    if (jobId === null) return;
+    setFormError(null);
+    try {
+      await transitionJob.mutateAsync({ jobId, toStatus: "in_progress" });
+      await boardQuery.refetch();
+      await claimedQuery.refetch();
+    } catch {
+      setFormError(strings.errors.generic);
     }
   }
 
@@ -241,6 +257,17 @@ export default function CleanerJobDetailScreen() {
             }}
             testID="cleaner-job-claim"
             title={strings.jobDetail.claim}
+          />
+        ) : null}
+        {cleanerStartAvailableForStatus(job.status) ? (
+          <SparklButton
+            accessibilityLabel={strings.jobDetail.start}
+            loading={transitionJob.isPending}
+            onPress={() => {
+              void handleStart();
+            }}
+            testID="cleaner-job-start"
+            title={strings.jobDetail.start}
           />
         ) : null}
         {claimed ? (

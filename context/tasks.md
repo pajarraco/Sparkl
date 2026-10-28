@@ -64,14 +64,14 @@
 
 Spec: `context/features/01-e2e-testing-implementation.md` (grilled, 14 decisions agreed).
 
-- [ ] Groundwork: `@playwright/test` in `apps/frontend` (one-line new-dep justification), `playwright.config.ts` for local Expo web with 375px + wide projects, `e2e` script, web-only local-only scope documented
-- [ ] Fixtures: timestamped seed-shaped host/cleaner account factory, seeded open job, storage-state helpers for logged-in sessions
-- [ ] Auth suite (real UI): welcome → sign-up (host + cleaner) → sign-in → sign-out; invalid login, duplicate registration, Zod validation messages
-- [ ] Navigation suite (seeded session): deep-link + tab coverage per role, protected-route redirects when signed out, back-stack from job detail / chat / review
-- [ ] Forms and buttons suite (seeded session): Post Job create flow, board filters (date, distance, price), claim CTA, every primary button by accessible label
-- [ ] Scroll suite (seeded session): board FlatList scroll, pagination/lazy rows if present, no layout shift, at both viewports
-- [ ] Happy-path suite (seeded session): post → claim → chat (history-refetch assertions) → in-progress → completed → both reviews, end to end on web
-- [ ] Wire-up: separate documented `e2e` command (kept out of `pnpm verify`); tick Demo-gate boxes only with green `test` + `typecheck` + `lint` output quoted; `CHANGELOG.md` entry under `[Unreleased]`
+- [x] Groundwork: `@playwright/test` in `apps/frontend` (one-line new-dep justification), `playwright.config.ts` for local Expo web with 375px + wide projects, `e2e` script, web-only local-only scope documented
+- [x] Fixtures: timestamped seed-shaped host/cleaner account factory, seeded open job, storage-state helpers for logged-in sessions
+- [x] Auth suite (real UI): welcome → sign-up (host + cleaner) → sign-in → sign-out; invalid login, duplicate registration, Zod validation messages
+- [x] Navigation suite (seeded session): deep-link + tab coverage per role, protected-route redirects when signed out, back-stack from job detail / chat / review
+- [x] Forms and buttons suite (seeded session): Post Job create flow, board filters (date, distance, price), claim CTA, every primary button by accessible label
+- [x] Scroll suite (seeded session): board FlatList scroll, pagination/lazy rows if present, no layout shift, at both viewports
+- [x] Happy-path suite (seeded session): post → claim → chat (history-refetch assertions) → in-progress → completed → both reviews, end to end on web
+- [x] Wire-up: separate documented `e2e` command (kept out of `pnpm verify`); tick Demo-gate boxes only with green `test` + `typecheck` + `lint` output quoted; `CHANGELOG.md` entry under `[Unreleased]`
 
 ## Done
 

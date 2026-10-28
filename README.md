@@ -34,7 +34,7 @@ pnpm install
 pnpm dev    # installs, starts Postgres/Redis/MinIO, migrates, then runs API (:3000) + Expo
 ```
 
-Press `w` in the Expo terminal for web. `pnpm verify` runs `test` + `lint` + `typecheck`. All commands: `AGENTS.md`.
+Press `w` in the Expo terminal for web. `pnpm verify` runs `test` + `lint` + `typecheck`. `pnpm --filter @sparkl/frontend e2e` runs the Playwright web suites (local stack only, kept out of `pnpm verify`); `pnpm --filter @sparkl/api clean:e2e` wipes fake E2E rows (also runs automatically before each `e2e`). All commands: `AGENTS.md`.
 
 ## Project Structure (Planned)
 

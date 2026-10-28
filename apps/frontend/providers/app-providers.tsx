@@ -1,5 +1,10 @@
 import type { AppRouter } from "@sparkl/api/src/trpc/router";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  MutationCache,
+  QueryCache,
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
 import { createTRPCReact } from "@trpc/react-query";
 import type { ReactNode } from "react";
 import { type GetSessionCookie, sessionHeaders } from "./auth-session";
@@ -11,8 +16,26 @@ import { createTrpcClient } from "./trpc-client";
 
 export const sparklTrpc = createTRPCReact<AppRouter>();
 
-export function createQueryClient(): QueryClient {
-  return new QueryClient();
+export interface QueryErrorHandlers {
+  onQueryError?: ((err: unknown) => void) | undefined;
+  onMutationError?: ((err: unknown) => void) | undefined;
+}
+
+export function createQueryClient(
+  handlers: QueryErrorHandlers = {},
+): QueryClient {
+  return new QueryClient({
+    queryCache: new QueryCache({
+      onError: (err) => {
+        handlers.onQueryError?.(err);
+      },
+    }),
+    mutationCache: new MutationCache({
+      onError: (err) => {
+        handlers.onMutationError?.(err);
+      },
+    }),
+  });
 }
 
 export function createAuthenticatedTrpcClient(options: {

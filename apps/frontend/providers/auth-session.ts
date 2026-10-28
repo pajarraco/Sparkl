@@ -30,3 +30,14 @@ export function selectCookieGetter(
   if (platformOS === "web") return () => Promise.resolve("");
   return getCookie;
 }
+
+// Expired-session detection for the root layout's cache subscriptions:
+// any tRPC UNAUTHORIZED means the server no longer accepts the session,
+// so the app signs out locally and returns to welcome instead of
+// stranding the user on error states.
+export function isSessionExpiredError(err: unknown): boolean {
+  if (typeof err !== "object" || err === null) return false;
+  const data = (err as { data?: unknown }).data;
+  if (typeof data !== "object" || data === null) return false;
+  return (data as { code?: unknown }).code === "UNAUTHORIZED";
+}

@@ -10,6 +10,12 @@ export function cleanerClaimAvailableForStatus(status: JobStatus): boolean {
   return status === "open";
 }
 
+// Only the claiming cleaner starts (claimed -> in_progress); the service
+// re-checks the party, this only decides what to render.
+export function cleanerStartAvailableForStatus(status: JobStatus): boolean {
+  return status === "claimed";
+}
+
 // Chat unlocks once the job is claimed (the service rejects sends on open
 // jobs); the thread stays readable afterwards, including history.
 export function cleanerChatAvailableForStatus(status: JobStatus): boolean {

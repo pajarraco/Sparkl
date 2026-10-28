@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { selectCookieGetter, sessionHeaders } from "./auth-session";
+import {
+  isSessionExpiredError,
+  selectCookieGetter,
+  sessionHeaders,
+} from "./auth-session";
 
 describe("session headers", () => {
   it("sends the stored session cookie", async () => {
@@ -31,5 +35,19 @@ describe("selectCookieGetter", () => {
       async () => "better-auth.session_token=abc",
     );
     expect(await getCookie()).toBe("better-auth.session_token=abc");
+  });
+});
+
+describe("isSessionExpiredError", () => {
+  it("matches tRPC UNAUTHORIZED", () => {
+    expect(isSessionExpiredError({ data: { code: "UNAUTHORIZED" } })).toBe(
+      true,
+    );
+  });
+
+  it("ignores other failures", () => {
+    expect(isSessionExpiredError({ data: { code: "CONFLICT" } })).toBe(false);
+    expect(isSessionExpiredError(new Error("boom"))).toBe(false);
+    expect(isSessionExpiredError(null)).toBe(false);
   });
 });

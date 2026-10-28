@@ -8,7 +8,8 @@
     "dev": "expo start",
     "build": "tsc -p tsconfig.json",
     "test": "vitest run --passWithNoTests",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@babel/runtime": "^7.29.10",
@@ -37,6 +38,7 @@
   },
   "devDependencies": {
     "@expo/metro-config": "~0.19.12",
+    "@playwright/test": "^1.64.1",
     "@sparkl/api": "workspace:*",
     "@sparkl/config": "workspace:*",
     "@sparkl/i18n": "workspace:*",

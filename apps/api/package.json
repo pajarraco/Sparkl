@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "buckets": "node scripts/ensure-buckets.mjs",
+    "clean:e2e": "node scripts/clean-e2e.mjs",
     "build": "tsc -p tsconfig.json",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit -p tsconfig.json"

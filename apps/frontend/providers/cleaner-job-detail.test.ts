@@ -4,6 +4,7 @@ import {
   cleanerChatAvailableForStatus,
   cleanerClaimAvailableForStatus,
   cleanerReviewAvailableForStatus,
+  cleanerStartAvailableForStatus,
 } from "./cleaner-job-detail";
 
 describe("cleanerClaimAvailableForStatus", () => {
@@ -33,6 +34,16 @@ describe("cleanerReviewAvailableForStatus", () => {
     expect(cleanerReviewAvailableForStatus("in_progress")).toBe(false);
     expect(cleanerReviewAvailableForStatus("completed")).toBe(true);
     expect(cleanerReviewAvailableForStatus("cancelled")).toBe(false);
+  });
+});
+
+describe("cleanerStartAvailableForStatus", () => {
+  it("offers the start only while the job is claimed", () => {
+    expect(cleanerStartAvailableForStatus("open")).toBe(false);
+    expect(cleanerStartAvailableForStatus("claimed")).toBe(true);
+    expect(cleanerStartAvailableForStatus("in_progress")).toBe(false);
+    expect(cleanerStartAvailableForStatus("completed")).toBe(false);
+    expect(cleanerStartAvailableForStatus("cancelled")).toBe(false);
   });
 });
 

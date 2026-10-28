@@ -5,7 +5,7 @@ import {
   ElmsSans_700Bold,
   useFonts,
 } from "@expo-google-fonts/elms-sans";
-import { Stack } from "expo-router";
+import { Stack, router } from "expo-router";
 import { Platform, StatusBar } from "react-native";
 import { getApiOrigin } from "../providers/app-config";
 import {
@@ -14,17 +14,36 @@ import {
   createQueryClient,
 } from "../providers/app-providers";
 import { authClient } from "../providers/auth-instance";
-import { selectCookieGetter } from "../providers/auth-session";
+import {
+  isSessionExpiredError,
+  selectCookieGetter,
+} from "../providers/auth-session";
 import { THEME_COLORS } from "../providers/theme";
 
 // Root composition: theme is token-driven (global.css + THEME_*), auth
 // session flows from SecureStore into tRPC headers via the stored cookie.
 const origin = getApiOrigin();
-const queryClient = createQueryClient();
+const queryClient = createQueryClient({
+  onQueryError: handleExpiredSession,
+  onMutationError: handleExpiredSession,
+});
 const trpcClient = createAuthenticatedTrpcClient({
   origin,
   getCookie: selectCookieGetter(Platform.OS, () => authClient.getCookie()),
 });
+
+// Expired sessions return to welcome (E2E navigation suite): any tRPC
+// UNAUTHORIZED from queries or mutations signs out locally, and the
+// group layouts' session check then bounces to welcome.
+function handleExpiredSession(err: unknown): void {
+  if (!isSessionExpiredError(err)) return;
+  void authClient
+    .signOut()
+    .catch(() => undefined)
+    .finally(() => {
+      router.replace("/(auth)/welcome");
+    });
+}
 
 export default function RootLayout() {
   // design.md Typography: Elms Sans for display and body. Nothing renders
