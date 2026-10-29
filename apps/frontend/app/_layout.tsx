@@ -13,10 +13,11 @@ import {
   createAuthenticatedTrpcClient,
   createQueryClient,
 } from "../providers/app-providers";
-import { authClient } from "../providers/auth-instance";
+import { authClient, authSessionStore } from "../providers/auth-instance";
 import {
   isSessionExpiredError,
   selectCookieGetter,
+  trackSessionOwner,
 } from "../providers/auth-session";
 
 // Root composition: theme is token-driven (global.css + THEME_*), auth
@@ -32,6 +33,10 @@ const queryClient = createQueryClient({
   onQueryError: handleExpiredSession,
   onMutationError: handleExpiredSession,
 });
+// Drop every cached query when the signed-in user changes, so a role
+// switch on one device never shows (or keeps in memory) the previous
+// account's data. subscribe (not listen) so the first owner is recorded.
+authSessionStore.subscribe(trackSessionOwner(() => queryClient.clear()));
 const trpcClient = createAuthenticatedTrpcClient({
   origin,
   getCookie: selectCookieGetter(Platform.OS, () => authClient.getCookie()),

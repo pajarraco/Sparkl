@@ -10,8 +10,9 @@ import {
   type AuthFieldErrors,
   validateSignUp,
 } from "../../providers/auth-forms";
-import { authClient } from "../../providers/auth-instance";
+import { authClient, readAuthSession } from "../../providers/auth-instance";
 import { getHomeRouteForRole } from "../../providers/auth-navigation";
+import { waitForSessionEmail } from "../../providers/auth-session";
 import { getStrings } from "../../providers/i18n";
 import {
   THEME_COLORS,
@@ -57,6 +58,16 @@ export default function SignUpScreen() {
         role: result.data.role,
       });
       if (signUp.error !== null) {
+        setFormError(strings.errors.generic);
+        return;
+      }
+      // Same store sync as sign-in: a sign-up after a sign-out in one tab
+      // would otherwise land on a layout that still sees no session.
+      const fresh = await waitForSessionEmail(
+        readAuthSession,
+        result.data.email,
+      );
+      if (fresh === null) {
         setFormError(strings.errors.generic);
         return;
       }

@@ -23,6 +23,9 @@ export const en = {
     messages: "Messages",
     profile: "Profile",
   },
+  navigation: {
+    back: "Back",
+  },
   postJob: {
     title: "Post a job",
     addressLabel: "Property address",
@@ -76,6 +79,11 @@ export const en = {
     segmentHistory: "History",
     spotlightNextUp: "Next up",
   },
+  messages: {
+    title: "Messages",
+    you: "You",
+    noMessageYet: "No messages yet. Say hello.",
+  },
   chat: {
     title: "Chat",
     inputPlaceholder: "Write a message",
@@ -119,7 +127,10 @@ export const en = {
     distanceLabel: "Distance",
     priceLabel: "Minimum price",
     clear: "Clear all",
+    clearOne: "Clear",
     apply: "Show results",
+    price: "Price",
+    close: "Close filter",
     noLocation: "Set your service area in Profile to filter by distance.",
   },
   status: {
@@ -150,6 +161,7 @@ export const en = {
     noMyJobs: "No jobs here yet.",
     postFirst: "Post your first cleaning.",
     noMessages: "No messages yet.",
+    messagesHint: "Your chats show up here once a job is claimed.",
     noHistory: "Completed jobs will show here.",
     noSuggestions: "No suggested cleaners yet.",
   },

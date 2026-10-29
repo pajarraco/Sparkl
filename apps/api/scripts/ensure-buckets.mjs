@@ -2,6 +2,7 @@
 // presigned-upload path works end to end (PUT via presigned URL + GET back).
 // Not part of the test suite: it needs a live S3 endpoint (see
 // docker-compose.dev.yml). Run: pnpm --filter @sparkl/api buckets
+import { existsSync } from "node:fs";
 import {
   CreateBucketCommand,
   GetObjectCommand,
@@ -10,6 +11,12 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+
+// Read the repo-root .env like the API does, so a second worktree's
+// stack (own ports) is never mixed up with the main one. Shell variables
+// still win.
+const rootEnv = new URL("../../../.env", import.meta.url);
+if (existsSync(rootEnv)) process.loadEnvFile(rootEnv);
 
 const client = new S3Client({
   region: process.env.S3_REGION ?? "us-east-1",

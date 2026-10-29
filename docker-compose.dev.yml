@@ -1,11 +1,13 @@
-name: sparkl-dev
+# SPARKL_STACK lets a second worktree run its own stack (own containers
+# and volumes) next to the main one; leave it unset for the defaults.
+name: ${SPARKL_STACK:-sparkl-dev}
 
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: sparkl-postgres
+    container_name: ${SPARKL_STACK:-sparkl}-postgres
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     environment:
       POSTGRES_USER: sparkl
       POSTGRES_PASSWORD: sparkl
@@ -20,9 +22,9 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: sparkl-redis
+    container_name: ${SPARKL_STACK:-sparkl}-redis
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
     volumes:
       - sparkl-redisdata:/data
     healthcheck:
@@ -36,10 +38,10 @@ services:
     # rebuild tracks the last community release. No shell in this image, so
     # no container healthcheck — the API retries S3 calls instead.
     image: cgr.dev/chainguard/minio:latest
-    container_name: sparkl-minio
+    container_name: ${SPARKL_STACK:-sparkl}-minio
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
     environment:
       MINIO_ROOT_USER: sparkl
       MINIO_ROOT_PASSWORD: sparkl1234

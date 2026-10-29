@@ -1,4 +1,10 @@
-import type { Job, Message, SparklErrorCode } from "@sparkl/shared";
+import {
+  CHAT_PREVIEW_MAX,
+  type Job,
+  type Message,
+  type SparklErrorCode,
+  type User,
+} from "@sparkl/shared";
 import { describe, expect, it } from "vitest";
 import {
   ChatError,
@@ -9,6 +15,7 @@ import {
   createChatEvents,
   listMessages,
   listNewMessagesSince,
+  listThreads,
   sendMessage,
 } from "./chat.js";
 import type { Clock, JobsStore } from "./jobs.js";
@@ -76,6 +83,13 @@ function makeFakes(jobs: Job[], seed: Message[] = []): Fakes {
       messages.push({ ...message });
       return { ...message };
     },
+    latestMessagesByJobs: async (jobIds) =>
+      jobIds.flatMap((jobId) => {
+        const forJob = messages
+          .filter((m) => m.jobId === jobId)
+          .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+        return forJob[0] === undefined ? [] : [{ ...forJob[0] }];
+      }),
   };
   return {
     stores: { jobs: jobsStore, chat: chatStore },
@@ -267,5 +281,118 @@ describe("chat service", () => {
     expect(first.done).toBe(false);
     expect((first.value as Message).id).toBe(published.id);
     await iterator.return?.(undefined);
+  });
+});
+
+describe("listThreads (Messages tab)", () => {
+  const OTHER_HOST = "44444444-4444-4444-8444-444444444444";
+
+  function makeUser(id: string, name: string): User {
+    return { id, name } as User;
+  }
+
+  function threadStores(jobs: Job[], seed: Message[] = []) {
+    const { stores } = makeFakes(jobs, seed);
+    const users = new Map([
+      [HOST, makeUser(HOST, "Demo Host")],
+      [CLEANER, makeUser(CLEANER, "Demo Cleaner")],
+      [OTHER_HOST, makeUser(OTHER_HOST, "Other Host")],
+    ]);
+    return {
+      jobs: {
+        listJobsByHost: async (hostId: string) =>
+          jobs.filter((j) => j.hostId === hostId),
+        listJobsByCleaner: async (cleanerId: string) =>
+          jobs.filter((j) => j.claimedByCleanerId === cleanerId),
+      },
+      chat: stores.chat,
+      users: {
+        findById: async (id: string) => {
+          const user = users.get(id);
+          return user === undefined
+            ? null
+            : ({ ...user, photoUrl: null } as User);
+        },
+      },
+    };
+  }
+
+  it("lists only claimed jobs the caller is a party to, with the other party", async () => {
+    const mine = makeJob();
+    const open = makeJob({ status: "open", claimedByCleanerId: null });
+    const notMine = makeJob({
+      hostId: OTHER_HOST,
+      claimedByCleanerId: STRANGER,
+    });
+    const stores = threadStores([mine, open, notMine]);
+    const hostThreads = await listThreads(stores, {
+      userId: HOST,
+      role: "host",
+    });
+    expect(hostThreads.map((t) => t.jobId)).toEqual([mine.id]);
+    expect(hostThreads[0]?.otherParty).toEqual({
+      id: CLEANER,
+      name: "Demo Cleaner",
+      photoUrl: null,
+    });
+    const cleanerThreads = await listThreads(stores, {
+      userId: CLEANER,
+      role: "cleaner",
+    });
+    expect(cleanerThreads[0]?.otherParty.name).toBe("Demo Host");
+  });
+
+  it("keeps a cancelled job only when it has messages", async () => {
+    const quiet = makeJob({ status: "cancelled" });
+    const talked = makeJob({ status: "cancelled" });
+    const stores = threadStores(
+      [quiet, talked],
+      [makeMessage({ jobId: talked.id, body: "Sorry, cancelling" })],
+    );
+    const threads = await listThreads(stores, { userId: HOST, role: "host" });
+    expect(threads.map((t) => t.jobId)).toEqual([talked.id]);
+  });
+
+  it("previews the latest message, cut to the cap", async () => {
+    const job = makeJob();
+    const long = `  ${"word ".repeat(40)}  `;
+    const stores = threadStores(
+      [job],
+      [
+        makeMessage({
+          jobId: job.id,
+          body: "first",
+          createdAt: "2026-02-01T08:00:00.000Z",
+        }),
+        makeMessage({
+          jobId: job.id,
+          senderId: CLEANER,
+          body: long,
+          createdAt: "2026-02-01T09:00:00.000Z",
+        }),
+      ],
+    );
+    const [thread] = await listThreads(stores, { userId: HOST, role: "host" });
+    expect(thread?.lastMessage?.senderId).toBe(CLEANER);
+    expect(thread?.lastMessage?.preview.length).toBe(CHAT_PREVIEW_MAX);
+    expect(thread?.lastMessage?.preview.endsWith("…")).toBe(true);
+    expect(thread?.lastActivityAt).toBe("2026-02-01T09:00:00.000Z");
+  });
+
+  it("orders threads by latest activity, falling back to the job update", async () => {
+    const silentNewer = makeJob({ updatedAt: "2026-03-01T00:00:00.000Z" });
+    const chatty = makeJob({ updatedAt: "2026-01-01T00:00:00.000Z" });
+    const stores = threadStores(
+      [chatty, silentNewer],
+      [
+        makeMessage({
+          jobId: chatty.id,
+          createdAt: "2026-02-15T00:00:00.000Z",
+        }),
+      ],
+    );
+    const threads = await listThreads(stores, { userId: HOST, role: "host" });
+    expect(threads.map((t) => t.jobId)).toEqual([silentNewer.id, chatty.id]);
+    expect(threads[0]?.lastMessage).toBeNull();
   });
 });

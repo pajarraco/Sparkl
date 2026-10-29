@@ -1,6 +1,7 @@
 import {
   listMessagesInputSchema,
   listMessagesOutputSchema,
+  listThreadsOutputSchema,
   messageSchema,
   onMessageInputSchema,
   sendMessageInputSchema,
@@ -9,6 +10,7 @@ import { TRPCError } from "@trpc/server";
 import {
   drizzleChatStore,
   drizzleJobsStore,
+  drizzleUsersStore,
   systemClock,
 } from "../../db/stores.js";
 import * as chatService from "../../services/chat.js";
@@ -57,6 +59,26 @@ export const chatRouter = router({
           userId: ctx.sessionUserId,
         },
       );
+    }),
+
+  // Messages tab: the caller's conversations, newest activity first.
+  listThreads: authedProcedure
+    .output(listThreadsOutputSchema)
+    .query(async ({ ctx }) => {
+      if (!ctx.role)
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Role missing from session.",
+        });
+      const threads = await chatService.listThreads(
+        {
+          jobs: drizzleJobsStore(ctx.db),
+          chat: drizzleChatStore(ctx.db),
+          users: drizzleUsersStore(ctx.db),
+        },
+        { userId: ctx.sessionUserId, role: ctx.role },
+      );
+      return { threads };
     }),
 
   // Server-sent events over the existing HTTP transport (no WebSocket

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
-import { uniqueAccount } from "./fixtures";
+import { newApiSession, signUpViaApi, uniqueAccount } from "./fixtures";
 import type { TestAccount } from "./fixtures";
 
 // Auth suite: the only suite that drives the real sign-up/sign-in UI
@@ -26,6 +26,18 @@ async function signOut(page: Page): Promise<void> {
   await expect(
     page.getByRole("heading", { name: "Welcome to Sparkl" }),
   ).toBeVisible();
+}
+
+// In-app sign-in from welcome (no page.goto): a reload would wipe the
+// in-memory session and query cache, which is where a role switch breaks.
+async function signInFromWelcome(
+  page: Page,
+  account: TestAccount,
+): Promise<void> {
+  await page.getByTestId("welcome-sign-in").click();
+  await page.getByTestId("sign-in-email").fill(account.email);
+  await page.getByTestId("sign-in-password").fill(account.password);
+  await page.getByTestId("sign-in-submit").click();
 }
 
 test("host sign-up lands on the host tabs", async ({ page }, testInfo) => {
@@ -101,4 +113,58 @@ test("role is required", async ({ page }, testInfo) => {
   await page.getByTestId("sign-up-password").fill(account.password);
   await page.getByTestId("sign-up-submit").click();
   await expect(page.getByText("This field is required.")).toBeVisible();
+});
+
+// Role switch on one browser (03 A1): the second account must land on its
+// own home on the first sign-in, in both directions.
+test("host → cleaner switch lands on the board first time", async ({
+  page,
+}, testInfo) => {
+  const hostSession = await newApiSession("host", testInfo.workerIndex);
+  const cleanerSession = await newApiSession("cleaner", testInfo.workerIndex);
+  await hostSession.api.dispose();
+  await cleanerSession.api.dispose();
+  const host = hostSession.account;
+  const cleaner = cleanerSession.account;
+  await page.goto("/welcome");
+  await signInFromWelcome(page, host);
+  await expect(page.getByRole("tab", { name: "Post" })).toBeVisible();
+  await signOut(page);
+  await signInFromWelcome(page, cleaner);
+  await expect(page.getByRole("heading", { name: "Open jobs" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Board" })).toBeVisible();
+});
+
+test("cleaner → host switch lands on the host tabs first time", async ({
+  page,
+}, testInfo) => {
+  const cleanerSession = await newApiSession("cleaner", testInfo.workerIndex);
+  const hostSession = await newApiSession("host", testInfo.workerIndex);
+  await cleanerSession.api.dispose();
+  await hostSession.api.dispose();
+  const cleaner = cleanerSession.account;
+  const host = hostSession.account;
+  await page.goto("/welcome");
+  await signInFromWelcome(page, cleaner);
+  await expect(page.getByRole("heading", { name: "Open jobs" })).toBeVisible();
+  await signOut(page);
+  await signInFromWelcome(page, host);
+  await expect(page.getByRole("tab", { name: "Post" })).toBeVisible();
+});
+
+test("restored host session → cleaner switch lands on the board", async ({
+  page,
+}, testInfo) => {
+  // Host session restored on page load (cookie already in the browser),
+  // the way a returning user starts, not one created by the sign-in form.
+  const host = uniqueAccount("host", testInfo.workerIndex);
+  await signUpViaApi(page.context().request, host);
+  const cleanerSession = await newApiSession("cleaner", testInfo.workerIndex);
+  await cleanerSession.api.dispose();
+  await page.goto("/");
+  await expect(page.getByRole("tab", { name: "Post" })).toBeVisible();
+  await signOut(page);
+  await signInFromWelcome(page, cleanerSession.account);
+  await expect(page.getByRole("heading", { name: "Open jobs" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Board" })).toBeVisible();
 });

@@ -5,6 +5,7 @@ import {
   THEME_FONT_FAMILY,
   THEME_SPACING,
 } from "../providers/theme";
+import { BackButton } from "./BackButton";
 
 // Shared screen shell: single column, 16pt edges, title + optional
 // subtitle, generous section rhythm (design.md Spacing). Screens own
@@ -24,6 +25,9 @@ export interface ScreenProps {
   testID?: string | undefined;
   scroll?: boolean | undefined;
   center?: boolean | undefined;
+  /** Detail screens only (see DetailScreen): renders Back above the title. */
+  onBack?: (() => void) | undefined;
+  backLabel?: string | undefined;
 }
 
 const styles = StyleSheet.create({
@@ -63,6 +67,15 @@ export function Screen(props: ScreenProps) {
   const centered = props.center === true;
   const body = (
     <>
+      {props.onBack === undefined ? null : (
+        <BackButton
+          label={props.backLabel ?? ""}
+          onPress={props.onBack}
+          testID={
+            props.testID === undefined ? undefined : `${props.testID}-back`
+          }
+        />
+      )}
       <Text
         accessibilityRole="header"
         style={[styles.title, centered ? styles.centeredText : null]}

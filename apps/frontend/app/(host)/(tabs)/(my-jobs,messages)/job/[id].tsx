@@ -1,31 +1,32 @@
 import type { RankedCleaner } from "@sparkl/shared";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter, useSegments } from "expo-router";
 import { useCallback, useState } from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
-import { BodyText } from "../../../components/BodyText";
-import { Screen } from "../../../components/Screen";
-import { SparklButton } from "../../../components/SparklButton";
-import { sparklTrpc } from "../../../providers/app-providers";
-import { getStrings } from "../../../providers/i18n";
+import { BodyText } from "../../../../../components/BodyText";
+import { DetailScreen } from "../../../../../components/DetailScreen";
+import { SparklButton } from "../../../../../components/SparklButton";
+import { sparklTrpc } from "../../../../../providers/app-providers";
+import { getStrings } from "../../../../../providers/i18n";
 import {
   type HostJobAction,
   hostActionsForStatus,
   hostChatAvailableForStatus,
   hostReviewAvailableForStatus,
   suggestionTrustLine,
-} from "../../../providers/job-detail";
+} from "../../../../../providers/job-detail";
 import {
   formatJobWindow,
   formatPriceMinorUnits,
   statusLabelFor,
-} from "../../../providers/my-jobs";
-import { STATUS_PILL } from "../../../providers/theme";
+} from "../../../../../providers/my-jobs";
+import { stackHref } from "../../../../../providers/tabs";
+import { STATUS_PILL } from "../../../../../providers/theme";
 import {
   THEME_COLORS,
   THEME_FONT_FAMILY,
   THEME_RADII,
   THEME_SPACING,
-} from "../../../providers/theme";
+} from "../../../../../providers/theme";
 
 // Host Job Detail (design.md Screen Inventory): status, ranked cleaner
 // suggestions from suggestions.forJob, lifecycle actions. The job itself
@@ -156,6 +157,7 @@ function SuggestionRow(props: {
 export default function HostJobDetailScreen() {
   const strings = getStrings();
   const router = useRouter();
+  const segments = useSegments();
   const params = useLocalSearchParams<{ id: string }>();
   const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
   const jobId = rawId !== undefined && UUID_RE.test(rawId) ? rawId : null;
@@ -209,16 +211,24 @@ export default function HostJobDetailScreen() {
 
   if (jobsQuery.isPending) {
     return (
-      <Screen testID="host-job-detail-screen" title={strings.jobDetail.title}>
+      <DetailScreen
+        userRole="host"
+        testID="host-job-detail-screen"
+        title={strings.jobDetail.title}
+      >
         <View style={styles.skeleton} />
         <View style={styles.skeleton} />
-      </Screen>
+      </DetailScreen>
     );
   }
 
   if (jobsQuery.isError || job === undefined) {
     return (
-      <Screen testID="host-job-detail-screen" title={strings.jobDetail.title}>
+      <DetailScreen
+        userRole="host"
+        testID="host-job-detail-screen"
+        title={strings.jobDetail.title}
+      >
         <Text accessibilityLiveRegion="polite" style={styles.formError}>
           {strings.errors.generic}
         </Text>
@@ -231,7 +241,7 @@ export default function HostJobDetailScreen() {
           title={strings.errors.retry}
           variant="secondary"
         />
-      </Screen>
+      </DetailScreen>
     );
   }
 
@@ -240,7 +250,8 @@ export default function HostJobDetailScreen() {
   const actions = hostActionsForStatus(job.status);
 
   return (
-    <Screen
+    <DetailScreen
+      userRole="host"
       scroll={false}
       subtitle={job.address}
       testID="host-job-detail-screen"
@@ -253,7 +264,7 @@ export default function HostJobDetailScreen() {
               <SparklButton
                 accessibilityLabel={strings.jobDetail.openChat}
                 onPress={() => {
-                  router.push(`/(host)/chat/${job.id}`);
+                  router.push(stackHref("host", segments, `chat/${job.id}`));
                 }}
                 testID="host-job-open-chat"
                 title={strings.jobDetail.openChat}
@@ -264,7 +275,7 @@ export default function HostJobDetailScreen() {
               <SparklButton
                 accessibilityLabel={strings.review.title}
                 onPress={() => {
-                  router.push(`/(host)/review/${job.id}`);
+                  router.push(stackHref("host", segments, `review/${job.id}`));
                 }}
                 testID="host-job-leave-review"
                 title={strings.review.title}
@@ -369,6 +380,6 @@ export default function HostJobDetailScreen() {
         style={styles.flatList}
         testID="host-job-detail-suggestions"
       />
-    </Screen>
+    </DetailScreen>
   );
 }

@@ -65,7 +65,8 @@ Role-based bottom tabs. The tab bar changes with the signed-in role:
 | Profile | Profile |
 
 - Active tab: `indigo` icon + label. Inactive: `ink-mute`. Unread counts badge on Messages.
-- Stacks push detail screens (job detail, chat thread, review) over their tab; each tab keeps its own history.
+- Detail screens (job detail, chat thread, review) push inside the tab they were opened from, and the tab bar stays visible, so the user can jump to another tab from a job or a chat. Each tab keeps its own history; tapping the active tab again returns to its root.
+- Every detail screen has a Back button above its title. With history it goes back; on a deep link or after a reload it returns to the root of its tab.
 - Auth (welcome, sign in, sign up with role pick) sits outside the tabs until signed in.
 
 ## Screen Inventory
@@ -101,6 +102,10 @@ The one memorable component, used on the Board, My Jobs, and suggestions:
 - **Buttons:** primary = `indigo` fill, white uppercase label (600, +0.03em), radius 6. Secondary = white fill, 2px `indigo` border + text. Destructive = danger text, no fill. Loading state inside the button, never a bare spinner.
 - **Inputs:** white fill, `stone` border, radius 6, label above in eyebrow style. Focus: 2px `indigo` outline. Never strip the focus ring.
 - **Tab bar:** as in Navigation; 44pt minimum touch targets throughout.
+- **Filter chips (Board):** a row above the list (it wraps to a second line rather than scrolling sideways, so no chip is ever hidden), one chip per filter (date `calendar`, distance `navigation`, price `dollar-sign`, Feather 16). Inactive: white fill, 1px `stone` border, `ink-soft` icon and label. Active: `paper-2` fill, `indigo` border, icon and label, and the label shows the value ("Fri, Jun 6", "≤ 10 km", "≥ $80"). Radius 6, 44pt touch target, Small 500 label. A "Clear all" chip (no icon) appears at the end while any filter is active.
+- **Bottom sheet:** a `paper` panel anchored to the bottom over a `ink` scrim at 40% opacity, radius 14 on the top corners only, 1px `stone` top border, no shadow. Holds one field, titled with the filter's short name, and its actions (primary Apply, secondary Clear). Tapping the scrim or Escape closes it without applying.
+- **Thread row (Messages tab):** one per conversation, newest first. 40pt initials avatar (as Avatars), the other party's name (Body 500, `ink`), the job address as an uppercase caption in `ink-soft`, a one-line preview of the last message (Small, `ink-soft`, "You: " when the viewer wrote it), and the time or day at the right (Caption, tabular). Stone border, radius up to 14, no rail, no shadow; on press the name shifts to `indigo`.
+- **Back button:** Feather `chevron-left` (24) in `ink`, icon only, no fill or border, 44pt touch target, accessibility label "Back". Sits at the top-left, above the screen title; the pressed state shifts the icon to `indigo`.
 - **Badges/tags:** `orange-tint` background with `orange-deep` text, or `paper-2` with `ink-soft`.
 - **Stars:** ★ glyphs in `orange-deep`, 5-step, tappable in the review form, read-only elsewhere.
 - **Avatars:** photo or initials on `paper-2`, full-round, `stone` ring.

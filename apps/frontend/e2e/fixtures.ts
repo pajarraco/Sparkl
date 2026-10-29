@@ -121,6 +121,7 @@ export async function pinBoardToDay(
   jobId: string,
 ): Promise<void> {
   await page.goto("/board");
+  await page.getByTestId("cleaner-board-chip-date").click();
   await page.getByTestId("cleaner-board-date").fill(day);
   await page.getByTestId("cleaner-board-apply").click();
   await expect(page.getByTestId(`cleaner-board-card-${jobId}`)).toBeVisible();
