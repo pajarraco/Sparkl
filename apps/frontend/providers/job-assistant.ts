@@ -7,8 +7,10 @@ import {
   type GeoPlace,
   type JobDraft,
   type JobDraftField,
+  type PriceHint,
 } from "@sparkl/shared";
 import { getStrings } from "./i18n";
+import { formatPriceMinorUnits } from "./my-jobs";
 
 // Pure state helpers for the Post-tab assistant (rules.md: no logic in
 // components). The client holds the transcript and sends at most the last
@@ -23,6 +25,7 @@ export interface AssistantState {
   missingFields: JobDraftField[];
   readyForReview: boolean;
   places: GeoPlace[];
+  priceHint: PriceHint | null;
 }
 
 export function createAssistantState(
@@ -36,6 +39,7 @@ export function createAssistantState(
     missingFields: [],
     readyForReview: false,
     places: [],
+    priceHint: null,
   };
 }
 
@@ -83,7 +87,21 @@ export function applyTurnOutput(
     missingFields: output.missingFields,
     readyForReview: output.readyForReview,
     places: output.places,
+    priceHint: output.priceHint,
   };
+}
+
+// The price suggestion under the draft card. The host sets the final price.
+export function priceHintLine(hint: PriceHint | null): string | null {
+  if (hint === null) return null;
+  const strings = getStrings();
+  const price = formatPriceMinorUnits(hint.medianMinorUnits);
+  if (hint.source === "per_sqm") {
+    return strings.assistant.priceRate.replace("{price}", price);
+  }
+  return strings.assistant.priceComparables
+    .replace("{price}", price)
+    .replace("{count}", String(hint.comparables));
 }
 
 // The host picked a geocoder candidate: coordinates come from the place.
@@ -114,6 +132,8 @@ export interface PostJobFormValues {
   price: string;
   latitude: string;
   longitude: string;
+  // The pinned usual cleaner, or "" when none is pinned.
+  preferredCleanerId: string;
 }
 
 export function draftToFormValues(draft: JobDraft): PostJobFormValues {
@@ -127,6 +147,7 @@ export function draftToFormValues(draft: JobDraft): PostJobFormValues {
     price: draft.price ?? "",
     latitude: draft.latitude ?? "",
     longitude: draft.longitude ?? "",
+    preferredCleanerId: draft.preferredCleanerId ?? "",
   };
 }
 

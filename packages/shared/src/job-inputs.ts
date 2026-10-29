@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { jobStatusSchema } from "./lifecycle";
+import { userIdSchema } from "./users";
 
 const isoDatetime = z.string().datetime();
 
@@ -14,6 +15,8 @@ export const createJobInput = z
     sizeSqm: z.number().positive().max(100000).optional(),
     notes: z.string().max(2000).optional(),
     priceMinorUnits: z.number().int().min(0),
+    // Checked in the service: must be a cleaner the host has worked with.
+    preferredCleanerId: userIdSchema.optional(),
   })
   .strict()
   .refine((v) => v.windowEnd > v.windowStart, {

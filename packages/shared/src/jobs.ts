@@ -16,6 +16,9 @@ export const jobSchema = z
     priceMinorUnits: z.number().int().min(0),
     status: jobStatusSchema,
     claimedByCleanerId: userIdSchema.nullable(),
+    // The host's usual cleaner, pinned to the top of suggestions (02 P2).
+    // Optional until every fixture carries it; the database always does.
+    preferredCleanerId: userIdSchema.nullish(),
     createdAt: z.string().datetime(),
     updatedAt: z.string().datetime(),
   })

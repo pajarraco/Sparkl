@@ -33,6 +33,9 @@ export interface JobsStore {
   listOpenJobs(): Promise<Job[]>;
   listJobsByHost(hostId: string): Promise<Job[]>;
   listJobsByCleaner(cleanerId: string): Promise<Job[]>;
+  // Every job, any status, for price comparables. Callers may only read
+  // aggregates from it.
+  listJobsForPricing(): Promise<Job[]>;
   /**
    * Atomically claim an open job. MUST re-check `status = open` inside a
    * single transaction so exactly one concurrent claim wins. Throws
@@ -67,6 +70,18 @@ export async function createJob(
       "windowEnd must be after windowStart.",
     );
   }
+  const preferred = args.input.preferredCleanerId;
+  if (preferred !== undefined) {
+    // The pin is only ever a cleaner the host has worked with before, so a
+    // client cannot point a job at a stranger.
+    const history = await store.listJobsByHost(args.hostId);
+    if (!history.some((j) => j.claimedByCleanerId === preferred)) {
+      throw new JobsServiceError(
+        "FORBIDDEN",
+        "Your usual cleaner must have worked for you before.",
+      );
+    }
+  }
   const now = clock.nowIso();
   return store.insertJob({
     id: randomUUID(),
@@ -81,6 +96,7 @@ export async function createJob(
     priceMinorUnits: args.input.priceMinorUnits,
     status: "open",
     claimedByCleanerId: null,
+    preferredCleanerId: preferred ?? null,
     createdAt: now,
     updatedAt: now,
   });

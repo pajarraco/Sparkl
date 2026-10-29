@@ -366,3 +366,9 @@ Phases are ordered by what gets cut last. Deadline: Nov 4, 9 PM ET.
 - **Usual cleaner as a real assignment** depends on 03's two-way
   assignment (host offers, cleaner accepts). Until then it is a pinned
   suggestion only.
+- **Learning from use (approved, 2026-10-29):** a solutions store the agent
+  reads and writes, ranked by the host's response and shared across hosts
+  with the host's own first. It ships before P4. The P2 price hint and
+  usual-cleaner offer stay as computed tools and report into it. Plan and
+  owner decisions are in `context/features/04-assistant-learning.md`; tasks
+  are in `tasks.md` §12.

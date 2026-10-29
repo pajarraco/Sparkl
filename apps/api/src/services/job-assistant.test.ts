@@ -900,3 +900,307 @@ describe("createJobAssistant", () => {
     });
   });
 });
+
+describe("price hint and usual cleaner", () => {
+  const HERE = { latitude: -33.8909546, longitude: 151.2633431 };
+  const MARIA: User = {
+    id: "cleaner-maria",
+    role: "cleaner",
+    name: "Maria",
+    photoUrl: null,
+    serviceLat: null,
+    serviceLng: null,
+    serviceRadiusKm: null,
+    avgRating: 4.8,
+    completedJobCount: 10,
+    createdAt: "2026-10-20T03:00:00.000Z",
+    updatedAt: "2026-10-20T03:00:00.000Z",
+  };
+  const HOSTED_DRAFT: JobDraft = {
+    address: PLACE.label,
+    latitude: String(HERE.latitude),
+    longitude: String(HERE.longitude),
+    sizeSqm: "80",
+  };
+
+  // A past job at the same spot, 80 m², claimed by Maria and completed.
+  function pastJob(n: number, overrides: Partial<Job> = {}): Job {
+    return {
+      id: `job-${n}`,
+      hostId: "host-1",
+      address: PLACE.label,
+      latitude: HERE.latitude,
+      longitude: HERE.longitude,
+      windowStart: `2026-10-${10 + n}T10:00:00.000Z`,
+      windowEnd: `2026-10-${10 + n}T12:00:00.000Z`,
+      sizeSqm: 80,
+      notes: null,
+      priceMinorUnits: 5000,
+      status: "completed",
+      claimedByCleanerId: MARIA.id,
+      createdAt: `2026-10-${10 + n}T03:00:00.000Z`,
+      updatedAt: `2026-10-${10 + n}T03:00:00.000Z`,
+      ...overrides,
+    };
+  }
+
+  function memory(jobs: Job[]): HostMemoryStores {
+    return {
+      jobs: { listJobsByHost: async () => jobs },
+      users: { findById: async () => MARIA },
+      reviews: { findReviewByJobAndAuthor: async () => null },
+      sessions: { listFinishedByHost: async () => [] },
+    };
+  }
+
+  function pricing(pool: Job[]) {
+    return { listJobsForPricing: async () => pool };
+  }
+
+  function toolNames(request: LlmRequest | undefined): string[] {
+    return request?.tools?.map((t) => t.name) ?? [];
+  }
+
+  it("offers suggest_price only with pricing, and answers with the hint", async () => {
+    const pool = [
+      pastJob(1, { priceMinorUnits: 5000 }),
+      pastJob(2, { priceMinorUnits: 6000 }),
+      pastJob(3, { priceMinorUnits: 7000 }),
+    ];
+    const { llm, requests } = scripted([
+      { toolCalls: [call("p1", "suggest_price", {})] },
+      { content: "Similar jobs nearby are about $60." },
+    ]);
+    const assistant = createJobAssistant({
+      llm,
+      geo: geoStub(),
+      now: fixedNow,
+    });
+
+    const result = await assistant.turn(
+      "host-1",
+      input("price?", HOSTED_DRAFT),
+      { pricing: pricing(pool) },
+    );
+
+    expect(toolNames(requests[0])).toEqual([
+      "update_draft",
+      "geocode_address",
+      "suggest_price",
+    ]);
+    expect(toolOutput(requests[1], "p1")).toEqual({
+      medianMinorUnits: 6000,
+      comparables: 3,
+      source: "comparables",
+    });
+    expect(result.priceHint).toEqual({
+      medianMinorUnits: 6000,
+      comparables: 3,
+      source: "comparables",
+    });
+    expect(result.draft.price).toBeUndefined();
+  });
+
+  it("falls back to the per-m² rate when there are too few comparables", async () => {
+    const { llm, requests } = scripted([
+      { toolCalls: [call("p1", "suggest_price", {})] },
+      { content: "About $320 for 80 m²." },
+    ]);
+    const assistant = createJobAssistant({
+      llm,
+      geo: geoStub(),
+      now: fixedNow,
+    });
+
+    const result = await assistant.turn(
+      "host-1",
+      input("price?", HOSTED_DRAFT),
+      { pricing: pricing([]) },
+    );
+
+    expect(toolOutput(requests[1], "p1")).toEqual({
+      medianMinorUnits: 32000,
+      comparables: 0,
+      source: "per_sqm",
+    });
+    expect(result.priceHint?.source).toBe("per_sqm");
+  });
+
+  it("asks for the address and size before suggesting a price", async () => {
+    const { llm, requests } = scripted([
+      { toolCalls: [call("p1", "suggest_price", {})] },
+      { content: "What is the size?" },
+    ]);
+    const assistant = createJobAssistant({
+      llm,
+      geo: geoStub(),
+      now: fixedNow,
+    });
+
+    const result = await assistant.turn("host-1", input("price?"), {
+      pricing: pricing([]),
+    });
+
+    expect(toolOutput(requests[1], "p1")).toEqual({
+      error: "need the address and the size first",
+    });
+    expect(result.priceHint).toBeNull();
+  });
+
+  it("keeps the turn alive when the comparables read fails", async () => {
+    const { llm, requests } = scripted([
+      { toolCalls: [call("p1", "suggest_price", {})] },
+      { content: "I cannot price it right now." },
+    ]);
+    const assistant = createJobAssistant({
+      llm,
+      geo: geoStub(),
+      now: fixedNow,
+    });
+
+    const result = await assistant.turn(
+      "host-1",
+      input("price?", HOSTED_DRAFT),
+      {
+        pricing: {
+          listJobsForPricing: async () => {
+            throw new Error("db down");
+          },
+        },
+      },
+    );
+
+    expect(toolOutput(requests[1], "p1")).toEqual({
+      error: "price comparables unavailable",
+    });
+    expect(result.priceHint).toBeNull();
+  });
+
+  it("does not offer suggest_price without pricing", async () => {
+    const { llm, requests } = scripted([{ content: "Hello" }]);
+    const assistant = createJobAssistant({
+      llm,
+      geo: geoStub(),
+      now: fixedNow,
+    });
+
+    await assistant.turn("host-1", input("hi", HOSTED_DRAFT), {});
+
+    expect(toolNames(requests[0])).not.toContain("suggest_price");
+    expect(requests[0]?.messages[0]?.content).not.toContain("suggest_price");
+  });
+
+  it("pins the usual cleaner on yes", async () => {
+    const { llm, requests } = scripted([
+      { toolCalls: [call("k1", "pin_usual_cleaner", {})] },
+      { content: "Maria is pinned to the top of this job's suggestions." },
+    ]);
+    const assistant = createJobAssistant({
+      llm,
+      geo: geoStub(),
+      now: fixedNow,
+    });
+    const jobs = [pastJob(1), pastJob(2), pastJob(3)];
+
+    const result = await assistant.turn("host-1", input("yes"), {
+      memory: memory(jobs),
+    });
+
+    expect(toolNames(requests[0])).toContain("pin_usual_cleaner");
+    expect(toolOutput(requests[1], "k1")).toEqual({ ok: true, name: "Maria" });
+    expect(result.draft.preferredCleanerId).toBe(MARIA.id);
+    expect(requests[0]?.messages[0]?.content).toContain(
+      "Go with Maria as always?",
+    );
+  });
+
+  it("does not offer the pin tool without a usual cleaner", async () => {
+    const { llm, requests } = scripted([{ content: "Hello" }]);
+    const assistant = createJobAssistant({
+      llm,
+      geo: geoStub(),
+      now: fixedNow,
+    });
+
+    await assistant.turn("host-1", input("hi"), {
+      memory: memory([pastJob(1)]),
+    });
+
+    expect(toolNames(requests[0])).not.toContain("pin_usual_cleaner");
+  });
+
+  it("refuses a pin when memory has no usual cleaner", async () => {
+    const { llm, requests } = scripted([
+      { toolCalls: [call("k1", "pin_usual_cleaner", {})] },
+      { content: "No usual cleaner yet." },
+    ]);
+    const assistant = createJobAssistant({
+      llm,
+      geo: geoStub(),
+      now: fixedNow,
+    });
+
+    const result = await assistant.turn("host-1", input("yes"), {
+      memory: memory([pastJob(1)]),
+    });
+
+    expect(toolOutput(requests[1], "k1")).toEqual({
+      error: "no usual cleaner to pin",
+    });
+    expect(result.draft.preferredCleanerId).toBeUndefined();
+  });
+
+  it("drops a pin in the draft that does not match the usual cleaner", async () => {
+    const { llm } = scripted([{ content: "Hello" }]);
+    const assistant = createJobAssistant({
+      llm,
+      geo: geoStub(),
+      now: fixedNow,
+    });
+
+    const result = await assistant.turn(
+      "host-1",
+      input("hi", { ...HOSTED_DRAFT, preferredCleanerId: "cleaner-stranger" }),
+      { memory: memory([pastJob(1), pastJob(2), pastJob(3)]) },
+    );
+
+    expect(result.draft.preferredCleanerId).toBeUndefined();
+  });
+
+  it("keeps a pin in the draft that matches the usual cleaner", async () => {
+    const { llm } = scripted([{ content: "Hello" }]);
+    const assistant = createJobAssistant({
+      llm,
+      geo: geoStub(),
+      now: fixedNow,
+    });
+
+    const result = await assistant.turn(
+      "host-1",
+      input("hi", { ...HOSTED_DRAFT, preferredCleanerId: MARIA.id }),
+      { memory: memory([pastJob(1), pastJob(2), pastJob(3)]) },
+    );
+
+    expect(result.draft.preferredCleanerId).toBe(MARIA.id);
+  });
+
+  it("tells the model the cleaner is already pinned, and carries the checklist rule", () => {
+    const prompt = buildSystemPrompt({
+      today: { date: "2026-10-30", weekday: "Friday", timeZone: "UTC" },
+      draft: { preferredCleanerId: MARIA.id },
+      missing: [],
+      memory: {
+        recentJobs: [],
+        singleProperty: null,
+        usualCleaner: { id: MARIA.id, name: "Maria" },
+        correctionHints: [],
+      },
+      canSuggestPrice: true,
+    });
+
+    expect(prompt).toContain("already pinned to this job");
+    expect(prompt).not.toContain("Go with Maria as always?");
+    expect(prompt).toContain("call suggest_price");
+    expect(prompt).toContain("cleaning checklist");
+  });
+});

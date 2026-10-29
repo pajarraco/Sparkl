@@ -71,6 +71,11 @@ export const en = {
     rateLimited: "Too many messages. Wait a moment, or use the form instead.",
     tooLong: "Keep your message under 1,000 characters.",
     sizeValue: "{size} m²",
+    priceComparables:
+      "Similar jobs nearby suggest about {price} ({count} jobs). You set the final price.",
+    priceRate: "Based on the size, about {price}. You set the final price.",
+    pinned:
+      "Your usual cleaner is pinned to the top of this job's suggestions.",
   },
   board: {
     title: "Open jobs",

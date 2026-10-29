@@ -143,6 +143,11 @@ export const jobs = pgTable(
         onDelete: "set null",
       },
     ),
+    // The host's usual cleaner, pinned by the assistant (02 P2). A hint only:
+    // it never assigns the job.
+    preferredCleanerId: text("preferred_cleaner_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
       .defaultNow()
       .notNull(),

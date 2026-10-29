@@ -15,6 +15,7 @@ import {
   draftSummary,
   draftToFormValues,
   newSessionId,
+  priceHintLine,
   validateAssistantMessage,
   withUserMessage,
 } from "./job-assistant";
@@ -42,6 +43,7 @@ describe("createAssistantState", () => {
       missingFields: [],
       readyForReview: false,
       places: [],
+      priceHint: null,
     });
   });
 
@@ -55,6 +57,7 @@ describe("createAssistantState", () => {
       missingFields: [],
       readyForReview: false,
       places: [],
+      priceHint: null,
     });
   });
 });
@@ -173,6 +176,26 @@ describe("applyTurnOutput", () => {
     expect(newState.missingFields).toEqual(output.missingFields);
     expect(newState.readyForReview).toBe(output.readyForReview);
     expect(newState.places).toEqual(output.places);
+    expect(newState.priceHint).toBeNull();
+  });
+
+  it("keeps the price hint from the turn", () => {
+    const state = createAssistantState(SESSION);
+    const priceHint = {
+      medianMinorUnits: 6000,
+      comparables: 3,
+      source: "comparables" as const,
+    };
+    const newState = applyTurnOutput(state, {
+      reply: "About $60.",
+      draft: {},
+      missingFields: [],
+      readyForReview: false,
+      quickReplies: [],
+      places: [],
+      priceHint,
+    });
+    expect(newState.priceHint).toEqual(priceHint);
   });
 });
 
@@ -205,6 +228,7 @@ describe("draftToFormValues", () => {
       price: "",
       latitude: "",
       longitude: "",
+      preferredCleanerId: "",
     });
   });
 
@@ -220,7 +244,41 @@ describe("draftToFormValues", () => {
       price: "",
       latitude: "",
       longitude: "",
+      preferredCleanerId: "",
     });
+  });
+
+  it("carries the pinned usual cleaner into the form", () => {
+    const result = draftToFormValues({ preferredCleanerId: "cleaner-maria" });
+    expect(result.preferredCleanerId).toBe("cleaner-maria");
+  });
+});
+
+describe("priceHintLine", () => {
+  it("is null without a hint", () => {
+    expect(priceHintLine(null)).toBeNull();
+  });
+
+  it("names the comparables and the median", () => {
+    expect(
+      priceHintLine({
+        medianMinorUnits: 6000,
+        comparables: 3,
+        source: "comparables",
+      }),
+    ).toBe(
+      "Similar jobs nearby suggest about $60.00 (3 jobs). You set the final price.",
+    );
+  });
+
+  it("says the rate is size based when there are no comparables", () => {
+    expect(
+      priceHintLine({
+        medianMinorUnits: 32000,
+        comparables: 0,
+        source: "per_sqm",
+      }),
+    ).toBe("Based on the size, about $320.00. You set the final price.");
   });
 });
 

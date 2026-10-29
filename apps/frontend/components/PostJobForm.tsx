@@ -79,7 +79,12 @@ export function PostJobForm(props: PostJobFormProps) {
     if (result.data === null) return;
     setFormError(null);
     try {
-      await createJob.mutateAsync(result.data);
+      // The pin came from the assistant's memory; the server re-checks it.
+      await createJob.mutateAsync(
+        initial.preferredCleanerId === ""
+          ? result.data
+          : { ...result.data, preferredCleanerId: initial.preferredCleanerId },
+      );
       setPosted(true);
     } catch {
       setFormError(strings.errors.generic);

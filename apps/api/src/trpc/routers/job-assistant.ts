@@ -30,6 +30,7 @@ export const jobAssistantRouter = router({
           reviews: drizzleReviewsStore(ctx.db),
           sessions,
         },
+        pricing: drizzleJobsStore(ctx.db),
         onTurn: (event) =>
           ctx.req.log.info({ assistantTurn: event }, "assistant turn"),
       });

@@ -24,6 +24,24 @@ export const RANKING_WEIGHTS_V2 = {
 
 export const RANKING_WEIGHTS_FLAG = "ranking-weights-v2";
 
+// Price hint config (02 P2): the median of comparable jobs nearby (similar
+// size, within the radius). With fewer than minComparables, fall back to a
+// rate per m². Amounts are minor units (cents). perSqmMinorUnits is a
+// placeholder rate to tune against real jobs, never a quoted price.
+export interface PriceHintConfig {
+  radiusKm: number;
+  sizeTolerance: number;
+  minComparables: number;
+  perSqmMinorUnits: number;
+}
+
+export const PRICE_HINT_CONFIG: PriceHintConfig = {
+  radiusKm: 5,
+  sizeTolerance: 0.3,
+  minComparables: 3,
+  perSqmMinorUnits: 400,
+};
+
 export const rankingWeightsSchema = z
   .object({
     rating: z.number().min(0).max(1),

@@ -56,6 +56,7 @@ function makeFakeStore(seed: Job[] = []): JobsStore {
       [...jobs.values()].filter((job) => job.hostId === hostId),
     listJobsByCleaner: async (cleanerId) =>
       [...jobs.values()].filter((job) => job.claimedByCleanerId === cleanerId),
+    listJobsForPricing: async () => [...jobs.values()],
     claimIfOpen: async (jobId, cleanerId, nowIso) => {
       const current = jobs.get(jobId);
       if (current === undefined)
@@ -153,6 +154,28 @@ describe("jobs service", () => {
           hostId: CLEANER_A,
           hostRole: "cleaner",
           input: createInput,
+        }),
+      ),
+    ).toBe("FORBIDDEN");
+  });
+
+  it("createJob keeps a pin only for a cleaner the host has worked with", async () => {
+    const worked = makeFakeStore([
+      makeJob({ status: "completed", claimedByCleanerId: CLEANER_A }),
+    ]);
+    const job = await createJob(worked, clock, {
+      hostId: HOST_ID,
+      hostRole: "host",
+      input: { ...createInput, preferredCleanerId: CLEANER_A },
+    });
+    expect(job.preferredCleanerId).toBe(CLEANER_A);
+
+    expect(
+      await captureCode(
+        createJob(makeFakeStore(), clock, {
+          hostId: HOST_ID,
+          hostRole: "host",
+          input: { ...createInput, preferredCleanerId: CLEANER_A },
         }),
       ),
     ).toBe("FORBIDDEN");

@@ -5,6 +5,7 @@ import { getStrings } from "../providers/i18n";
 import {
   type AssistantState,
   draftSummary,
+  priceHintLine,
   validateAssistantMessage,
 } from "../providers/job-assistant";
 import {
@@ -177,6 +178,7 @@ export function AssistantChat(props: AssistantChatProps) {
   const [text, setText] = useState("");
   const [inputError, setInputError] = useState<string | null>(null);
   const rows = draftSummary(props.state.draft);
+  const priceLine = priceHintLine(props.state.priceHint);
   const started = props.state.messages.length > 0;
 
   function handleSend(): void {
@@ -265,6 +267,14 @@ export function AssistantChat(props: AssistantChatProps) {
             ))
           )}
         </View>
+        {priceLine === null ? null : (
+          <BodyText testID="assistant-price-hint">{priceLine}</BodyText>
+        )}
+        {props.state.draft.preferredCleanerId ? (
+          <BodyText testID="assistant-pinned">
+            {strings.assistant.pinned}
+          </BodyText>
+        ) : null}
         {props.state.readyForReview ? (
           <BodyText testID="assistant-ready">
             {strings.assistant.readyHint}

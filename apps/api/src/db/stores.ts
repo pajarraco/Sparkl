@@ -45,6 +45,7 @@ function toJob(row: typeof jobs.$inferSelect): Job {
     priceMinorUnits: row.priceMinorUnits,
     status: row.status as JobStatus,
     claimedByCleanerId: row.claimedByCleanerId,
+    preferredCleanerId: row.preferredCleanerId,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -84,6 +85,7 @@ export function drizzleJobsStore(db: Db): JobsStore {
           priceMinorUnits: job.priceMinorUnits,
           status: job.status,
           claimedByCleanerId: job.claimedByCleanerId,
+          preferredCleanerId: job.preferredCleanerId ?? null,
           createdAt: new Date(job.createdAt),
           updatedAt: new Date(job.updatedAt),
         })
@@ -103,6 +105,12 @@ export function drizzleJobsStore(db: Db): JobsStore {
 
     async listOpenJobs() {
       const rows = await db.select().from(jobs).where(eq(jobs.status, "open"));
+      return rows.map(toJob);
+    },
+
+    async listJobsForPricing() {
+      // Every job, any status: only aggregates leave the price-hint service.
+      const rows = await db.select().from(jobs);
       return rows.map(toJob);
     },
 

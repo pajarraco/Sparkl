@@ -43,6 +43,8 @@ export const jobDraftSchema = z
     sizeSqm: z.string().max(16).optional(),
     notes: z.string().max(2000).optional(),
     price: z.string().max(16).optional(),
+    // Set only by the pin_usual_cleaner tool, never by update_draft.
+    preferredCleanerId: z.string().min(1).max(256).optional(),
   })
   .strict();
 export type JobDraft = z.infer<typeof jobDraftSchema>;

@@ -92,14 +92,14 @@ Spec: `context/features/02-integrate-baseten.md` (approved 2026-10-29). Phases a
 
 - [x] `assistant_sessions` migration (no message text) + `jobAssistant.finish` (review-form diff, outcome)
 - [x] `get_host_history`, `singleProperty` / `usualCleaner` shortcuts, correction-rate prompt hints
-- [ ] `suggest_price` (median of nearby comparable jobs; per-m² fallback in the weights config) + checklist drafting into the notes
-- [ ] "Go with {cleaner} as always?" pins that cleaner to the top of the job's suggestions (real offer waits for 03's two-way assignment)
+- [x] `suggest_price` (median of nearby comparable jobs; per-m² fallback in the weights config) + checklist drafting into the notes
+- [x] "Go with {cleaner} as always?" pins that cleaner to the top of the job's suggestions (real offer waits for 03's two-way assignment)
 
 #### P3 — Voice
 
 - [ ] Voice service + `voice.transcribe` router (base64, ~30s / 1.5 MB cap, never stored), mic button (`expo-audio` on native / `MediaRecorder` on web), transcript lands in the composer
 
-#### P4 — Stretch (cut first)
+#### P4 — Stretch (cut first; §12 learning L1 goes before it)
 
 - [ ] Smart match explanations on ranked suggestions
 
@@ -142,6 +142,23 @@ Spec: `context/features/03-improvements-issues.md` (approved 2026-10-29). Built 
 #### Close-out
 
 - [ ] Per item: `pnpm verify` green (coverage ≥ 80%) + `e2e` green, output quoted; `CHANGELOG.md` and docs updated
+
+### 12. Assistant learning from use (solutions store)
+
+Spec: `context/features/04-assistant-learning.md` (approved 2026-10-29). L1 ships before Nov 4, ahead of 02 P4. Votes come only from the host's response; only answers are stored, never messages or personal data; shared across hosts with the host's own first.
+
+Resume here (2026-10-30): the first box below. 02 P2 is done and migration `0002_job_preferred_cleaner` is applied on the local dev DB (main tree only, not the 03 worktree DB).
+
+- [ ] Shared: solution kinds + payload schemas, `SOLUTION_TAGS`, `SOLUTION_RANKING_CONFIG`, `proposals` on the turn output, `assistantFeedbackInput`
+- [ ] Pure services + tests: ranking (Wilson × recency, host-first), personal-data check, payload fingerprint
+- [ ] `assistant_solutions` + `assistant_solution_events` migration (`0003`) and store
+- [ ] `find_solutions` / `save_solution` tools in the agent loop (Zod args, save cap, quoted results, `proposed` events)
+- [ ] Feedback: `jobAssistant.feedback` (chip taps) + accept/reject from the review-form diff in `finish`
+- [ ] Sharing: fingerprint → global row, 3 distinct hosts with posted jobs, rejected-by-host never re-proposed, `solutions:retire` script
+- [ ] 02 price hint + usual-cleaner offer report into `offer_preference`
+- [ ] UI: "Use this" / "Not this" chips under proposals (i18n; `design.md` first if a style is new)
+- [ ] Seed: 3 obviously-fake global checklists + 3 FAQ entries
+- [ ] Gates: `pnpm verify` green + e2e (saved checklist proposed first in session 2; a checklist with a phone number refused), output quoted; `CHANGELOG.md` and docs updated
 
 ### Stretch (only if time allows)
 

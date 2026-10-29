@@ -15,6 +15,13 @@
       "when": 1793261318960,
       "tag": "0001_assistant_sessions",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793270952163,
+      "tag": "0002_job_preferred_cleaner",
+      "breakpoints": true
     }
   ]
 }
