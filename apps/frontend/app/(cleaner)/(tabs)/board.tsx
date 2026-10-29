@@ -112,7 +112,9 @@ export default function CleanerBoardScreen() {
         address={item.job.address}
         metaLine={boardMetaLine(item.job, item.score)}
         onPress={() => {
-          router.navigate(`/(cleaner)/job/${item.job.id}`);
+          // push (not navigate): the detail is a stack screen, and push
+          // unconditionally pushes it. navigate stayed on /board in E2E.
+          router.push(`/(cleaner)/job/${item.job.id}`);
         }}
         status={item.job.status}
         statusLabel={statusLabelFor(item.job.status)}

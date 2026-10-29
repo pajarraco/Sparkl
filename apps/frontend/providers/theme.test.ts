@@ -50,8 +50,8 @@ describe("theme tokens", () => {
     ]);
   });
 
-  it("keeps touch targets at 44pt", () => {
-    expect(THEME_SPACING.touchTarget).toBe(44);
+  it("keeps touch targets at least 44pt (design.md minimum)", () => {
+    expect(THEME_SPACING.touchTarget).toBeGreaterThanOrEqual(44);
   });
 
   it("maps one loaded Elms Sans cut per weight (no synthesized weights)", () => {
