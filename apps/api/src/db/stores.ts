@@ -1,12 +1,14 @@
 import type {
   CleanerAvailability,
   Job,
+  JobDraftField,
   JobStatus,
   Message,
   Review,
   User,
 } from "@sparkl/shared";
-import { and, eq, sql } from "drizzle-orm";
+import { jobDraftFieldSchema } from "@sparkl/shared";
+import { and, desc, eq, isNotNull, sql } from "drizzle-orm";
 import type { AssistantSessionsStore } from "../services/assistant-sessions.js";
 import { ChatError, type ChatStore } from "../services/chat.js";
 import {
@@ -404,6 +406,26 @@ export function drizzleAssistantSessionsStore(db: Db): AssistantSessionsStore {
           modelFilled: sql`array(select distinct unnest(${t.modelFilled} || ARRAY[${filled}]::text[]) order by 1)`,
         })
         .where(and(eq(t.id, id), ownOpen(hostId)));
+    },
+
+    async listFinishedByHost(hostId) {
+      const rows = await db
+        .select({ modelFilled: t.modelFilled, hostChanged: t.hostChanged })
+        .from(t)
+        .where(and(eq(t.hostId, hostId), isNotNull(t.outcome)))
+        .orderBy(desc(t.createdAt))
+        .limit(20);
+      // Rows are written by our own session paths, but field names are
+      // re-checked so a foreign or legacy value can never reach the prompt.
+      const fields = (values: string[]): JobDraftField[] =>
+        values.filter(
+          (value): value is JobDraftField =>
+            jobDraftFieldSchema.safeParse(value).success,
+        );
+      return rows.map((row) => ({
+        modelFilled: fields(row.modelFilled),
+        hostChanged: fields(row.hostChanged),
+      }));
     },
 
     async finish({ id, hostId, outcome, jobId, hostChanged, nowIso }) {

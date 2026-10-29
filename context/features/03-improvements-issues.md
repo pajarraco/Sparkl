@@ -6,6 +6,7 @@ Here are some issues an improvement that I would like to make. follow this list 
 
 - Switching from Host to Cleaner doesn't work at the first time. only when I sign in two times works
 - there is now back bottom when you go inside the details of the jobs or inside the chat. also the main navigation is not visible
+- Submit the review doesn't work. it get me a "Something went wrong. Try again." message
 
 ## Improvements
 

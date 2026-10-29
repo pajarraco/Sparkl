@@ -6,6 +6,8 @@ import {
 import {
   drizzleAssistantSessionsStore,
   drizzleJobsStore,
+  drizzleReviewsStore,
+  drizzleUsersStore,
   systemClock,
 } from "../../db/stores.js";
 import { finishAssistantSession } from "../../services/assistant-sessions.js";
@@ -18,13 +20,20 @@ export const jobAssistantRouter = router({
   turn: roleProcedure("host")
     .input(assistantTurnInput)
     .output(assistantTurnOutput)
-    .mutation(({ ctx, input }) =>
-      getJobAssistant().turn(ctx.sessionUserId, input, {
-        sessions: drizzleAssistantSessionsStore(ctx.db),
+    .mutation(({ ctx, input }) => {
+      const sessions = drizzleAssistantSessionsStore(ctx.db);
+      return getJobAssistant().turn(ctx.sessionUserId, input, {
+        sessions,
+        memory: {
+          jobs: drizzleJobsStore(ctx.db),
+          users: drizzleUsersStore(ctx.db),
+          reviews: drizzleReviewsStore(ctx.db),
+          sessions,
+        },
         onTurn: (event) =>
           ctx.req.log.info({ assistantTurn: event }, "assistant turn"),
-      }),
-    ),
+      });
+    }),
 
   // Closes the session: outcome, the posted job, and the fields the host
   // changed on the review form.

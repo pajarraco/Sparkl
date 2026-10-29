@@ -31,6 +31,13 @@ export interface AssistantTurnStats {
   modelFilled: JobDraftField[];
 }
 
+// One finished session's learning counts: what the model filled vs what the
+// host changed on the review form. Backs the correction-rate prompt hints.
+export interface SessionCorrections {
+  modelFilled: JobDraftField[];
+  hostChanged: JobDraftField[];
+}
+
 export interface AssistantSessionsStore {
   // Inserts the session, or counts one more turn on it. False when the id
   // belongs to another host or the session is already finished. Atomic.
@@ -46,6 +53,9 @@ export interface AssistantSessionsStore {
     hostId: string,
     stats: AssistantTurnStats,
   ): Promise<void>;
+  // Finished sessions of one host, newest first, for correction-rate
+  // hints. Counts and field names only, never message text.
+  listFinishedByHost(hostId: string): Promise<SessionCorrections[]>;
   // Closes the session (inserting it when it never had a turn). False when
   // the id belongs to another host or the session is already finished.
   finish(args: {

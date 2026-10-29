@@ -90,8 +90,8 @@ Spec: `context/features/02-integrate-baseten.md` (approved 2026-10-29). Phases a
 
 #### P2 — Smart
 
-- [ ] `assistant_sessions` migration (no message text) + `jobAssistant.finish` (review-form diff, outcome)
-- [ ] `get_host_history`, `singleProperty` / `usualCleaner` shortcuts, correction-rate prompt hints
+- [x] `assistant_sessions` migration (no message text) + `jobAssistant.finish` (review-form diff, outcome)
+- [x] `get_host_history`, `singleProperty` / `usualCleaner` shortcuts, correction-rate prompt hints
 - [ ] `suggest_price` (median of nearby comparable jobs; per-m² fallback in the weights config) + checklist drafting into the notes
 - [ ] "Go with {cleaner} as always?" pins that cleaner to the top of the job's suggestions (real offer waits for 03's two-way assignment)
 

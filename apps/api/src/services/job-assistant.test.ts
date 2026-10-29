@@ -1,15 +1,19 @@
 import {
   type AssistantTurnInput,
   type GeoPlace,
+  type Job,
   type JobDraft,
   SPARKL_ERROR_CODES,
+  type User,
 } from "@sparkl/shared";
 import { describe, expect, it, vi } from "vitest";
 import type {
   AssistantSessionsStore,
   AssistantTurnStats,
+  SessionCorrections,
 } from "./assistant-sessions.js";
 import type { GeoService } from "./geo.js";
+import type { HostMemoryStores } from "./host-memory.js";
 import {
   AssistantError,
   type AssistantTurnEvent,
@@ -83,6 +87,9 @@ function sessionsStub(open = true) {
     },
     async recordTurn(id, hostId, stats) {
       recorded.push({ id, hostId, stats });
+    },
+    async listFinishedByHost() {
+      return [];
     },
     async finish() {
       throw new Error("finish is not called by a turn");
@@ -707,6 +714,189 @@ describe("createJobAssistant", () => {
         SPARKL_ERROR_CODES.UPSTREAM_UNAVAILABLE,
       );
       expect(recorded.map((r) => r.stats.modelFilled)).toEqual([[]]);
+    });
+  });
+
+  describe("host memory", () => {
+    const HISTORY_JOB: Job = {
+      id: "job-past-1",
+      hostId: "host-1",
+      address: "12 Ocean St, Bondi",
+      latitude: -33.8909,
+      longitude: 151.2633,
+      windowStart: "2026-10-20T10:00:00.000Z",
+      windowEnd: "2026-10-20T12:00:00.000Z",
+      sizeSqm: 80,
+      notes: "Change the sheets",
+      priceMinorUnits: 5000,
+      status: "completed",
+      claimedByCleanerId: "cleaner-maria",
+      createdAt: "2026-10-20T03:00:00.000Z",
+      updatedAt: "2026-10-20T03:00:00.000Z",
+    };
+
+    function memoryStores(
+      overrides: Partial<{
+        jobs: Job[];
+        user: User | null;
+        sessions: SessionCorrections[];
+      }> = {},
+    ): HostMemoryStores {
+      return {
+        jobs: { listJobsByHost: async () => overrides.jobs ?? [HISTORY_JOB] },
+        users: {
+          findById: async () =>
+            overrides.user ?? {
+              id: "cleaner-maria",
+              role: "cleaner",
+              name: "Maria",
+              photoUrl: null,
+              serviceLat: null,
+              serviceLng: null,
+              serviceRadiusKm: null,
+              avgRating: 4.8,
+              completedJobCount: 10,
+              createdAt: "2026-10-20T03:00:00.000Z",
+              updatedAt: "2026-10-20T03:00:00.000Z",
+            },
+        },
+        reviews: { findReviewByJobAndAuthor: async () => null },
+        sessions: {
+          listFinishedByHost: async () => overrides.sessions ?? [],
+        },
+      };
+    }
+
+    it("offers get_host_history and answers from the host's jobs", async () => {
+      const { llm, requests } = scripted([
+        { toolCalls: [call("c1", "get_host_history", {})] },
+        { content: "Same as last time?" },
+      ]);
+      const { sessions } = sessionsStub();
+      const assistant = createJobAssistant({
+        llm,
+        geo: geoStub(),
+        now: fixedNow,
+      });
+
+      const result = await assistant.turn(
+        "host-1",
+        input("same as last time"),
+        {
+          sessions,
+          memory: memoryStores(),
+        },
+      );
+
+      expect(requests[0]?.tools?.map((t) => t.name)).toEqual([
+        "update_draft",
+        "geocode_address",
+        "get_host_history",
+      ]);
+      expect(toolOutput(requests[1], "c1")).toEqual({
+        jobs: [
+          {
+            address: "12 Ocean St, Bondi",
+            windowStart: "2026-10-20T10:00:00.000Z",
+            windowEnd: "2026-10-20T12:00:00.000Z",
+            sizeSqm: 80,
+            notes: "Change the sheets",
+            priceMinorUnits: 5000,
+          },
+        ],
+      });
+      expect(result.reply).toBe("Same as last time?");
+    });
+
+    it("pre-fills a single property and tells the model to confirm it", async () => {
+      const { llm, requests } = scripted([
+        { content: "At 12 Ocean St as usual?" },
+      ]);
+      const { sessions } = sessionsStub();
+      const assistant = createJobAssistant({
+        llm,
+        geo: geoStub(),
+        now: fixedNow,
+      });
+
+      const result = await assistant.turn(
+        "host-1",
+        input("this Friday 10 to 1"),
+        {
+          sessions,
+          memory: memoryStores(),
+        },
+      );
+
+      expect(result.draft.address).toBe("12 Ocean St, Bondi");
+      expect(result.draft.latitude).toBe("-33.8909");
+      expect(result.draft.longitude).toBe("151.2633");
+      const system = requests[0]?.messages[0];
+      expect(system?.role).toBe("system");
+      expect(system?.content).toContain("as usual?");
+      expect(system?.content).toContain("never ask for the address");
+    });
+
+    it("adds usual-cleaner and correction hints to the prompt", async () => {
+      const jobs = ["21", "22", "23"].map((day) => ({
+        ...HISTORY_JOB,
+        id: `job-${day}`,
+        windowStart: `2026-10-${day}T10:00:00.000Z`,
+        windowEnd: `2026-10-${day}T12:00:00.000Z`,
+        createdAt: `2026-10-${day}T03:00:00.000Z`,
+      }));
+      const { llm, requests } = scripted([
+        { content: "Go with Maria as always?" },
+      ]);
+      const { sessions } = sessionsStub();
+      const assistant = createJobAssistant({
+        llm,
+        geo: geoStub(),
+        now: fixedNow,
+      });
+
+      await assistant.turn("host-1", input("I need a clean"), {
+        sessions,
+        memory: memoryStores({
+          jobs,
+          sessions: [
+            { modelFilled: ["windowEnd"], hostChanged: ["windowEnd"] },
+            { modelFilled: ["windowEnd"], hostChanged: ["windowEnd"] },
+          ],
+        }),
+      });
+
+      const system = requests[0]?.messages[0];
+      expect(system?.content).toContain("Go with Maria as always?");
+      expect(system?.content).toContain("`windowEnd`");
+    });
+
+    it("runs memory-free when the memory read fails", async () => {
+      const { llm, requests } = scripted([{ content: "ok" }]);
+      const { sessions } = sessionsStub();
+      const assistant = createJobAssistant({
+        llm,
+        geo: geoStub(),
+        now: fixedNow,
+      });
+
+      const result = await assistant.turn("host-1", input("hi"), {
+        sessions,
+        memory: {
+          ...memoryStores(),
+          jobs: {
+            listJobsByHost: async () => {
+              throw new Error("db down");
+            },
+          },
+        },
+      });
+
+      expect(result.reply).toBe("ok");
+      expect(requests[0]?.tools?.map((t) => t.name)).toEqual([
+        "update_draft",
+        "geocode_address",
+      ]);
     });
   });
 });
