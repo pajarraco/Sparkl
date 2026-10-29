@@ -73,6 +73,10 @@ test("a reload keeps each role on its own screens", async ({
   await expect(page.getByTestId("cleaner-profile-screen")).toHaveCount(0);
   await page.goto("/host/my-jobs");
   await expect(page.getByTestId("host-my-jobs-screen")).toBeVisible();
+  // An old cleaner-side URL sends the host home instead of the cleaner screen.
+  await page.goto("/profile");
+  await expect(page).toHaveURL(/\/host\/my-jobs$/);
+  await expect(page.getByTestId("host-my-jobs-screen")).toBeVisible();
 
   const fresh = await browser.newContext();
   const cleanerPage = await fresh.newPage();
