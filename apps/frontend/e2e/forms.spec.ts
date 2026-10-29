@@ -29,6 +29,8 @@ async function newHostPage(
 
 async function fillPostForm(page: Page, address: string): Promise<void> {
   await page.goto("/post");
+  // The Post tab opens on the assistant; the form is one tap away.
+  await page.getByTestId("assistant-review").click();
   await page.getByTestId("post-job-address").fill(address);
   await page.getByTestId("post-job-date").fill(JOB_DAY);
   await page.getByTestId("post-job-window-start").fill("10:00");
@@ -68,6 +70,7 @@ test("empty post form shows validation", async ({ browser }, testInfo) => {
   const { page, close } = await newHostPage(browser, testInfo.workerIndex);
   try {
     await page.goto("/post");
+    await page.getByTestId("assistant-review").click();
     await page.getByTestId("post-job-submit").click();
     await expect(page.getByText("This field is required.")).toBeVisible();
     await expect(page.getByText("Use YYYY-MM-DD.")).toBeVisible();
