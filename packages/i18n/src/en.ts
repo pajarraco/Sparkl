@@ -41,6 +41,28 @@ export const en = {
     submit: "Post job",
     success: "Job posted. Suggested cleaners are below.",
   },
+  assistant: {
+    intro:
+      "Hi! Tell me about the cleaning: where it is, when, and how big the place is.",
+    inputPlaceholder: "Type your answer",
+    send: "Send",
+    thinking: "Thinking…",
+    draftHeading: "Your job so far",
+    draftEmpty: "Nothing filled in yet.",
+    placesHeading: "Which address did you mean?",
+    usePlace: "Use this address",
+    review: "Review and post",
+    readyHint:
+      "Everything required is filled in. Review the form and set your price.",
+    useForm: "Use the form instead",
+    backToAssistant: "Back to the assistant",
+    startOver: "Start over",
+    unavailable:
+      "The assistant is unavailable right now. Use the form instead; your answers are kept.",
+    rateLimited: "Too many messages. Wait a moment, or use the form instead.",
+    tooLong: "Keep your message under 1,000 characters.",
+    sizeValue: "{size} m²",
+  },
   board: {
     title: "Open jobs",
     subtitle: "Ranked by best match",
