@@ -1,0 +1,2 @@
+ALTER TABLE "jobs" ADD COLUMN "preferred_cleaner_id" text;--> statement-breakpoint
+ALTER TABLE "jobs" ADD CONSTRAINT "jobs_preferred_cleaner_id_user_id_fk" FOREIGN KEY ("preferred_cleaner_id") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;

@@ -73,7 +73,7 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(host)" />
+        <Stack.Screen name="host" />
         <Stack.Screen name="(cleaner)" />
       </Stack>
     </SparklProviders>

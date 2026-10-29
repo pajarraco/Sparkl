@@ -18,6 +18,39 @@ import {
 
 const JOB_DAY = "2026-11-07";
 
+// Geo is mocked in e2e (02 plan): autocomplete echoes the typed text as
+// the only place, at the seed coordinates, so the posted address stays
+// unique per run. OSM tiles are blocked to keep runs offline-friendly.
+async function mockGeo(page: Page): Promise<void> {
+  await page.route("https://tile.openstreetmap.org/**", (route) =>
+    route.abort(),
+  );
+  await page.route("**/trpc/geo.autocomplete?**", async (route) => {
+    const raw = new URL(route.request().url()).searchParams.get("input");
+    const query = (JSON.parse(raw ?? "{}") as { 0?: { query?: string } })[0]
+      ?.query;
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify([
+        {
+          result: {
+            data: {
+              places: [
+                {
+                  id: "osm:N1",
+                  label: query ?? "E2E place",
+                  latitude: 25.7617,
+                  longitude: -80.1918,
+                },
+              ],
+            },
+          },
+        },
+      ]),
+    });
+  });
+}
+
 async function newHostPage(
   browser: Browser,
   workerIndex: number,
@@ -28,8 +61,13 @@ async function newHostPage(
 }
 
 async function fillPostForm(page: Page, address: string): Promise<void> {
-  await page.goto("/post");
+  await mockGeo(page);
+  await page.goto("/host/post");
+  // The Post tab opens on the assistant; the form is one tap away.
+  await page.getByTestId("assistant-review").click();
   await page.getByTestId("post-job-address").fill(address);
+  await page.getByTestId("post-job-place-0").click();
+  await expect(page.getByTestId("post-job-map")).toBeVisible();
   await page.getByTestId("post-job-date").fill(JOB_DAY);
   await page.getByTestId("post-job-window-start").fill("10:00");
   await page.getByTestId("post-job-window-end").fill("13:00");
@@ -38,8 +76,6 @@ async function fillPostForm(page: Page, address: string): Promise<void> {
     .getByTestId("post-job-notes")
     .fill("E2E posted job, obviously fake");
   await page.getByTestId("post-job-price").fill("85");
-  await page.getByTestId("post-job-latitude").fill("25.7617");
-  await page.getByTestId("post-job-longitude").fill("-80.1918");
 }
 
 test("host posts a job through the UI and sees success", async ({
@@ -67,11 +103,13 @@ test("host posts a job through the UI and sees success", async ({
 test("empty post form shows validation", async ({ browser }, testInfo) => {
   const { page, close } = await newHostPage(browser, testInfo.workerIndex);
   try {
-    await page.goto("/post");
+    await page.goto("/host/post");
+    await page.getByTestId("assistant-review").click();
     await page.getByTestId("post-job-submit").click();
     await expect(page.getByText("This field is required.")).toBeVisible();
     await expect(page.getByText("Use YYYY-MM-DD.")).toBeVisible();
     await expect(page.getByText("Enter a valid price.")).toBeVisible();
+    await expect(page.getByTestId("post-job-coords-error")).toBeVisible();
     await expect(page.getByTestId("post-job-success")).toHaveCount(0);
   } finally {
     await close();
@@ -240,10 +278,14 @@ test("board distance filter needs a service area first", async ({
     await page.keyboard.press("Escape");
     await expect(page.getByTestId("cleaner-board-sheet")).toHaveCount(0);
     await page.getByRole("tab", { name: "Profile" }).click();
-    await page.getByTestId("cleaner-profile-latitude").fill("25.7617");
-    await page.getByTestId("cleaner-profile-longitude").fill("-80.1918");
-    await page.getByTestId("cleaner-profile-radius").fill("50");
-    await page.getByTestId("cleaner-profile-save-area").click();
+    await mockGeo(page);
+    await page
+      .getByTestId("cleaner-profile-address")
+      .fill("E2E base, obviously fake");
+    await page.getByTestId("cleaner-profile-place-0").click();
+    await page.getByTestId("cleaner-profile-radius-50").click();
+    await page.getByTestId("cleaner-profile-save").click();
+    await expect(page.getByTestId("cleaner-profile-saved")).toBeVisible();
     await page.getByRole("tab", { name: "Board" }).click();
     await page.getByTestId("cleaner-board-chip-distance").click();
     await page.getByTestId("cleaner-board-max-distance").fill("50");

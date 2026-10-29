@@ -73,32 +73,33 @@ Spec: `context/features/02-integrate-baseten.md` (approved 2026-10-29). Phases a
 
 #### P0 — Spike (no merge)
 
-- [ ] Tool calling on Muse Spark Open (Baseten) and Glimmer (Ollama) with the four agent tools
-- [ ] `react-native-maps` + OSM `UrlTile` on RN 0.88 in Expo Go; `react-leaflet` on Expo web
-- [ ] Muse Voice Transcribe endpoint + audio formats with `META_MODEL_IMAGE_API_KEY`
-- [ ] Owner decision: properties table inside 02 P1, or address per job until 03
+- [x] Tool calling on Muse Spark Open (Baseten) and Glimmer (Ollama) with the four agent tools (both pass; results in 02 Verified Facts)
+- [x] `react-native-maps` + OSM `UrlTile` on RN 0.88 in Expo Go; `react-leaflet` on Expo web (iPhone + web pass; Android unchecked)
+- [x] Muse Voice Transcribe endpoint + audio formats with `META_MODEL_IMAGE_API_KEY` (WAV only; 02 Verified Facts)
+- [x] Owner decision: address per job in 02, properties table moves to 03
 
 #### P1 — Core
 
-- [ ] Shared contracts: `jobDraftSchema`, assistant turn/finish, `geoPlaceSchema`, `transcribeInput`
-- [ ] LLM client (`services/llm.ts`, live + fake modes, `reasoning_effort: low`, token cap, timeout) + `.env.example` entries
-- [ ] Geo service (OSM: Photon autocomplete, Nominatim geocode/reverse, cache, 1 req/s, User-Agent) + `geo` router
-- [ ] Job-assistant agent loop (`update_draft`, `geocode_address`; 6-step cap; Zod on every tool argument and output) + `jobAssistant.turn` router
-- [ ] Post tab assistant UI + pre-filled review form with `AddressMapPicker` (native + web); "Use the form instead" keeps the draft
-- [ ] Cleaner `ServiceAreaMapPicker` (pin + radius) + a single save button for service area and availability (from 03)
+- [x] Shared contracts: `jobDraftSchema`, assistant turn/finish, `geoPlaceSchema`, `transcribeInput`
+- [x] LLM client (`services/llm.ts`, live + fake modes, `reasoning_effort: low`, token cap, timeout) + `.env.example` entries
+- [x] Geo service (OSM: Photon autocomplete, Nominatim geocode/reverse, cache, 1 req/s, User-Agent) + `geo` router
+- [x] Job-assistant agent loop (`update_draft`, `geocode_address`; 6-step cap; Zod on every tool argument and output) + `jobAssistant.turn` router
+- [x] Post tab assistant UI + pre-filled review form; "Use the form instead" keeps the draft
+- [x] `AddressMapPicker` on the review form (native + web), replacing the lat/lng fields
+- [x] Cleaner `ServiceAreaMapPicker` (pin + radius) + a single save button for service area and availability (from 03)
 
 #### P2 — Smart
 
-- [ ] `assistant_sessions` migration (no message text) + `jobAssistant.finish` (review-form diff, outcome)
-- [ ] `get_host_history`, `singleProperty` / `usualCleaner` shortcuts, correction-rate prompt hints
-- [ ] `suggest_price` (median of nearby comparable jobs; per-m² fallback in the weights config) + checklist drafting into the notes
-- [ ] "Go with {cleaner} as always?" pins that cleaner to the top of the job's suggestions (real offer waits for 03's two-way assignment)
+- [x] `assistant_sessions` migration (no message text) + `jobAssistant.finish` (review-form diff, outcome)
+- [x] `get_host_history`, `singleProperty` / `usualCleaner` shortcuts, correction-rate prompt hints
+- [x] `suggest_price` (median of nearby comparable jobs; per-m² fallback in the weights config) + checklist drafting into the notes
+- [x] "Go with {cleaner} as always?" pins that cleaner to the top of the job's suggestions (real offer waits for 03's two-way assignment)
 
 #### P3 — Voice
 
 - [ ] Voice service + `voice.transcribe` router (base64, ~30s / 1.5 MB cap, never stored), mic button (`expo-audio` on native / `MediaRecorder` on web), transcript lands in the composer
 
-#### P4 — Stretch (cut first)
+#### P4 — Stretch (cut first; §12 learning L1 goes before it)
 
 - [ ] Smart match explanations on ranked suggestions
 
@@ -141,6 +142,23 @@ Spec: `context/features/03-improvements-issues.md` (approved 2026-10-29). Built 
 #### Close-out
 
 - [ ] Per item: `pnpm verify` green (coverage ≥ 80%) + `e2e` green, output quoted; `CHANGELOG.md` and docs updated
+
+### 12. Assistant learning from use (solutions store)
+
+Spec: `context/features/04-assistant-learning.md` (approved 2026-10-29). L1 ships before Nov 4, ahead of 02 P4. Votes come only from the host's response; only answers are stored, never messages or personal data; shared across hosts with the host's own first.
+
+Resume here (2026-10-30): the first box below. 02 P2 is done and migration `0002_job_preferred_cleaner` is applied on the local dev DB (main tree only, not the 03 worktree DB).
+
+- [ ] Shared: solution kinds + payload schemas, `SOLUTION_TAGS`, `SOLUTION_RANKING_CONFIG`, `proposals` on the turn output, `assistantFeedbackInput`
+- [ ] Pure services + tests: ranking (Wilson × recency, host-first), personal-data check, payload fingerprint
+- [ ] `assistant_solutions` + `assistant_solution_events` migration (`0003`) and store
+- [ ] `find_solutions` / `save_solution` tools in the agent loop (Zod args, save cap, quoted results, `proposed` events)
+- [ ] Feedback: `jobAssistant.feedback` (chip taps) + accept/reject from the review-form diff in `finish`
+- [ ] Sharing: fingerprint → global row, 3 distinct hosts with posted jobs, rejected-by-host never re-proposed, `solutions:retire` script
+- [ ] 02 price hint + usual-cleaner offer report into `offer_preference`
+- [ ] UI: "Use this" / "Not this" chips under proposals (i18n; `design.md` first if a style is new)
+- [ ] Seed: 3 obviously-fake global checklists + 3 FAQ entries
+- [ ] Gates: `pnpm verify` green + e2e (saved checklist proposed first in session 2; a checklist with a phone number refused), output quoted; `CHANGELOG.md` and docs updated
 
 ### Stretch (only if time allows)
 

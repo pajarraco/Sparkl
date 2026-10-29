@@ -1,16 +1,19 @@
 import { useState } from "react";
-import { StyleSheet, Switch, Text, View } from "react-native";
+import { Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import { AddressMapPicker } from "../../../components/AddressMapPicker";
 import { Screen } from "../../../components/Screen";
 import { SparklButton } from "../../../components/SparklButton";
-import { SparklTextField } from "../../../components/SparklTextField";
+import type { AddressValue } from "../../../providers/address-picker";
 import { sparklTrpc } from "../../../providers/app-providers";
 import { authClient } from "../../../providers/auth-instance";
 import {
   type AvailabilityToggles,
-  availabilitySlotsForToggles,
+  DEFAULT_RADIUS_KM,
+  RADIUS_OPTIONS_KM,
+  areaValueFromProfile,
   initialsForName,
+  planProfileSave,
   togglesForAvailability,
-  validateServiceArea,
 } from "../../../providers/cleaner-profile";
 import { getStrings } from "../../../providers/i18n";
 import {
@@ -22,11 +25,13 @@ import {
 
 // Cleaner Profile (design.md Screen Inventory): identity header (initials
 // avatar, name, rating and completed-job count), service-area editor
-// (feeds the distance filter and ranking), availability editor (weekday /
-// weekend toggles expanding to 09:00–17:00 slots), and sign-out. Photo
-// upload lands later — the avatar shows initials until then (design.md
-// allows photo or initials). Availability reads back through the public
-// profile query; both saves refetch so the header never goes stale.
+// (base address or pin on an OSM map plus a radius chip; feeds the
+// distance filter and ranking), availability editor (weekday / weekend
+// toggles expanding to 09:00–17:00 slots), one Save button for both (02
+// plan, from 03), and sign-out. Photo upload lands later — the avatar
+// shows initials until then (design.md allows photo or initials).
+// Availability reads back through the public profile query; saving
+// refetches both queries so the header never goes stale.
 
 const styles = StyleSheet.create({
   section: {
@@ -108,6 +113,35 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: THEME_COLORS.indigo,
   },
+  chips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: THEME_SPACING.rowMin,
+  },
+  chip: {
+    minHeight: THEME_SPACING.touchTarget,
+    minWidth: THEME_SPACING.touchTarget,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: THEME_SPACING.rowMax,
+    borderWidth: 1,
+    borderColor: THEME_COLORS.stone,
+    borderRadius: THEME_RADII.control,
+    backgroundColor: THEME_COLORS.paper,
+  },
+  chipSelected: {
+    borderColor: THEME_COLORS.indigo,
+    backgroundColor: THEME_COLORS.indigo,
+  },
+  chipText: {
+    fontFamily: THEME_FONT_FAMILY.medium,
+    fontSize: 14,
+    lineHeight: 20,
+    color: THEME_COLORS.ink,
+  },
+  chipTextSelected: {
+    color: THEME_COLORS.paper,
+  },
   skeleton: {
     height: 96,
     backgroundColor: THEME_COLORS.paper2,
@@ -151,20 +185,12 @@ export default function CleanerProfileScreen() {
   const setServiceArea = sparklTrpc.users.setServiceArea.useMutation();
   const setAvailability = sparklTrpc.users.setAvailability.useMutation();
 
+  // null = not edited yet; the saved profile values show until then.
   const [toggles, setToggles] = useState<AvailabilityToggles | null>(null);
-  const [availabilitySaved, setAvailabilitySaved] = useState(false);
-  const [availabilityError, setAvailabilityError] = useState<string | null>(
-    null,
-  );
-  const [latitude, setLatitude] = useState<string | null>(null);
-  const [longitude, setLongitude] = useState<string | null>(null);
-  const [radiusKm, setRadiusKm] = useState<string | null>(null);
-  const [areaErrors, setAreaErrors] = useState<{
-    latitude?: string | undefined;
-    longitude?: string | undefined;
-    radiusKm?: string | undefined;
-  }>({});
-  const [areaError, setAreaError] = useState<string | null>(null);
+  const [area, setArea] = useState<AddressValue | null>(null);
+  const [radiusKm, setRadiusKm] = useState<number | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
 
   // No explicit navigation here: the tab layout redirects to welcome once
   // the session clears. Navigating too caused a visible double reload.
@@ -172,57 +198,29 @@ export default function CleanerProfileScreen() {
     await authClient.signOut();
   }
 
-  async function handleSaveArea(): Promise<void> {
-    const profile = profileQuery.data;
-    const result = validateServiceArea({
-      latitude:
-        latitude ??
-        (profile?.serviceLat === null || profile?.serviceLat === undefined
-          ? ""
-          : String(profile.serviceLat)),
-      longitude:
-        longitude ??
-        (profile?.serviceLng === null || profile?.serviceLng === undefined
-          ? ""
-          : String(profile.serviceLng)),
-      radiusKm:
-        radiusKm ??
-        (profile?.serviceRadiusKm === null ||
-        profile?.serviceRadiusKm === undefined
-          ? ""
-          : String(profile.serviceRadiusKm)),
+  function edited(): void {
+    setSaved(false);
+    setSaveError(null);
+  }
+
+  async function handleSave(): Promise<void> {
+    const plan = planProfileSave({
+      area: effectiveArea,
+      radiusKm: effectiveRadius,
+      toggles: effectiveToggles,
     });
-    setAreaErrors(result.errors);
-    if (result.data === null) return;
-    setAreaError(null);
+    setSaved(false);
+    setSaveError(plan.error);
+    if (plan.error !== null) return;
     try {
-      await setServiceArea.mutateAsync({
-        serviceLat: result.data.latitude,
-        serviceLng: result.data.longitude,
-        serviceRadiusKm: result.data.radiusKm,
-      });
-      await profileQuery.refetch();
+      if (plan.serviceArea !== null) {
+        await setServiceArea.mutateAsync(plan.serviceArea);
+      }
+      await setAvailability.mutateAsync({ slots: plan.slots });
+      await Promise.all([profileQuery.refetch(), publicQuery.refetch()]);
+      setSaved(true);
     } catch {
-      setAreaError(strings.errors.generic);
-    }
-  }
-
-  function handleToggle(next: AvailabilityToggles): void {
-    setToggles(next);
-    setAvailabilitySaved(false);
-    setAvailabilityError(null);
-  }
-
-  async function handleSaveAvailability(): Promise<void> {
-    setAvailabilityError(null);
-    try {
-      await setAvailability.mutateAsync({
-        slots: availabilitySlotsForToggles(effectiveToggles),
-      });
-      await publicQuery.refetch();
-      setAvailabilitySaved(true);
-    } catch {
-      setAvailabilityError(strings.errors.generic);
+      setSaveError(strings.errors.generic);
     }
   }
 
@@ -257,6 +255,9 @@ export default function CleanerProfileScreen() {
   const profile = profileQuery.data;
   const effectiveToggles =
     toggles ?? togglesForAvailability(publicQuery.data?.availability ?? []);
+  const effectiveArea = area ?? areaValueFromProfile(profile);
+  const effectiveRadius =
+    radiusKm ?? profile.serviceRadiusKm ?? DEFAULT_RADIUS_KM;
   const trustLine =
     profile.avgRating === null
       ? `${profile.completedJobCount} ${strings.jobCard.jobsDone}`
@@ -282,58 +283,50 @@ export default function CleanerProfileScreen() {
       </View>
       <View style={styles.section}>
         <Text style={styles.heading}>{strings.profile.areaLabel}</Text>
-        <SparklTextField
-          accessibilityLabel={strings.postJob.latitudeLabel}
-          error={areaErrors.latitude}
-          keyboardType="numbers-and-punctuation"
-          label={strings.postJob.latitudeLabel}
-          onChangeText={setLatitude}
-          testID="cleaner-profile-latitude"
-          value={
-            latitude ??
-            (profile.serviceLat === null ? "" : String(profile.serviceLat))
-          }
-        />
-        <SparklTextField
-          accessibilityLabel={strings.postJob.longitudeLabel}
-          error={areaErrors.longitude}
-          keyboardType="numbers-and-punctuation"
-          label={strings.postJob.longitudeLabel}
-          onChangeText={setLongitude}
-          testID="cleaner-profile-longitude"
-          value={
-            longitude ??
-            (profile.serviceLng === null ? "" : String(profile.serviceLng))
-          }
-        />
-        <SparklTextField
-          accessibilityLabel={strings.profile.radiusLabel}
-          error={areaErrors.radiusKm}
-          keyboardType="decimal-pad"
-          label={strings.profile.radiusLabel}
-          onChangeText={setRadiusKm}
-          testID="cleaner-profile-radius"
-          value={
-            radiusKm ??
-            (profile.serviceRadiusKm === null
-              ? ""
-              : String(profile.serviceRadiusKm))
-          }
-        />
-        {areaError === null ? null : (
-          <Text accessibilityLiveRegion="polite" style={styles.formError}>
-            {areaError}
-          </Text>
-        )}
-        <SparklButton
-          accessibilityLabel={strings.profile.saveArea}
-          loading={setServiceArea.isPending}
-          onPress={() => {
-            void handleSaveArea();
+        <AddressMapPicker
+          label={strings.profile.baseAddressLabel}
+          mapHint={strings.profile.areaHint}
+          onChange={(value) => {
+            setArea(value);
+            edited();
           }}
-          testID="cleaner-profile-save-area"
-          title={strings.profile.saveArea}
+          radiusKm={effectiveRadius}
+          testIDPrefix="cleaner-profile"
+          value={effectiveArea}
         />
+        <Text style={styles.hint}>{strings.profile.radiusLabel}</Text>
+        <View style={styles.chips}>
+          {RADIUS_OPTIONS_KM.map((km) => {
+            const selected = km === effectiveRadius;
+            const label = strings.profile.radiusOption.replace(
+              "{km}",
+              String(km),
+            );
+            return (
+              <Pressable
+                accessibilityLabel={label}
+                accessibilityRole="radio"
+                accessibilityState={{ selected }}
+                key={km}
+                onPress={() => {
+                  setRadiusKm(km);
+                  edited();
+                }}
+                style={[styles.chip, selected ? styles.chipSelected : null]}
+                testID={`cleaner-profile-radius-${km}`}
+              >
+                <Text
+                  style={[
+                    styles.chipText,
+                    selected ? styles.chipTextSelected : null,
+                  ]}
+                >
+                  {label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
       <View style={styles.section}>
         <Text style={styles.heading}>{strings.availability.title}</Text>
@@ -341,7 +334,8 @@ export default function CleanerProfileScreen() {
         <ToggleRow
           label={strings.availability.weekdaysLabel}
           onValueChange={(value) => {
-            handleToggle({ ...effectiveToggles, weekdays: value });
+            setToggles({ ...effectiveToggles, weekdays: value });
+            edited();
           }}
           testID="cleaner-profile-weekdays"
           value={effectiveToggles.weekdays}
@@ -349,29 +343,40 @@ export default function CleanerProfileScreen() {
         <ToggleRow
           label={strings.availability.weekendLabel}
           onValueChange={(value) => {
-            handleToggle({ ...effectiveToggles, weekend: value });
+            setToggles({ ...effectiveToggles, weekend: value });
+            edited();
           }}
           testID="cleaner-profile-weekend"
           value={effectiveToggles.weekend}
         />
-        {availabilityError === null ? null : (
-          <Text accessibilityLiveRegion="polite" style={styles.formError}>
-            {availabilityError}
+      </View>
+      <View style={styles.section}>
+        {saveError === null ? null : (
+          <Text
+            accessibilityLiveRegion="polite"
+            style={styles.formError}
+            testID="cleaner-profile-save-error"
+          >
+            {saveError}
           </Text>
         )}
-        {availabilitySaved ? (
-          <Text accessibilityLiveRegion="polite" style={styles.saved}>
-            {strings.availability.saved}
+        {saved ? (
+          <Text
+            accessibilityLiveRegion="polite"
+            style={styles.saved}
+            testID="cleaner-profile-saved"
+          >
+            {strings.profile.saved}
           </Text>
         ) : null}
         <SparklButton
-          accessibilityLabel={strings.availability.save}
-          loading={setAvailability.isPending}
+          accessibilityLabel={strings.profile.save}
+          loading={setServiceArea.isPending || setAvailability.isPending}
           onPress={() => {
-            void handleSaveAvailability();
+            void handleSave();
           }}
-          testID="cleaner-profile-save-availability"
-          title={strings.availability.save}
+          testID="cleaner-profile-save"
+          title={strings.profile.save}
         />
       </View>
       <View style={styles.section}>

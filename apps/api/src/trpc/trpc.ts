@@ -19,6 +19,8 @@ const SPARKL_TO_TRPC: Record<SparklErrorCode, TRPCError["code"]> = {
   [SPARKL_ERROR_CODES.REVIEW_NOT_ALLOWED]: "FORBIDDEN",
   [SPARKL_ERROR_CODES.REVIEW_DUPLICATE]: "CONFLICT",
   [SPARKL_ERROR_CODES.VALIDATION_ERROR]: "BAD_REQUEST",
+  [SPARKL_ERROR_CODES.RATE_LIMITED]: "TOO_MANY_REQUESTS",
+  [SPARKL_ERROR_CODES.UPSTREAM_UNAVAILABLE]: "SERVICE_UNAVAILABLE",
 };
 
 function isSparklError(
@@ -47,12 +49,17 @@ export function toTRPCError(err: unknown): TRPCError {
   return new TRPCError({ code: "INTERNAL_SERVER_ERROR", cause: err });
 }
 
+// tRPC v11 never throws past next(): a failing resolver comes back as
+// { ok: false, error } with the original error as `cause`. Map Sparkl
+// domain errors from there (a try/catch here never fires, which made
+// every domain error a 500).
 const errorMapper = t.middleware(async ({ next }) => {
-  try {
-    return await next();
-  } catch (err) {
-    throw toTRPCError(err);
+  const result = await next();
+  const cause = result.ok ? undefined : result.error.cause;
+  if (!(cause instanceof TRPCError) && isSparklError(cause)) {
+    throw toTRPCError(cause);
   }
+  return result;
 });
 
 const requireAuth = t.middleware(async ({ ctx, next }) => {
@@ -68,11 +75,11 @@ export const authedProcedure = t.procedure.use(errorMapper).use(requireAuth);
 
 export function roleProcedure(...allowed: UserRole[]) {
   const roles = allowed.map((r) => userRoleSchema.parse(r));
-  return authedProcedure.use(
-    t.middleware(async ({ ctx, next }) => {
-      if (!ctx.role || !roles.includes(ctx.role))
-        throw new TRPCError({ code: "FORBIDDEN" });
-      return next({ ctx });
-    }),
-  );
+  // Inline middleware (not t.middleware) so the signed-in ctx narrowing
+  // from authedProcedure carries through to the resolver.
+  return authedProcedure.use(async ({ ctx, next }) => {
+    if (!ctx.role || !roles.includes(ctx.role))
+      throw new TRPCError({ code: "FORBIDDEN" });
+    return next();
+  });
 }

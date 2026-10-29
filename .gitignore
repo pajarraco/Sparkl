@@ -15,3 +15,4 @@ coverage/
 .pnpm-store/*
 test-results/
 context/archive/baseten-prompt.md
+.claude

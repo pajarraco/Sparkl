@@ -189,6 +189,35 @@ describe("matching service", () => {
     }
   });
 
+  it("puts the pinned usual cleaner first, ahead of a higher score", async () => {
+    const job = makeJob({ preferredCleanerId: CLEANER_B });
+    const done = makeJob({
+      status: "completed",
+      claimedByCleanerId: CLEANER_A,
+    });
+    const stores = makeStores({
+      users: [
+        makeUser({ id: CLEANER_A, avgRating: 4.9, completedJobCount: 12 }),
+        makeUser({
+          id: CLEANER_B,
+          name: "Bo Cleaner",
+          avgRating: 3.0,
+          completedJobCount: 0,
+        }),
+      ],
+      availability: { [CLEANER_A]: [coveringSlot(CLEANER_A)] },
+      jobs: [job, done],
+      messages: [],
+    });
+    const { suggestions } = await suggestCleanersForJob(
+      stores,
+      flagsOff,
+      baseArgs(job.id),
+    );
+    expect(suggestions[0]?.cleaner.profile.id).toBe(CLEANER_B);
+    expect(suggestions[0]?.score ?? 1).toBeLessThan(suggestions[1]?.score ?? 0);
+  });
+
   it("availability overlap decides otherwise-tied cleaners", async () => {
     const job = makeJob();
     const stores = makeStores({

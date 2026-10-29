@@ -137,6 +137,18 @@ describe("updateServiceArea", () => {
     });
     expect(updated.serviceRadiusKm).toBe(15);
   });
+
+  it("rejects hosts with FORBIDDEN and leaves their row untouched", async () => {
+    const store = storeWithCleaner();
+    await expect(
+      updateServiceArea(store, HOST_ID, {
+        serviceLat: 41.39,
+        serviceLng: 2.17,
+        serviceRadiusKm: 15,
+      }),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(store.users.get(HOST_ID)?.serviceLat).toBeNull();
+  });
 });
 
 describe("setAvailability", () => {

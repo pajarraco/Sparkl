@@ -82,6 +82,36 @@ Status: approved by the owner on 2026-10-29. Tasks are in
   - An 8.3s TTS clip came back as
     `{"transcript":"I need a turnover clean this Friday from 10 to 1 at 12 Ocean Street, Bondi. ...","audioDurationMs":8320}`
     in about 1.7s. Listed price: about $0.18 per audio hour.
+- **Tool calling works on both models** (P0 spike, 2026-10-29). Same
+  script, the four tools with stubbed results, prompt "Turnover clean this
+  Friday 10 to 1 at 12 Ocean St, Bondi. About 80 m2.":
+  - Baseten Spark Open: 3 requests in 5.3s, 3,818 tokens in / 839 out
+    (~$0.008). It sent `get_host_history`, `geocode_address` and
+    `update_draft` as **parallel** tool calls in one step, then
+    `suggest_price` with the geocoder's coordinates, then a reply.
+  - Glimmer: 5 requests in 95s, 4,931 in / 764 out, one tool per step,
+    same correct arguments (`2026-10-30`, `10:00`–`13:00`, 80 m²).
+  - Consequences for the loop: handle several tool calls per step; the
+    address and coordinates come from the geocode candidate, never from
+    the `update_draft` patch (Spark wrote the raw address text before the
+    geocode result came back); the model said "Ready to post?", so the
+    reply wording is never trusted, and `readyForReview` is computed by
+    the service. Tools stay the main path; the JSON-mode loop is the
+    fallback.
+- **Maps work** (P0 spike, 2026-10-29, branch `spike/maps`, not merged):
+  - Native: `react-native-maps@1.29.11` (the version bundled in Expo Go
+    for SDK 58) with an OSM `UrlTile`, a draggable `Marker` and a
+    `Circle` passed the owner's Expo Go check on **iPhone** (tiles, drag,
+    tap to move, radius). Android is not checked yet; there the map uses
+    `mapType="none"` so only OSM tiles show. The OSM tile server accepts
+    Android's default HTTP client (200).
+  - Web: `leaflet@1.9.4` + `react-leaflet@5.0.0` in a `.web.tsx` file,
+    checked in Playwright on both viewports: OSM tiles load, attribution
+    visible, click moves the pin, no console errors. A `divIcon` pin
+    avoids Leaflet's default marker images, which bundlers break. Metro
+    bundles `leaflet/dist/leaflet.css`; TypeScript needs a `*.css`
+    module declaration.
+  - Fallback (Leaflet in a WebView) not needed.
 - **Voice format gap:** the browser's `MediaRecorder` produces
   WebM/Opus, and on Android `expo-audio` records AAC/3GP. Neither is WAV.
   Planned fixes:
@@ -331,9 +361,14 @@ Phases are ordered by what gets cut last. Deadline: Nov 4, 9 PM ET.
     `geocode_address` for returning hosts;
   - `singleProperty` becomes a simple count.
 
-  Owner decision needed: build properties inside 02 P1, or ship 02 with
-  addresses on each job and move to properties in 03. Until decided, P1
-  keeps the address on the job.
+  **Decided (owner, 2026-10-29): address per job in 02; properties move to
+  03.** `singleProperty` is one distinct geocoded address.
 - **Usual cleaner as a real assignment** depends on 03's two-way
   assignment (host offers, cleaner accepts). Until then it is a pinned
   suggestion only.
+- **Learning from use (approved, 2026-10-29):** a solutions store the agent
+  reads and writes, ranked by the host's response and shared across hosts
+  with the host's own first. It ships before P4. The P2 price hint and
+  usual-cleaner offer stay as computed tools and report into it. Plan and
+  owner decisions are in `context/features/04-assistant-learning.md`; tasks
+  are in `tasks.md` §12.

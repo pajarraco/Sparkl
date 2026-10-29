@@ -43,6 +43,39 @@ export const en = {
     timePlaceholder: "HH:MM",
     submit: "Post job",
     success: "Job posted. Suggested cleaners are below.",
+    addressHint: "Start typing, then pick your address from the list.",
+    searching: "Searching…",
+    noMatches: "No matches. Try the street and suburb.",
+    pickAddress: "Pick the address from the list or drop the pin on the map.",
+    mapHint: "Drag the pin to the exact entrance.",
+    osmAttribution: "© OpenStreetMap contributors",
+  },
+  assistant: {
+    intro:
+      "Hi! Tell me about the cleaning: where it is, when, and how big the place is.",
+    inputPlaceholder: "Type your answer",
+    send: "Send",
+    thinking: "Thinking…",
+    draftHeading: "Your job so far",
+    draftEmpty: "Nothing filled in yet.",
+    placesHeading: "Which address did you mean?",
+    usePlace: "Use this address",
+    review: "Review and post",
+    readyHint:
+      "Everything required is filled in. Review the form and set your price.",
+    useForm: "Use the form instead",
+    backToAssistant: "Back to the assistant",
+    startOver: "Start over",
+    unavailable:
+      "The assistant is unavailable right now. Use the form instead; your answers are kept.",
+    rateLimited: "Too many messages. Wait a moment, or use the form instead.",
+    tooLong: "Keep your message under 1,000 characters.",
+    sizeValue: "{size} m²",
+    priceComparables:
+      "Similar jobs nearby suggest about {price} ({count} jobs). You set the final price.",
+    priceRate: "Based on the size, about {price}. You set the final price.",
+    pinned:
+      "Your usual cleaner is pinned to the top of this job's suggestions.",
   },
   board: {
     title: "Open jobs",
@@ -106,7 +139,14 @@ export const en = {
     photoLabel: "Photo",
     areaLabel: "Service area",
     radiusLabel: "Radius (km)",
-    saveArea: "Save service area",
+    baseAddressLabel: "Base address",
+    areaHint:
+      "Search your base address, then drag the pin. Jobs inside the circle rank higher.",
+    radiusOption: "{km} km",
+    pickArea:
+      "Pick your base address from the list or drop the pin on the map.",
+    save: "Save profile",
+    saved: "Profile saved.",
     ratingHeading: "Rating",
     jobsDoneHeading: "Jobs completed",
     viewPublic: "View public profile",
@@ -118,8 +158,6 @@ export const en = {
     hint: "When you are usually available for cleanings.",
     weekdaysLabel: "Weekdays",
     weekendLabel: "Weekends",
-    save: "Save availability",
-    saved: "Availability saved.",
   },
   filters: {
     title: "Filters",

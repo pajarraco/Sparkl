@@ -200,6 +200,12 @@ export function scoreCleaner(
   );
 }
 
+// The host's pinned (usual) cleaner sorts ahead of every score. A pin is a
+// suggestion order only; it never assigns the job (two-way assignment, 03).
+function pinRank(cleanerId: string, pinned: string | null): number {
+  return cleanerId === pinned ? 0 : 1;
+}
+
 export async function suggestCleanersForJob(
   stores: MatchingStores,
   flags: RankingFlags,
@@ -256,8 +262,11 @@ export async function suggestCleanersForJob(
       breakdown,
     });
   }
+  const pinned = job.preferredCleanerId ?? null;
   ranked.sort(
     (a, b) =>
+      pinRank(a.cleaner.profile.id, pinned) -
+        pinRank(b.cleaner.profile.id, pinned) ||
       b.score - a.score ||
       b.cleaner.profile.completedJobCount -
         a.cleaner.profile.completedJobCount ||

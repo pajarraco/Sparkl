@@ -6,6 +6,7 @@ Here are some issues an improvement that I would like to make. follow this list 
 
 - Switching from Host to Cleaner doesn't work at the first time. only when I sign in two times works
 - there is now back bottom when you go inside the details of the jobs or inside the chat. also the main navigation is not visible
+- Submit the review doesn't work. it get me a "Something went wrong. Try again." message
 
 ## Improvements
 
@@ -36,6 +37,7 @@ work starts.
 
 | Item | Likely cause | Fit |
 | ---- | ------------ | --- |
+| Submit the review doesn't work ("Something went wrong. Try again.") | Every non-duplicate `reviews.create` failure maps to the generic string (`reviewSubmitErrorMessage` only special-cases `CONFLICT`), so the message hides the cause. Suspects, most likely first: the job is missing from `jobs.myJobs` on that screen (subject resolves to null), the job is not yet `completed` in the caller's cache, the caller is not a job party or the subject is wrong, or a Zod input failure. Needs a diagnosis pass with the real error first. | Bug: blocks the demo script (mutual reviews). Highest priority — planned first as A0. |
 | Host → Cleaner switch only works on the second sign-in | Probably the role read from a cached session or tRPC cache after sign-out and sign-in. `auth-session.ts` already has switching logic. Needs a diagnosis pass first. | Bug: breaks the demo when switching accounts on one device. High priority. |
 | No back button in job detail / chat; main navigation hidden | Side effect of the Stack-over-Tabs fix (CHANGELOG 2026-10-29 11:35): detail screens are on a Stack with `headerShown: false`, above the tabs. Fix: show a header back button, or nest a Stack inside each tab so the tab bar stays visible. `design.md` already says stacks push over their own tab and each tab keeps its own history, which points to nested stacks. | Bug against `design.md`. High priority. |
 
@@ -70,6 +72,7 @@ Status: approved by the owner on 2026-10-29. Tasks are in `context/tasks.md`
    visible, so the user can jump to another tab from a job or a chat.
 4. **Role-switch bug:** seen on web. Diagnose there first, then check
    Expo Go.
+5. **Review-submit bug:** reported in the owner issues list; it blocks demo-script step 5 (mutual reviews). Planned first as A0; diagnose with the real error before fixing.
 
 ### Working alongside 02
 
@@ -84,6 +87,7 @@ The 02 session works in the same repo. To avoid collisions:
 
 | Item | Files it touches | Clash with 02 | Start |
 | ---- | ---------------- | ------------- | ----- |
+| A0 Review submit | Leave Review screens, `leave-review.ts`, `reviews` service/router | None (form + review path untouched by 02) | First |
 | A1 Role switch | `providers/auth-*`, profile sign-out, root layout | None | Now |
 | A2 Navigation | group and tab layouts, route moves, `Screen` | None (Post does not navigate after posting) | Now |
 | B Messages | new chat service and router, `messages.tsx` | None | Now (after A2 for the stack) |
@@ -92,6 +96,41 @@ The 02 session works in the same repo. To avoid collisions:
 | E Properties | jobs schema, Post form, new tab, assistant tools | 02 P1 Post form and assistant | After 02 P1 |
 
 If the Nov 4 deadline is at risk, cut from the bottom: E first, then D.
+
+### A0 — Submit review fails with "Something went wrong. Try again." (first)
+
+The Leave Review screen shows `errors.generic` for every non-duplicate
+`reviews.create` failure (`reviewSubmitErrorMessage` in
+`providers/leave-review.ts` only special-cases `CONFLICT`, which maps to
+`REVIEW_DUPLICATE`), so the message hides the cause. The screen also
+shows the same generic string when the job is missing from
+`jobs.myJobs`, when the subject resolves to null, or when the job is not
+`completed`.
+
+**Diagnose first.** Reproduce on web with the network response open and
+record: which state shows (form vs. generic + Retry vs. success), the
+role, the job status on both sides, whether the job appears in history,
+and the real error code. Suspects, most likely first:
+
+1. The job is not in the caller's `myJobs`/`myClaimed` list on that
+   screen, so `subjectId` is null and the screen errors without ever
+   calling the API.
+2. The job is not `completed` in the caller's cache (the other party
+   transitioned it; this session has stale data) → `REVIEW_NOT_ALLOWED`.
+3. The caller is not a job party, or the subject is not the other party
+   (unclaimed job, wrong id) → `NOT_JOB_PARTY` / `FORBIDDEN`.
+4. A Zod input failure (bad `jobId` / `subjectId` shape) → `BAD_REQUEST`.
+5. A duplicate review — this one shows "already reviewed", not the
+   generic string, which already rules it out when the generic shows.
+
+**Fix** (final shape depends on the diagnosis): repair the guard/data
+path the repro fingers (query, segment, subject resolution, or stale
+status), and only then decide whether the generic mapping needs a
+narrower case. No lifecycle, ranking, or schema changes expected.
+
+**Done when:** host and cleaner can each submit a review from history on
+web and on one Expo Go target, and a regression test covers the failing
+state found above.
 
 ### A1 — Host → Cleaner switch fails on the first sign-in (web)
 

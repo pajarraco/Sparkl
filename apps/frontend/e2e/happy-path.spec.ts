@@ -79,7 +79,7 @@ test("claim, chat, history refetch", async ({ browser }, testInfo) => {
 
     // Host reads the message from their own chat thread (claimed jobs
     // live under the Active segment).
-    await host.page.goto("/post");
+    await host.page.goto("/host/post");
     await host.page.getByRole("tab", { name: "My jobs" }).click();
     await host.page.getByTestId("host-my-jobs-segment-active").click();
     await tap(host.page, `host-job-card-${jobId}`);
@@ -136,7 +136,7 @@ test("start, complete, both reviews", async ({ browser }, testInfo) => {
     await tap(cleaner.page, `cleaner-job-card-${jobId}`);
     await tap(cleaner.page, "cleaner-job-start");
     await expect(cleaner.page.getByTestId("cleaner-job-start")).toHaveCount(0);
-    await host.page.goto("/post");
+    await host.page.goto("/host/post");
     await host.page.getByRole("tab", { name: "My jobs" }).click();
     await host.page.getByTestId("host-my-jobs-segment-active").click();
     await tap(host.page, `host-job-card-${jobId}`);

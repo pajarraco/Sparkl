@@ -71,7 +71,7 @@ Role-based bottom tabs. The tab bar changes with the signed-in role:
 
 ## Screen Inventory
 
-**Host:** My Jobs (open / active / history) · Post Job (single form: address, window, size/notes, price) · Job Detail (status, ranked cleaner suggestions, chat entry, lifecycle actions) · Chat Thread · Leave Review · Profile.
+**Host:** My Jobs (open / active / history) · Post Job (assistant chat with a live draft card, a price-hint line and a "usual cleaner pinned" line; "Review" / "Use the form instead" opens the form: address map picker, window, size/notes, price) · Job Detail (status, ranked cleaner suggestions, chat entry, lifecycle actions) · Chat Thread · Leave Review · Profile.
 
 **Cleaner:** Board (ranked jobs + filters: date, distance, price) · Job Detail (full info, claim CTA) · My Jobs (claimed / active / history) · Chat Thread · Leave Review · Profile (photo, service area, availability editor).
 
@@ -79,7 +79,7 @@ Role-based bottom tabs. The tab bar changes with the signed-in role:
 
 ## Key Flows
 
-**Post → fill → complete (host):** Post tab → form → Job Detail shows ranked cleaner suggestions → cleaner claims → coordinate in Chat Thread → mark completed → Leave Review.
+**Post → fill → complete (host):** Post tab → assistant (or the form directly) → review form → Job Detail shows ranked cleaner suggestions → cleaner claims → coordinate in Chat Thread → mark completed → Leave Review.
 
 **Find → claim → complete (cleaner):** Board (ranked) → Job Detail → Claim → appears in My Jobs → Chat Thread to confirm → mark in progress → mark completed → Leave Review.
 
