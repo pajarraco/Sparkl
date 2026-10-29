@@ -148,3 +148,68 @@ export function formatMatchPercent(score: number): string {
   const percent = Math.round(Math.min(Math.max(score, 0), 1) * 100);
   return `${percent}% ${getStrings().board.matchWord}`;
 }
+
+// Filter chips (03 C, design.md Filter chips): the Board keeps the applied
+// raw values per field; a chip shows its value when active, its label
+// otherwise. Each sheet edits one field and the whole set goes back
+// through validateBoardFilters, so the filter logic is unchanged.
+
+export type BoardFilterValues = Record<BoardFilterField, string>;
+
+export const EMPTY_BOARD_FILTERS: BoardFilterValues = {
+  date: "",
+  maxDistanceKm: "",
+  minPrice: "",
+};
+
+const chipDayFormat = new Intl.DateTimeFormat("en-US", {
+  weekday: "short",
+  month: "short",
+  day: "numeric",
+  timeZone: "UTC",
+});
+
+export function isBoardFilterActive(
+  values: BoardFilterValues,
+  field: BoardFilterField,
+): boolean {
+  return values[field].trim() !== "";
+}
+
+export function anyBoardFilterActive(values: BoardFilterValues): boolean {
+  return (
+    isBoardFilterActive(values, "date") ||
+    isBoardFilterActive(values, "maxDistanceKm") ||
+    isBoardFilterActive(values, "minPrice")
+  );
+}
+
+export function withBoardFilter(
+  values: BoardFilterValues,
+  field: BoardFilterField,
+  raw: string,
+): BoardFilterValues {
+  return { ...values, [field]: raw.trim() };
+}
+
+export function boardFilterChipLabel(
+  field: BoardFilterField,
+  values: BoardFilterValues,
+): string {
+  const strings = getStrings().filters;
+  const raw = values[field].trim();
+  if (field === "date") {
+    return raw === ""
+      ? strings.dateLabel
+      : chipDayFormat.format(new Date(`${raw}T00:00:00Z`));
+  }
+  if (field === "maxDistanceKm") {
+    return raw === "" ? strings.distanceLabel : `≤ ${raw} km`;
+  }
+  if (raw === "") return strings.price;
+  // Whole amounts drop the cents on a chip ("≥ $80"); others keep them.
+  const minor = Math.round(Number(raw) * 100);
+  const price =
+    minor % 100 === 0 ? `$${minor / 100}` : formatPriceMinorUnits(minor);
+  return `≥ ${price}`;
+}

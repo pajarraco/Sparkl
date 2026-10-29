@@ -199,8 +199,11 @@ message.
 - Tapping a chip opens a bottom sheet built on React Native `Modal`, so
   no new dependency, with that one field and Apply / Clear. The sheet
   reuses `validateBoardFilters` and the existing field testIDs.
-- The distance chip is disabled, with a hint, until the cleaner has set
-  a service area.
+- Without a service area, the distance chip still opens; its sheet shows
+  the "set your service area" hint instead of the field (a disabled chip
+  would not say why).
+- The chips wrap to a second line instead of scrolling sideways, so
+  "Clear all" is never hidden off-screen on a phone.
 - Chip labels and the "apply one filter" merge go in
   `providers/ranked-board.ts`, with unit tests. The filter logic and the
   API are unchanged.

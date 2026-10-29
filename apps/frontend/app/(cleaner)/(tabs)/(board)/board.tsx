@@ -3,6 +3,11 @@ import { useRouter, useSegments } from "expo-router";
 import { useCallback, useState } from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 import { BodyText } from "../../../../components/BodyText";
+import { BottomSheet } from "../../../../components/BottomSheet";
+import {
+  FilterChip,
+  type FilterChipIcon,
+} from "../../../../components/FilterChip";
 import { JobCard } from "../../../../components/JobCard";
 import { Screen } from "../../../../components/Screen";
 import { SparklButton } from "../../../../components/SparklButton";
@@ -11,10 +16,16 @@ import { sparklTrpc } from "../../../../providers/app-providers";
 import { getStrings } from "../../../../providers/i18n";
 import { statusLabelFor } from "../../../../providers/my-jobs";
 import {
-  type BoardFilterErrors,
+  type BoardFilterField,
+  type BoardFilterValues,
   type BoardServiceCenter,
+  EMPTY_BOARD_FILTERS,
+  anyBoardFilterActive,
+  boardFilterChipLabel,
   boardMetaLine,
+  isBoardFilterActive,
   validateBoardFilters,
+  withBoardFilter,
 } from "../../../../providers/ranked-board";
 import { stackHref } from "../../../../providers/tabs";
 import {
@@ -25,22 +36,27 @@ import {
 } from "../../../../providers/theme";
 
 // Cleaner Board (design.md Screen Inventory): ranked open jobs over one
-// jobs.listRanked query, filters for date / minimum price / distance.
+// jobs.listRanked query, filters for date / minimum price / distance as a
+// row of chips; each chip opens a bottom sheet with its one field (03 C).
 // Rows are memoized JobCards with stable keyExtractor pushing to the
 // cleaner Job Detail route. Loading shows card-shaped skeletons, never
 // a full-screen spinner; errors stay inline with a retry. Every
 // interactive element is labelled.
 
 const styles = StyleSheet.create({
-  filters: {
+  // Wraps instead of scrolling sideways, so "Clear all" is never hidden
+  // off-screen on a phone.
+  chips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: THEME_SPACING.rowMin,
-    marginBottom: THEME_SPACING.section,
+    marginBottom: THEME_SPACING.rowMax,
   },
-  filterActions: {
+  sheetActions: {
     flexDirection: "row",
     gap: THEME_SPACING.rowMin,
   },
-  filterAction: {
+  sheetAction: {
     flex: 1,
   },
   list: {
@@ -65,14 +81,73 @@ const styles = StyleSheet.create({
   },
 });
 
+const FILTER_CHIPS: {
+  field: BoardFilterField;
+  icon: FilterChipIcon;
+  testID: string;
+  name: () => string;
+}[] = [
+  {
+    field: "date",
+    icon: "calendar",
+    testID: "date",
+    name: () => getStrings().filters.dateLabel,
+  },
+  {
+    field: "maxDistanceKm",
+    icon: "navigation",
+    testID: "distance",
+    name: () => getStrings().filters.distanceLabel,
+  },
+  {
+    field: "minPrice",
+    icon: "dollar-sign",
+    testID: "price",
+    name: () => getStrings().filters.price,
+  },
+];
+
+// The sheet's one field per filter; testIDs match the old inline fields so
+// the e2e suites keep their selectors.
+const FILTER_FIELDS: Record<
+  BoardFilterField,
+  {
+    label: () => string;
+    placeholder: () => string | undefined;
+    keyboard: "default" | "decimal-pad";
+    testID: string;
+  }
+> = {
+  date: {
+    label: () => getStrings().filters.dateLabel,
+    placeholder: () => getStrings().postJob.datePlaceholder,
+    keyboard: "default",
+    testID: "cleaner-board-date",
+  },
+  maxDistanceKm: {
+    label: () => getStrings().filters.distanceLabel,
+    placeholder: () => undefined,
+    keyboard: "decimal-pad",
+    testID: "cleaner-board-max-distance",
+  },
+  minPrice: {
+    label: () => getStrings().filters.priceLabel,
+    placeholder: () => undefined,
+    keyboard: "decimal-pad",
+    testID: "cleaner-board-min-price",
+  },
+};
+
 export default function CleanerBoardScreen() {
   const strings = getStrings();
   const router = useRouter();
   const segments = useSegments();
-  const [date, setDate] = useState("");
-  const [minPrice, setMinPrice] = useState("");
-  const [maxDistanceKm, setMaxDistanceKm] = useState("");
-  const [fieldErrors, setFieldErrors] = useState<BoardFilterErrors>({});
+  // Applied raw values (what the chips show), the field whose sheet is
+  // open, and that sheet's draft text.
+  const [values, setValues] = useState<BoardFilterValues>(EMPTY_BOARD_FILTERS);
+  const [editing, setEditing] = useState<BoardFilterField | null>(null);
+  const [draft, setDraft] = useState("");
+  const [draftError, setDraftError] = useState<string | undefined>(undefined);
   const [applied, setApplied] = useState<ListOpenJobsInput>(() => ({
     limit: 20,
     offset: 0,
@@ -91,20 +166,42 @@ export default function CleanerBoardScreen() {
 
   const boardQuery = sparklTrpc.jobs.listRanked.useQuery(applied);
 
-  function handleApply(): void {
-    const result = validateBoardFilters(
-      { date, minPrice, maxDistanceKm },
-      center,
-    );
-    setFieldErrors(result.errors);
-    if (result.data !== null) setApplied(result.data);
+  function openSheet(field: BoardFilterField): void {
+    setEditing(field);
+    setDraft(values[field]);
+    setDraftError(undefined);
   }
 
-  function handleClear(): void {
-    setDate("");
-    setMinPrice("");
-    setMaxDistanceKm("");
-    setFieldErrors({});
+  function closeSheet(): void {
+    setEditing(null);
+    setDraftError(undefined);
+  }
+
+  // The edited field plus the other applied values go back through
+  // validateBoardFilters, so the board filters exactly as before.
+  function applyValues(next: BoardFilterValues): boolean {
+    const result = validateBoardFilters(next, center);
+    if (result.data === null) {
+      setDraftError(editing === null ? undefined : result.errors[editing]);
+      return false;
+    }
+    setValues(next);
+    setApplied(result.data);
+    return true;
+  }
+
+  function handleApply(): void {
+    if (editing === null) return;
+    if (applyValues(withBoardFilter(values, editing, draft))) closeSheet();
+  }
+
+  function handleClearOne(): void {
+    if (editing === null) return;
+    if (applyValues(withBoardFilter(values, editing, ""))) closeSheet();
+  }
+
+  function handleClearAll(): void {
+    setValues(EMPTY_BOARD_FILTERS);
     setApplied({ limit: 20, offset: 0 });
   }
 
@@ -136,39 +233,67 @@ export default function CleanerBoardScreen() {
       testID="cleaner-board-screen"
       title={strings.board.title}
     >
-      <View style={styles.filters}>
-        <SparklTextField
-          accessibilityLabel={strings.filters.dateLabel}
-          autoCapitalize="none"
-          error={fieldErrors.date}
-          label={strings.filters.dateLabel}
-          onChangeText={setDate}
-          placeholder={strings.postJob.datePlaceholder}
-          testID="cleaner-board-date"
-          value={date}
-        />
-        <SparklTextField
-          accessibilityLabel={strings.filters.priceLabel}
-          autoCapitalize="none"
-          error={fieldErrors.minPrice}
-          keyboardType="decimal-pad"
-          label={strings.filters.priceLabel}
-          onChangeText={setMinPrice}
-          testID="cleaner-board-min-price"
-          value={minPrice}
-        />
-        <SparklTextField
-          accessibilityLabel={strings.filters.distanceLabel}
-          autoCapitalize="none"
-          error={fieldErrors.maxDistanceKm}
-          keyboardType="decimal-pad"
-          label={strings.filters.distanceLabel}
-          onChangeText={setMaxDistanceKm}
-          testID="cleaner-board-max-distance"
-          value={maxDistanceKm}
-        />
-        <View style={styles.filterActions}>
-          <View style={styles.filterAction}>
+      <View style={styles.chips}>
+        {FILTER_CHIPS.map((chip) => {
+          const label = boardFilterChipLabel(chip.field, values);
+          return (
+            <FilterChip
+              key={chip.field}
+              accessibilityLabel={`${chip.name()}: ${label}`}
+              active={isBoardFilterActive(values, chip.field)}
+              icon={chip.icon}
+              label={label}
+              onPress={() => openSheet(chip.field)}
+              testID={`cleaner-board-chip-${chip.testID}`}
+            />
+          );
+        })}
+        {anyBoardFilterActive(values) ? (
+          <FilterChip
+            accessibilityLabel={strings.filters.clear}
+            active={false}
+            label={strings.filters.clear}
+            onPress={handleClearAll}
+            testID="cleaner-board-clear"
+          />
+        ) : null}
+      </View>
+      <BottomSheet
+        closeLabel={strings.filters.close}
+        onClose={closeSheet}
+        testID="cleaner-board-sheet"
+        title={
+          FILTER_CHIPS.find((chip) => chip.field === editing)?.name() ??
+          strings.filters.title
+        }
+        visible={editing !== null}
+      >
+        {editing === "maxDistanceKm" && center === undefined ? (
+          <BodyText soft>{strings.filters.noLocation}</BodyText>
+        ) : editing === null ? null : (
+          <SparklTextField
+            accessibilityLabel={FILTER_FIELDS[editing].label()}
+            autoCapitalize="none"
+            error={draftError}
+            keyboardType={FILTER_FIELDS[editing].keyboard}
+            label={FILTER_FIELDS[editing].label()}
+            onChangeText={setDraft}
+            placeholder={FILTER_FIELDS[editing].placeholder()}
+            testID={FILTER_FIELDS[editing].testID}
+            value={draft}
+          />
+        )}
+        <View style={styles.sheetActions}>
+          <View style={styles.sheetAction}>
+            <SparklButton
+              accessibilityLabel={strings.filters.clearOne}
+              onPress={handleClearOne}
+              testID="cleaner-board-sheet-clear"
+              title={strings.filters.clearOne}
+              variant="secondary"
+            />
+          </View>
+          <View style={styles.sheetAction}>
             <SparklButton
               accessibilityLabel={strings.filters.apply}
               onPress={handleApply}
@@ -177,17 +302,8 @@ export default function CleanerBoardScreen() {
               variant="primary"
             />
           </View>
-          <View style={styles.filterAction}>
-            <SparklButton
-              accessibilityLabel={strings.filters.clear}
-              onPress={handleClear}
-              testID="cleaner-board-clear"
-              title={strings.filters.clear}
-              variant="secondary"
-            />
-          </View>
         </View>
-      </View>
+      </BottomSheet>
       {boardQuery.isPending ? (
         <View style={styles.list} testID="cleaner-board-loading">
           <View style={styles.skeleton} />

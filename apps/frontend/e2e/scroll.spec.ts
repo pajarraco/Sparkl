@@ -39,6 +39,7 @@ test("board scrolls to the last seeded row", async ({ browser }, testInfo) => {
   try {
     const page = await context.newPage();
     await page.goto("/board");
+    await page.getByTestId("cleaner-board-chip-date").click();
     await page.getByTestId("cleaner-board-date").fill(day);
     await page.getByTestId("cleaner-board-apply").click();
     const first = page.getByTestId(`cleaner-board-card-${ids[0]}`);

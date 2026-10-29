@@ -127,7 +127,10 @@ export const en = {
     distanceLabel: "Distance",
     priceLabel: "Minimum price",
     clear: "Clear all",
+    clearOne: "Clear",
     apply: "Show results",
+    price: "Price",
+    close: "Close filter",
     noLocation: "Set your service area in Profile to filter by distance.",
   },
   status: {
