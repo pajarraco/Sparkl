@@ -1,6 +1,7 @@
 import * as SecureStore from "expo-secure-store";
 import { getApiOrigin, getPageHostname } from "./app-config";
 import { createSparklAuthClient } from "./auth-client";
+import { readSharedSession } from "./auth-session";
 
 // Shared Better Auth singleton for screens and the root layout.
 // SecureStore persists the session cookie on native; the app shell passes
@@ -18,3 +19,15 @@ export const authClient = createSparklAuthClient({
   origin,
   storage: SecureStore,
 });
+
+// The store useSession subscribers read. The atom always exists: Better
+// Auth registers it before any plugin atoms.
+const sessionAtom = authClient.$store.atoms.session;
+if (sessionAtom === undefined) {
+  throw new Error("Better Auth session store is missing.");
+}
+export const authSessionStore = sessionAtom;
+
+// Reads the session through that store (see readSharedSession).
+export const readAuthSession =
+  readSharedSession<typeof authClient.$Infer.Session>(sessionAtom);

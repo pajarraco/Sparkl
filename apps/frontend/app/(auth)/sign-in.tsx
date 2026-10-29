@@ -9,7 +9,7 @@ import {
   type AuthFieldErrors,
   validateSignIn,
 } from "../../providers/auth-forms";
-import { authClient } from "../../providers/auth-instance";
+import { authClient, readAuthSession } from "../../providers/auth-instance";
 import { getHomeRouteForRole } from "../../providers/auth-navigation";
 import { waitForSessionEmail } from "../../providers/auth-session";
 import { getStrings } from "../../providers/i18n";
@@ -56,18 +56,16 @@ export default function SignInScreen() {
         setFormError(strings.errors.generic);
         return;
       }
+      // Sync the store the tab layouts read BEFORE navigating, or they can
+      // still see the signed-out state and bounce back to welcome.
       const fresh = await waitForSessionEmail(
-        () => authClient.getSession(),
+        readAuthSession,
         result.data.email,
       );
       if (fresh === null) {
         setFormError(strings.errors.generic);
         return;
       }
-      // Push the fresh session into the shared store BEFORE navigating:
-      // the tab layouts read useSession, and without this they can still
-      // see the signed-out state and bounce straight back to welcome.
-      authClient.hydrateSession(fresh);
       const role = parseAppRole(
         (fresh.user as { role?: unknown } | null)?.role,
       );
