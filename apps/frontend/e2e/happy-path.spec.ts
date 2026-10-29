@@ -18,11 +18,12 @@ import {
 // server; every stage itself is driven through the UI. Chat assertions
 // use history refetch (reload), never socket-push timing.
 //
-// Host screens live under /host/... and cleaner screens at the root, so
-// every URL belongs to one role and is safe to deep-link or reload. The
-// suite still drives stages through tab taps and buttons, like a user.
-// Detail screens are Stack screens without tabs: leave them with goBack
-// (or a goto to a tab screen after a reload), never a tab tap.
+// Navigation stays inside each role's tab group: /my-jobs, /job/:id,
+// /chat/:jobId and /review/:jobId exist in BOTH the (host) and (cleaner)
+// groups. The group layouts now send a user who lands in the other
+// role's group back to their own (03 A2), but these stages still move
+// through tab taps and buttons, like a user would. Detail screens push
+// inside their tab and keep the tab bar; goBack still leaves them.
 
 async function newRolePage(
   browser: Browser,
@@ -84,6 +85,25 @@ test("claim, chat, history refetch", async ({ browser }, testInfo) => {
     await tap(host.page, `host-job-card-${jobId}`);
     await tap(host.page, "host-job-open-chat");
     await expect(host.page.getByText(message)).toBeVisible();
+
+    // Messages tab (03 B): both sides see the thread. The host opens the
+    // chat from it inside the Messages tab, and Back returns to the list.
+    await host.page.getByRole("tab", { name: "Messages" }).click();
+    const hostThread = host.page.getByTestId(`host-messages-thread-${jobId}`);
+    await expect(hostThread).toBeVisible();
+    await expect(hostThread).toContainText(message);
+    await hostThread.click();
+    await expect(
+      host.page.getByTestId("host-chat-thread-screen"),
+    ).toBeVisible();
+    await expect(host.page.getByRole("tab", { name: "Post" })).toBeVisible();
+    await host.page.getByRole("button", { name: "Back" }).click();
+    await expect(host.page.getByTestId("host-messages-screen")).toBeVisible();
+
+    await cleaner.page.getByRole("tab", { name: "Messages" }).click();
+    await expect(
+      cleaner.page.getByTestId(`cleaner-messages-thread-${jobId}`),
+    ).toContainText(`You: ${message}`);
   } finally {
     await host.close();
     await cleaner.close();
@@ -109,8 +129,8 @@ test("start, complete, both reviews", async ({ browser }, testInfo) => {
     await tap(cleaner.page, "cleaner-job-claim");
     await expect(cleaner.page.getByTestId("cleaner-job-claimed")).toBeVisible();
 
-    // Cleaner starts; host completes. Detail is a Stack screen without
-    // tabs, so go back to the board first, then switch tabs.
+    // Cleaner starts; host completes. Back to the board first, then
+    // switch tabs.
     await cleaner.page.goBack();
     await cleaner.page.getByRole("tab", { name: "My jobs" }).click();
     await tap(cleaner.page, `cleaner-job-card-${jobId}`);

@@ -2,24 +2,24 @@ import type { Message } from "@sparkl/shared";
 import { useLocalSearchParams } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { FlatList, StyleSheet, Text, TextInput, View } from "react-native";
-import { BodyText } from "../../../components/BodyText";
-import { Screen } from "../../../components/Screen";
-import { SparklButton } from "../../../components/SparklButton";
-import { sparklTrpc } from "../../../providers/app-providers";
-import { authClient } from "../../../providers/auth-instance";
+import { BodyText } from "../../../../../components/BodyText";
+import { DetailScreen } from "../../../../../components/DetailScreen";
+import { SparklButton } from "../../../../../components/SparklButton";
+import { sparklTrpc } from "../../../../../providers/app-providers";
+import { authClient } from "../../../../../providers/auth-instance";
 import {
   formatChatTime,
   isOwnMessage,
   mergeChatMessages,
   validateChatDraft,
-} from "../../../providers/chat-thread";
-import { getStrings } from "../../../providers/i18n";
+} from "../../../../../providers/chat-thread";
+import { getStrings } from "../../../../../providers/i18n";
 import {
   THEME_COLORS,
   THEME_FONT_FAMILY,
   THEME_RADII,
   THEME_SPACING,
-} from "../../../providers/theme";
+} from "../../../../../providers/theme";
 
 // Host chat thread (design.md Screen Inventory): per-job history from
 // chat.list, sending through chat.send, live messages over the
@@ -215,18 +215,23 @@ export default function HostChatThreadScreen() {
 
   if (jobId === null) {
     return (
-      <Screen testID="host-chat-thread-screen" title={strings.chat.title}>
+      <DetailScreen
+        userRole="host"
+        testID="host-chat-thread-screen"
+        title={strings.chat.title}
+      >
         <Text accessibilityLiveRegion="polite" style={styles.error}>
           {strings.errors.generic}
         </Text>
-      </Screen>
+      </DetailScreen>
     );
   }
 
   const messages = mergeChatMessages(historyQuery.data?.messages ?? [], live);
 
   return (
-    <Screen
+    <DetailScreen
+      userRole="host"
       scroll={false}
       testID="host-chat-thread-screen"
       title={strings.chat.title}
@@ -322,6 +327,6 @@ export default function HostChatThreadScreen() {
           title={strings.chat.send}
         />
       </View>
-    </Screen>
+    </DetailScreen>
   );
 }

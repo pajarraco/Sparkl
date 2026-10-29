@@ -1,26 +1,27 @@
 import type { Job } from "@sparkl/shared";
-import { useRouter } from "expo-router";
+import { useRouter, useSegments } from "expo-router";
 import { useCallback, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
-import { BodyText } from "../../../components/BodyText";
-import { JobCard } from "../../../components/JobCard";
-import { Screen } from "../../../components/Screen";
-import { SparklButton } from "../../../components/SparklButton";
-import { sparklTrpc } from "../../../providers/app-providers";
-import { getStrings } from "../../../providers/i18n";
+import { BodyText } from "../../../../components/BodyText";
+import { JobCard } from "../../../../components/JobCard";
+import { Screen } from "../../../../components/Screen";
+import { SparklButton } from "../../../../components/SparklButton";
+import { sparklTrpc } from "../../../../providers/app-providers";
+import { getStrings } from "../../../../providers/i18n";
 import {
   type CleanerMyJobsSegment,
   cleanerMetaLine,
   filterCleanerJobsBySegment,
   spotlightCleanerJob,
   statusLabelFor,
-} from "../../../providers/my-jobs";
+} from "../../../../providers/my-jobs";
+import { stackHref } from "../../../../providers/tabs";
 import {
   THEME_COLORS,
   THEME_FONT_FAMILY,
   THEME_RADII,
   THEME_SPACING,
-} from "../../../providers/theme";
+} from "../../../../providers/theme";
 
 // Cleaner My Jobs (design.md Screen Inventory): claimed / active / history
 // segments over one jobs.myClaimed query, rows are memoized JobCards with
@@ -91,6 +92,7 @@ const styles = StyleSheet.create({
 export default function CleanerMyJobsScreen() {
   const strings = getStrings();
   const router = useRouter();
+  const segments = useSegments();
   const [segment, setSegment] = useState<CleanerMyJobsSegment>("claimed");
   const query = sparklTrpc.jobs.myClaimed.useQuery({});
 
@@ -105,9 +107,9 @@ export default function CleanerMyJobsScreen() {
 
   const openJob = useCallback(
     (jobId: string) => {
-      router.push(`/(cleaner)/job/${jobId}`);
+      router.push(stackHref("cleaner", segments, `job/${jobId}`));
     },
-    [router],
+    [router, segments],
   );
 
   const renderItem = useCallback(

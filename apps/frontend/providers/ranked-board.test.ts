@@ -1,9 +1,15 @@
 import type { Job } from "@sparkl/shared";
 import { describe, expect, it } from "vitest";
+import { getStrings } from "./i18n";
 import {
+  EMPTY_BOARD_FILTERS,
+  anyBoardFilterActive,
+  boardFilterChipLabel,
   boardMetaLine,
   formatMatchPercent,
+  isBoardFilterActive,
   validateBoardFilters,
+  withBoardFilter,
 } from "./ranked-board";
 
 function openJob(): Job {
@@ -106,5 +112,49 @@ describe("board formatting", () => {
     expect(formatMatchPercent(0.947)).toBe("95% match");
     expect(formatMatchPercent(1.5)).toBe("100% match");
     expect(formatMatchPercent(-0.2)).toBe("0% match");
+  });
+});
+
+describe("board filter chips (03 C)", () => {
+  const strings = getStrings().filters;
+
+  it("shows the default label while a filter is empty", () => {
+    expect(boardFilterChipLabel("date", EMPTY_BOARD_FILTERS)).toBe(
+      strings.dateLabel,
+    );
+    expect(boardFilterChipLabel("maxDistanceKm", EMPTY_BOARD_FILTERS)).toBe(
+      strings.distanceLabel,
+    );
+    expect(boardFilterChipLabel("minPrice", EMPTY_BOARD_FILTERS)).toBe(
+      strings.price,
+    );
+  });
+
+  it("shows the applied value on an active chip", () => {
+    const values = {
+      date: "2036-06-06",
+      maxDistanceKm: "10",
+      minPrice: "80",
+    };
+    expect(boardFilterChipLabel("date", values)).toBe("Fri, Jun 6");
+    expect(boardFilterChipLabel("maxDistanceKm", values)).toBe("≤ 10 km");
+    expect(boardFilterChipLabel("minPrice", values)).toBe("≥ $80");
+  });
+
+  it("replaces one filter and keeps the others", () => {
+    const values = withBoardFilter(
+      { date: "2036-06-06", maxDistanceKm: "", minPrice: "" },
+      "minPrice",
+      " 45 ",
+    );
+    expect(values).toEqual({
+      date: "2036-06-06",
+      maxDistanceKm: "",
+      minPrice: "45",
+    });
+    expect(isBoardFilterActive(values, "minPrice")).toBe(true);
+    expect(isBoardFilterActive(values, "maxDistanceKm")).toBe(false);
+    expect(anyBoardFilterActive(values)).toBe(true);
+    expect(anyBoardFilterActive(EMPTY_BOARD_FILTERS)).toBe(false);
   });
 });

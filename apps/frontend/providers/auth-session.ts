@@ -9,14 +9,11 @@ import type { GetTrpcHeaders } from "./trpc-client";
 
 export type GetSessionCookie = () => Promise<string>;
 
-// After sign-in the client persists the session cookie asynchronously,
-// and a direct getSession does not update the shared session atom that
-// useSession subscribers (like the tab layouts) read. When switching
-// accounts, the layout can therefore still see the signed-out state and
-// bounce back to welcome while a retry works. Poll until the fetched
-// session belongs to the signed-in email (bounded, so the worst case is
-// the same generic error as before); the caller hydrates the shared store
-// with the result before navigating.
+// After sign-in the client persists the session cookie asynchronously.
+// Poll until the session belongs to the signed-in email (bounded, so the
+// worst case is the same generic error as before). Callers pass
+// readSharedSession, so the store the tab layouts read is up to date
+// before they navigate.
 export async function waitForSessionEmail<
   TData extends { user?: { email?: unknown } | null },
 >(
@@ -43,6 +40,47 @@ export async function waitForSessionEmail<
     if (attempt < attempts - 1) await sleep(delayMs);
   }
   return null;
+}
+
+// The Better Auth session store that useSession subscribers (the group
+// layouts) read.
+export interface SharedSessionStore<TData> {
+  get(): { data: TData | null; refetch: () => Promise<void> };
+}
+
+// Session reads for the sign-in/sign-up poll: refetch the shared store,
+// then read it. authClient.getSession() fetches without touching the
+// store, and hydrateSession() only applies once per page load — so the
+// second sign-in in one tab (a role switch) navigated while the store
+// still said signed out, and the group layout bounced back to welcome
+// (03 A1).
+export function readSharedSession<TData>(
+  store: SharedSessionStore<TData>,
+): () => Promise<{ data: TData | null }> {
+  return async () => {
+    await store.get().refetch();
+    return { data: store.get().data };
+  };
+}
+
+// Session-owner tracking for the root layout's cache reset: calls
+// onChange whenever the signed-in user changes (sign-out, expiry, or
+// another account signing in on the same device), so one account's
+// cached data never shows for, or stays in memory under, the next.
+// Pending states are skipped; the first settled value only records the
+// owner.
+export function trackSessionOwner(onChange: () => void): (value: {
+  data: { user?: { id?: unknown } | null } | null;
+  isPending: boolean;
+}) => void {
+  let owner: string | null | undefined;
+  return (value) => {
+    if (value.isPending) return;
+    const id = value.data?.user?.id;
+    const next = typeof id === "string" ? id : null;
+    if (owner !== undefined && next !== owner) onChange();
+    owner = next;
+  };
 }
 
 export function sessionHeaders(getCookie: GetSessionCookie): GetTrpcHeaders {

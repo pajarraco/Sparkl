@@ -1,25 +1,26 @@
 import type { Job } from "@sparkl/shared";
-import { useRouter } from "expo-router";
+import { useRouter, useSegments } from "expo-router";
 import { useCallback, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
-import { BodyText } from "../../../components/BodyText";
-import { JobCard } from "../../../components/JobCard";
-import { Screen } from "../../../components/Screen";
-import { SparklButton } from "../../../components/SparklButton";
-import { sparklTrpc } from "../../../providers/app-providers";
-import { getStrings } from "../../../providers/i18n";
+import { BodyText } from "../../../../components/BodyText";
+import { JobCard } from "../../../../components/JobCard";
+import { Screen } from "../../../../components/Screen";
+import { SparklButton } from "../../../../components/SparklButton";
+import { sparklTrpc } from "../../../../providers/app-providers";
+import { getStrings } from "../../../../providers/i18n";
 import {
   type MyJobsSegment,
   filterJobsBySegment,
   hostMetaLine,
   statusLabelFor,
-} from "../../../providers/my-jobs";
+} from "../../../../providers/my-jobs";
+import { stackHref } from "../../../../providers/tabs";
 import {
   THEME_COLORS,
   THEME_FONT_FAMILY,
   THEME_RADII,
   THEME_SPACING,
-} from "../../../providers/theme";
+} from "../../../../providers/theme";
 
 // Host My Jobs (design.md Screen Inventory): open / active / history
 // segments over one jobs.myJobs query, rows are memoized JobCards with
@@ -73,6 +74,7 @@ const styles = StyleSheet.create({
 export default function HostMyJobsScreen() {
   const strings = getStrings();
   const router = useRouter();
+  const segments = useSegments();
   const [segment, setSegment] = useState<MyJobsSegment>("open");
   const query = sparklTrpc.jobs.myJobs.useQuery({});
 
@@ -91,7 +93,7 @@ export default function HostMyJobsScreen() {
         address={item.address}
         metaLine={hostMetaLine(item)}
         onPress={() => {
-          router.push(`/host/job/${item.id}`);
+          router.push(stackHref("host", segments, `job/${item.id}`));
         }}
         status={item.status}
         statusLabel={statusLabelFor(item.status)}
@@ -99,7 +101,7 @@ export default function HostMyJobsScreen() {
         title={strings.jobCard.title}
       />
     ),
-    [strings, router],
+    [strings, router, segments],
   );
 
   const jobs =

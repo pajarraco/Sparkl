@@ -1,5 +1,12 @@
 import { expect, test } from "@playwright/test";
-import type { Page } from "@playwright/test";
+import type { Browser, Page } from "@playwright/test";
+import {
+  dayWindow,
+  newBrowserSession,
+  pinBoardToDay,
+  seedOpenJob,
+  tap,
+} from "./fixtures";
 
 // Navigation suite (context/features/01-e2e-testing-implementation.md
 // step 4): role tabs, URL-per-tab, history back, unknown routes, and the
@@ -118,4 +125,114 @@ test("expired session returns to welcome", async ({
     page.getByRole("heading", { name: "Welcome to Sparkl" }),
     "expired session redirects to welcome",
   ).toBeVisible({ timeout: 30_000 });
+});
+
+// Tab stacks (03 A2): detail screens push inside their tab, keep the tab
+// bar, and have a Back button that also works after a reload.
+
+const NAV_DAY = "2036-07-01";
+
+async function hostOnJobDetail(
+  browser: Browser,
+  workerIndex: number,
+): Promise<{ page: Page; jobId: string; close: () => Promise<void> }> {
+  const { context } = await newBrowserSession(browser, "host", workerIndex);
+  const page = await context.newPage();
+  const { id } = await seedOpenJob(context.request, {
+    address: `E2E Nav ${Date.now()}-w${workerIndex}`,
+    ...dayWindow(NAV_DAY),
+  });
+  await page.goto("/post");
+  await page.getByRole("tab", { name: "My jobs" }).click();
+  await tap(page, `host-job-card-${id}`);
+  await expect(page.getByTestId("host-job-detail-screen")).toBeVisible();
+  return { page, jobId: id, close: () => context.close() };
+}
+
+test("job detail keeps the tab bar and Back returns to My Jobs", async ({
+  browser,
+}, testInfo) => {
+  const { page, close } = await hostOnJobDetail(browser, testInfo.workerIndex);
+  try {
+    await expect(page.getByRole("tab", { name: "Post" })).toBeVisible();
+    await page.getByRole("button", { name: "Back" }).click();
+    await expect(page.getByTestId("host-my-jobs-screen")).toBeVisible();
+    await expect(page).toHaveURL(/\/my-jobs$/);
+  } finally {
+    await close();
+  }
+});
+
+test("a detail screen can jump straight to another tab", async ({
+  browser,
+}, testInfo) => {
+  const { page, close } = await hostOnJobDetail(browser, testInfo.workerIndex);
+  try {
+    await page.getByRole("tab", { name: "Messages" }).click();
+    await expect(page.getByTestId("host-messages-screen")).toBeVisible();
+    await expect(page).toHaveURL(/\/messages$/);
+  } finally {
+    await close();
+  }
+});
+
+test("tapping the active tab on a detail screen returns to its root", async ({
+  browser,
+}, testInfo) => {
+  const { page, close } = await hostOnJobDetail(browser, testInfo.workerIndex);
+  try {
+    await page.getByRole("tab", { name: "My jobs" }).click();
+    await expect(page.getByTestId("host-my-jobs-screen")).toBeVisible();
+    await expect(page.getByTestId("host-job-detail-screen")).toHaveCount(0);
+  } finally {
+    await close();
+  }
+});
+
+test("reload on a detail screen keeps the role, and Back goes to the tab", async ({
+  browser,
+}, testInfo) => {
+  const { page, jobId, close } = await hostOnJobDetail(
+    browser,
+    testInfo.workerIndex,
+  );
+  try {
+    // /job/:id exists in both role groups; a reload must not land a host
+    // on the cleaner's screens.
+    await page.reload();
+    await expect(page.getByTestId("host-job-detail-screen")).toBeVisible();
+    await expect(page.getByTestId("cleaner-job-detail-screen")).toHaveCount(0);
+    await expect(page).toHaveURL(new RegExp(`/job/${jobId}$`));
+    await page.getByRole("button", { name: "Back" }).click();
+    await expect(page.getByTestId("host-my-jobs-screen")).toBeVisible();
+  } finally {
+    await close();
+  }
+});
+
+test("cleaner job detail keeps the tab bar and Back returns to the board", async ({
+  browser,
+}, testInfo) => {
+  const host = await newBrowserSession(browser, "host", testInfo.workerIndex);
+  const { id } = await seedOpenJob(host.context.request, {
+    address: `E2E Nav ${Date.now()}-w${testInfo.workerIndex}`,
+    ...dayWindow(NAV_DAY),
+  });
+  await host.context.close();
+  const { context } = await newBrowserSession(
+    browser,
+    "cleaner",
+    testInfo.workerIndex,
+  );
+  const page = await context.newPage();
+  try {
+    await pinBoardToDay(page, NAV_DAY, id);
+    await tap(page, `cleaner-board-card-${id}`);
+    await expect(page.getByTestId("cleaner-job-detail-screen")).toBeVisible();
+    await expect(page.getByRole("tab", { name: "My jobs" })).toBeVisible();
+    await page.getByRole("button", { name: "Back" }).click();
+    await expect(page.getByTestId("cleaner-board-screen")).toBeVisible();
+  } finally {
+    await context.close();
+  }
 });

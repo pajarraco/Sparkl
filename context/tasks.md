@@ -110,6 +110,39 @@ Spec: `context/features/02-integrate-baseten.md` (approved 2026-10-29). Phases a
 - [ ] Docs: `project.md`, `architecture.md` (new services, provider switches, SSE not WebSocket, stale banner), `design.md`, `hackathon.md` Our Entry, `code-standard.md` + `AGENTS.md` banners, `README.md`, `CHANGELOG.md`
 - [ ] Gates: `pnpm verify` green (coverage ≥ 80%) + `e2e` green, output quoted
 
+### 11. Improvements and issues
+
+Spec: `context/features/03-improvements-issues.md` (approved 2026-10-29). Built on `feat/03-improvements` in its own worktree, alongside 02. A1–C start now; D waits for 02 P2, E for 02 P1. Cut from the bottom (E, then D) if the Nov 4 deadline is at risk.
+
+#### A — Bugs
+
+- [ ] A1 Role switch on web: failing e2e repro (host → sign out → cleaner and reverse), diagnose, shared `signOutAndReset()` that also clears the React Query cache; confirm on one Expo Go target
+- [ ] A2 Navigation: nested stacks per tab via shared routes (detail screens keep the tab bar), `BackButton` in `Screen` with a deep-link fallback (`design.md` first), Post redirect into the My Jobs stack, `navigation.spec.ts` updated
+
+#### B — Messages
+
+- [x] `listThreads` service + `chat.listThreads` router + shared `chatThreadSchema` (party-only, last message, newest first), thread list on both Messages tabs, happy-path e2e checks the thread
+
+#### C — Board filters
+
+- [x] Filter chips + bottom sheet in `design.md`, chip row (date, distance, price) opening an RN `Modal` sheet, chip-label helpers in `ranked-board.ts` with tests, `forms.spec.ts` board filters updated
+
+#### D — Two-way assignment (after 02 P2)
+
+- [ ] `job_requests` migration + `services/job-requests.ts` (request, offer, accept in one transaction, decline, withdraw, caps, authorization) + `jobRequests` router replacing `jobs.claim`; race and authorization tests
+- [ ] UI: Request job (cleaner), Requests section + Offer job on suggestions (host), Offers in cleaner My Jobs, request badge on host cards; 02 "go with {cleaner}" becomes a real offer
+- [ ] Scope docs in the same step (`project.md` MVP #4 + demo script, `README.md`, `architecture.md`), demo seed, e2e `happy-path` + `forms` + fixtures
+
+#### E — Properties (after 02 P1)
+
+- [ ] `properties` migration + `jobs.property_id` (nullable, snapshot copied on create), properties service + router with ownership checks
+- [ ] Properties tab (five host tabs, `design.md` first) with list + add/edit using `AddressMapPicker`, archive instead of delete
+- [ ] Post Job picks a property (notes from its checklist), assistant `list_properties` tool + `singleProperty` as a count, `properties.spec.ts` + Post Job e2e + seed
+
+#### Close-out
+
+- [ ] Per item: `pnpm verify` green (coverage ≥ 80%) + `e2e` green, output quoted; `CHANGELOG.md` and docs updated
+
 ### Stretch (only if time allows)
 
 Deferred in full on 2026-10-29 (owner decision, demo gate closed first).

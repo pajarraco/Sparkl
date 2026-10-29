@@ -8,7 +8,7 @@ import type {
   User,
 } from "@sparkl/shared";
 import { jobDraftFieldSchema } from "@sparkl/shared";
-import { and, desc, eq, isNotNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import type { AssistantSessionsStore } from "../services/assistant-sessions.js";
 import { ChatError, type ChatStore } from "../services/chat.js";
 import {
@@ -316,6 +316,18 @@ export function drizzleChatStore(db: Db): ChatStore {
         .returning();
       if (!row) throw new ChatError("NOT_FOUND", "Message insert failed.");
       return toMessage(row);
+    },
+
+    // One row per job: DISTINCT ON keeps the newest message of each job
+    // (messages_job_created_idx covers the ordering).
+    async latestMessagesByJobs(jobIds) {
+      if (jobIds.length === 0) return [];
+      const rows = await db
+        .selectDistinctOn([messages.jobId])
+        .from(messages)
+        .where(inArray(messages.jobId, jobIds))
+        .orderBy(messages.jobId, desc(messages.createdAt));
+      return rows.map(toMessage);
     },
   };
 }

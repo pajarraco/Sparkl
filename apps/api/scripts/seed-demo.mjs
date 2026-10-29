@@ -5,6 +5,14 @@
 // demo address — reruns never duplicate and never delete anything.
 // All fixtures are obviously fake (demo@example.com, Demo Lane).
 // Run: pnpm --filter @sparkl/api seed:demo
+import { existsSync } from "node:fs";
+
+// Read the repo-root .env like the API does, so a second worktree's
+// stack (own ports) is never mixed up with the main one. Shell variables
+// still win.
+const rootEnv = new URL("../../../.env", import.meta.url);
+if (existsSync(rootEnv)) process.loadEnvFile(rootEnv);
+
 const API_BASE = process.env.SPKL_API_URL ?? "http://localhost:3000";
 const PASSWORD = process.env.DEMO_PASSWORD ?? "demo-password-123";
 // Better Auth rejects non-browser auth POSTs without an Origin header

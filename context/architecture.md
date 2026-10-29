@@ -63,7 +63,7 @@ PostgreSQL via Docker locally; Drizzle ORM with versioned migrations in the repo
 | `users` | profile get/update, availability set, cleaner public profile |
 | `jobs` | create, ranked list (cleaner board), my jobs (host), claim, status transitions, cancel |
 | `suggestions` | ranked cleaners for a job (host view) |
-| `chat` | message list, send, `onMessage` subscription per job |
+| `chat` | message list, send, `onMessage` subscription per job, `listThreads` (the caller's conversations for the Messages tab) |
 | `reviews` | create (after completion), list by user |
 | `storage` | presigned upload URL |
 

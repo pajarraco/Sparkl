@@ -139,15 +139,27 @@ test("board date filter narrows to the job day", async ({
   try {
     const page = await context.newPage();
     await page.goto("/board");
+    await page.getByTestId("cleaner-board-chip-date").click();
     await page.getByTestId("cleaner-board-date").fill(FILTER_DAY);
     await page.getByTestId("cleaner-board-apply").click();
     await expect(page.getByTestId(`cleaner-board-card-${id}`)).toBeVisible();
+    // The active chip shows the applied day (03 C).
+    await expect(page.getByTestId("cleaner-board-chip-date")).toContainText(
+      "Mar 3",
+    );
+    await page.getByTestId("cleaner-board-chip-date").click();
+    await expect(page.getByTestId("cleaner-board-date")).toHaveValue(
+      FILTER_DAY,
+    );
     await page.getByTestId("cleaner-board-date").fill("2030-01-01");
     await page.getByTestId("cleaner-board-apply").click();
     await expect(page.getByTestId("cleaner-board-list")).toHaveCount(0);
     await expect(page.getByText("No open jobs near you yet.")).toBeVisible();
     await page.getByTestId("cleaner-board-clear").click();
-    await expect(page.getByTestId("cleaner-board-date")).toHaveValue("");
+    await expect(page.getByTestId("cleaner-board-chip-date")).toContainText(
+      "Date",
+    );
+    await expect(page.getByTestId("cleaner-board-clear")).toHaveCount(0);
     await expect(page.getByTestId("cleaner-board-list")).toBeVisible();
   } finally {
     await hostApi.dispose();
@@ -174,14 +186,27 @@ test("board price filter narrows by minimum", async ({ browser }, testInfo) => {
   try {
     const page = await context.newPage();
     await page.goto("/board");
+    await page.getByTestId("cleaner-board-chip-date").click();
     await page.getByTestId("cleaner-board-date").fill(PRICE_DAY);
     await page.getByTestId("cleaner-board-apply").click();
     await expect(page.getByTestId(`cleaner-board-card-${id}`)).toBeVisible();
+    await page.getByTestId("cleaner-board-chip-price").click();
     await page.getByTestId("cleaner-board-min-price").fill("100");
     await page.getByTestId("cleaner-board-apply").click();
     await expect(page.getByTestId("cleaner-board-list")).toHaveCount(0);
+    await expect(page.getByTestId("cleaner-board-chip-price")).toContainText(
+      "≥ $100",
+    );
+    await page.getByTestId("cleaner-board-chip-price").click();
     await page.getByTestId("cleaner-board-min-price").fill("10");
     await page.getByTestId("cleaner-board-apply").click();
+    await expect(page.getByTestId(`cleaner-board-card-${id}`)).toBeVisible();
+    // Clearing one filter keeps the others: the day still pins our card.
+    await page.getByTestId("cleaner-board-chip-price").click();
+    await page.getByTestId("cleaner-board-sheet-clear").click();
+    await expect(page.getByTestId("cleaner-board-chip-price")).toContainText(
+      "Price",
+    );
     await expect(page.getByTestId(`cleaner-board-card-${id}`)).toBeVisible();
   } finally {
     await hostApi.dispose();
@@ -200,10 +225,21 @@ test("board shows validation for bad filter values", async ({
   try {
     const page = await context.newPage();
     await page.goto("/board");
+    await page.getByTestId("cleaner-board-chip-date").click();
     await page.getByTestId("cleaner-board-date").fill("not-a-date");
-    await page.getByTestId("cleaner-board-min-price").fill("abc");
     await page.getByTestId("cleaner-board-apply").click();
     await expect(page.getByText("Use YYYY-MM-DD.")).toBeVisible();
+    // A bad value keeps the sheet open; the scrim closes it unapplied.
+    await page.getByTestId("cleaner-board-sheet-scrim").click({
+      position: { x: 10, y: 10 },
+    });
+    await expect(page.getByTestId("cleaner-board-sheet")).toHaveCount(0);
+    await expect(page.getByTestId("cleaner-board-chip-date")).toContainText(
+      "Date",
+    );
+    await page.getByTestId("cleaner-board-chip-price").click();
+    await page.getByTestId("cleaner-board-min-price").fill("abc");
+    await page.getByTestId("cleaner-board-apply").click();
     await expect(page.getByText("Enter a valid price.")).toBeVisible();
   } finally {
     await context.close();
@@ -230,12 +266,17 @@ test("board distance filter needs a service area first", async ({
   try {
     const page = await context.newPage();
     await page.goto("/board");
+    await page.getByTestId("cleaner-board-chip-date").click();
     await page.getByTestId("cleaner-board-date").fill(DISTANCE_DAY);
-    await page.getByTestId("cleaner-board-max-distance").fill("50");
     await page.getByTestId("cleaner-board-apply").click();
+    // No service area yet: the distance sheet explains instead of a field.
+    await page.getByTestId("cleaner-board-chip-distance").click();
     await expect(
       page.getByText("Set your service area in Profile to filter by distance."),
     ).toBeVisible();
+    await expect(page.getByTestId("cleaner-board-max-distance")).toHaveCount(0);
+    await page.keyboard.press("Escape");
+    await expect(page.getByTestId("cleaner-board-sheet")).toHaveCount(0);
     await page.getByRole("tab", { name: "Profile" }).click();
     await mockGeo(page);
     await page
@@ -246,8 +287,12 @@ test("board distance filter needs a service area first", async ({
     await page.getByTestId("cleaner-profile-save").click();
     await expect(page.getByTestId("cleaner-profile-saved")).toBeVisible();
     await page.getByRole("tab", { name: "Board" }).click();
+    await page.getByTestId("cleaner-board-chip-distance").click();
     await page.getByTestId("cleaner-board-max-distance").fill("50");
     await page.getByTestId("cleaner-board-apply").click();
+    await expect(page.getByTestId("cleaner-board-chip-distance")).toContainText(
+      "≤ 50 km",
+    );
     await expect(page.getByTestId(`cleaner-board-card-${id}`)).toBeVisible();
   } finally {
     await hostApi.dispose();

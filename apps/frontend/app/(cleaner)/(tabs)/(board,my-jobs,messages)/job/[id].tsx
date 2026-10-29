@@ -1,30 +1,31 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter, useSegments } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { Screen } from "../../../components/Screen";
-import { SparklButton } from "../../../components/SparklButton";
-import { sparklTrpc } from "../../../providers/app-providers";
+import { DetailScreen } from "../../../../../components/DetailScreen";
+import { SparklButton } from "../../../../../components/SparklButton";
+import { sparklTrpc } from "../../../../../providers/app-providers";
 import {
   claimSubmitErrorMessage,
   cleanerChatAvailableForStatus,
   cleanerClaimAvailableForStatus,
   cleanerReviewAvailableForStatus,
   cleanerStartAvailableForStatus,
-} from "../../../providers/cleaner-job-detail";
-import { getStrings } from "../../../providers/i18n";
+} from "../../../../../providers/cleaner-job-detail";
+import { getStrings } from "../../../../../providers/i18n";
 import {
   formatJobWindow,
   formatPriceMinorUnits,
   statusLabelFor,
-} from "../../../providers/my-jobs";
-import { formatMatchPercent } from "../../../providers/ranked-board";
+} from "../../../../../providers/my-jobs";
+import { formatMatchPercent } from "../../../../../providers/ranked-board";
+import { stackHref } from "../../../../../providers/tabs";
 import {
   STATUS_PILL,
   THEME_COLORS,
   THEME_FONT_FAMILY,
   THEME_RADII,
   THEME_SPACING,
-} from "../../../providers/theme";
+} from "../../../../../providers/theme";
 
 // Cleaner Job Detail (design.md Screen Inventory): full info plus the
 // claim CTA while the job is open. The job itself comes from the
@@ -99,6 +100,7 @@ const styles = StyleSheet.create({
 export default function CleanerJobDetailScreen() {
   const strings = getStrings();
   const router = useRouter();
+  const segments = useSegments();
   const params = useLocalSearchParams<{ id: string }>();
   const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
   const jobId = rawId !== undefined && UUID_RE.test(rawId) ? rawId : null;
@@ -156,17 +158,19 @@ export default function CleanerJobDetailScreen() {
   if (job === undefined) {
     if (boardQuery.isPending || claimedQuery.isPending) {
       return (
-        <Screen
+        <DetailScreen
+          userRole="cleaner"
           testID="cleaner-job-detail-screen"
           title={strings.jobDetail.title}
         >
           <View style={styles.skeleton} />
           <View style={styles.skeleton} />
-        </Screen>
+        </DetailScreen>
       );
     }
     return (
-      <Screen
+      <DetailScreen
+        userRole="cleaner"
         testID="cleaner-job-detail-screen"
         title={strings.jobDetail.title}
       >
@@ -183,7 +187,7 @@ export default function CleanerJobDetailScreen() {
           title={strings.errors.retry}
           variant="secondary"
         />
-      </Screen>
+      </DetailScreen>
     );
   }
 
@@ -191,7 +195,8 @@ export default function CleanerJobDetailScreen() {
     STATUS_PILL[job.status === "in_progress" ? "inProgress" : job.status];
 
   return (
-    <Screen
+    <DetailScreen
+      userRole="cleaner"
       subtitle={job.address}
       testID="cleaner-job-detail-screen"
       title={strings.jobDetail.title}
@@ -230,7 +235,7 @@ export default function CleanerJobDetailScreen() {
           <SparklButton
             accessibilityLabel={strings.jobDetail.openChat}
             onPress={() => {
-              router.push(`/(cleaner)/chat/${job.id}`);
+              router.push(stackHref("cleaner", segments, `chat/${job.id}`));
             }}
             testID="cleaner-job-open-chat"
             title={strings.jobDetail.openChat}
@@ -241,7 +246,7 @@ export default function CleanerJobDetailScreen() {
           <SparklButton
             accessibilityLabel={strings.review.title}
             onPress={() => {
-              router.push(`/(cleaner)/review/${job.id}`);
+              router.push(stackHref("cleaner", segments, `review/${job.id}`));
             }}
             testID="cleaner-job-leave-review"
             title={strings.review.title}
@@ -285,6 +290,6 @@ export default function CleanerJobDetailScreen() {
           </Text>
         )}
       </View>
-    </Screen>
+    </DetailScreen>
   );
 }

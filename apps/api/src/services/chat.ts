@@ -5,15 +5,18 @@
 // (ChatEvents); Redis pubsub replaces it if the API ever scales horizontally.
 import { randomUUID } from "node:crypto";
 import { EventEmitter, on } from "node:events";
-import type {
-  Job,
-  ListMessagesInput,
-  Message,
-  SendMessageInput,
-  SparklErrorCode,
-  UserRole,
+import {
+  CHAT_PREVIEW_MAX,
+  type ChatThread,
+  type Job,
+  type ListMessagesInput,
+  type Message,
+  type SendMessageInput,
+  type SparklErrorCode,
+  type UserRole,
 } from "@sparkl/shared";
 import type { Clock, JobsStore } from "./jobs.js";
+import type { UsersStore } from "./users.js";
 
 export class ChatError extends Error {
   readonly code: SparklErrorCode;
@@ -28,6 +31,8 @@ export class ChatError extends Error {
 export interface ChatStore {
   listMessagesByJob(jobId: string): Promise<Message[]>;
   insertMessage(message: Message): Promise<Message>;
+  /** The newest message of each given job (jobs without messages are absent). */
+  latestMessagesByJobs(jobIds: string[]): Promise<Message[]>;
 }
 
 export interface ChatStores {
@@ -140,4 +145,87 @@ export async function listNewMessagesSince(
   const idx = all.findIndex((m) => m.id === args.lastEventId);
   if (idx === -1) return [];
   return all.slice(idx + 1);
+}
+
+export interface ChatThreadStores {
+  jobs: Pick<JobsStore, "listJobsByHost" | "listJobsByCleaner">;
+  chat: Pick<ChatStore, "latestMessagesByJobs">;
+  users: Pick<UsersStore, "findById">;
+}
+
+// One line, at most CHAT_PREVIEW_MAX characters including the ellipsis.
+export function chatPreview(body: string): string {
+  const line = body.replace(/\s+/g, " ").trim();
+  if (line.length <= CHAT_PREVIEW_MAX) return line;
+  return `${line.slice(0, CHAT_PREVIEW_MAX - 1).trimEnd()}…`;
+}
+
+// Messages tab: every job the caller is a party to that has a chat — a
+// claimed cleaner and a status past open; cancelled jobs only when someone
+// wrote. The caller's own job list is the party check, so another user's
+// thread can never appear. Newest activity first (last message, else the
+// job's last update).
+export async function listThreads(
+  stores: ChatThreadStores,
+  args: { userId: string; role: UserRole },
+): Promise<ChatThread[]> {
+  const jobs =
+    args.role === "host"
+      ? await stores.jobs.listJobsByHost(args.userId)
+      : await stores.jobs.listJobsByCleaner(args.userId);
+  const withChat = jobs.filter(
+    (job) => job.claimedByCleanerId !== null && job.status !== "open",
+  );
+  if (withChat.length === 0) return [];
+  const latest = new Map(
+    (await stores.chat.latestMessagesByJobs(withChat.map((job) => job.id))).map(
+      (message) => [message.jobId, message],
+    ),
+  );
+  const visible = withChat.filter(
+    (job) => job.status !== "cancelled" || latest.has(job.id),
+  );
+  const otherIdOf = (job: Job): string =>
+    args.role === "host" ? (job.claimedByCleanerId ?? "") : job.hostId;
+  const others = new Map(
+    await Promise.all(
+      [...new Set(visible.map(otherIdOf))].map(
+        async (id) => [id, await stores.users.findById(id)] as const,
+      ),
+    ),
+  );
+  const threads = visible.flatMap((job): ChatThread[] => {
+    const other = others.get(otherIdOf(job));
+    if (other === null || other === undefined) return [];
+    const message = latest.get(job.id);
+    return [
+      {
+        jobId: job.id,
+        jobStatus: job.status,
+        address: job.address,
+        windowStart: job.windowStart,
+        otherParty: {
+          id: other.id,
+          name: other.name,
+          photoUrl: other.photoUrl,
+        },
+        lastMessage:
+          message === undefined
+            ? null
+            : {
+                senderId: message.senderId,
+                preview: chatPreview(message.body),
+                createdAt: message.createdAt,
+              },
+        lastActivityAt: message?.createdAt ?? job.updatedAt,
+      },
+    ];
+  });
+  return threads.sort((a, b) =>
+    a.lastActivityAt < b.lastActivityAt
+      ? 1
+      : a.lastActivityAt > b.lastActivityAt
+        ? -1
+        : 0,
+  );
 }

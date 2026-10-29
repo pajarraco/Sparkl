@@ -5,7 +5,14 @@
 // (plus older `*E2E*` probe rows). Messages and reviews cascade off jobs;
 // fake accounts are left alone (tiny, harmless).
 // Run: pnpm --filter @sparkl/api clean:e2e
+import { existsSync } from "node:fs";
 import postgres from "postgres";
+
+// Read the repo-root .env like the API does, so a second worktree's
+// stack (own ports) is never mixed up with the main one. Shell variables
+// still win.
+const rootEnv = new URL("../../../.env", import.meta.url);
+if (existsSync(rootEnv)) process.loadEnvFile(rootEnv);
 
 const sql = postgres(
   process.env.DATABASE_URL ?? "postgres://sparkl:sparkl@localhost:5432/sparkl",
