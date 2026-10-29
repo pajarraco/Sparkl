@@ -120,11 +120,11 @@ Spec: `context/features/03-improvements-issues.md` (approved 2026-10-29). Built 
 
 #### B — Messages
 
-- [ ] `listThreads` service + `chat.listThreads` router + shared `chatThreadSchema` (party-only, last message, newest first), thread list on both Messages tabs, happy-path e2e checks the thread
+- [x] `listThreads` service + `chat.listThreads` router + shared `chatThreadSchema` (party-only, last message, newest first), thread list on both Messages tabs, happy-path e2e checks the thread
 
 #### C — Board filters
 
-- [ ] Filter chips + bottom sheet in `design.md`, chip row (date, distance, price) opening an RN `Modal` sheet, chip-label helpers in `ranked-board.ts` with tests, `forms.spec.ts` board filters updated
+- [x] Filter chips + bottom sheet in `design.md`, chip row (date, distance, price) opening an RN `Modal` sheet, chip-label helpers in `ranked-board.ts` with tests, `forms.spec.ts` board filters updated
 
 #### D — Two-way assignment (after 02 P2)
 
