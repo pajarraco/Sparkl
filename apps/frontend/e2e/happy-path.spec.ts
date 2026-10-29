@@ -20,11 +20,10 @@ import {
 //
 // Navigation stays inside each role's tab group: /my-jobs, /job/:id,
 // /chat/:jobId and /review/:jobId exist in BOTH the (host) and (cleaner)
-// groups, so a bare page.goto on those URLs can resolve to the wrong
-// group's screen. Only /post (host) and /board (cleaner) are unique and
-// safe to deep-link; everything else goes through tab taps and buttons.
-// Detail screens are Stack screens without tabs: leave them with goBack
-// (or a goto to a tab screen after a reload), never a tab tap.
+// groups. The group layouts now send a user who lands in the other
+// role's group back to their own (03 A2), but these stages still move
+// through tab taps and buttons, like a user would. Detail screens push
+// inside their tab and keep the tab bar; goBack still leaves them.
 
 async function newRolePage(
   browser: Browser,
@@ -111,8 +110,8 @@ test("start, complete, both reviews", async ({ browser }, testInfo) => {
     await tap(cleaner.page, "cleaner-job-claim");
     await expect(cleaner.page.getByTestId("cleaner-job-claimed")).toBeVisible();
 
-    // Cleaner starts; host completes. Detail is a Stack screen without
-    // tabs, so go back to the board first, then switch tabs.
+    // Cleaner starts; host completes. Back to the board first, then
+    // switch tabs.
     await cleaner.page.goBack();
     await cleaner.page.getByRole("tab", { name: "My jobs" }).click();
     await tap(cleaner.page, `cleaner-job-card-${jobId}`);

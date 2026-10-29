@@ -65,7 +65,8 @@ Role-based bottom tabs. The tab bar changes with the signed-in role:
 | Profile | Profile |
 
 - Active tab: `indigo` icon + label. Inactive: `ink-mute`. Unread counts badge on Messages.
-- Stacks push detail screens (job detail, chat thread, review) over their tab; each tab keeps its own history.
+- Detail screens (job detail, chat thread, review) push inside the tab they were opened from, and the tab bar stays visible, so the user can jump to another tab from a job or a chat. Each tab keeps its own history; tapping the active tab again returns to its root.
+- Every detail screen has a Back button above its title. With history it goes back; on a deep link or after a reload it returns to the root of its tab.
 - Auth (welcome, sign in, sign up with role pick) sits outside the tabs until signed in.
 
 ## Screen Inventory
@@ -101,6 +102,7 @@ The one memorable component, used on the Board, My Jobs, and suggestions:
 - **Buttons:** primary = `indigo` fill, white uppercase label (600, +0.03em), radius 6. Secondary = white fill, 2px `indigo` border + text. Destructive = danger text, no fill. Loading state inside the button, never a bare spinner.
 - **Inputs:** white fill, `stone` border, radius 6, label above in eyebrow style. Focus: 2px `indigo` outline. Never strip the focus ring.
 - **Tab bar:** as in Navigation; 44pt minimum touch targets throughout.
+- **Back button:** Feather `chevron-left` (24) in `ink`, icon only, no fill or border, 44pt touch target, accessibility label "Back". Sits at the top-left, above the screen title; the pressed state shifts the icon to `indigo`.
 - **Badges/tags:** `orange-tint` background with `orange-deep` text, or `paper-2` with `ink-soft`.
 - **Stars:** ★ glyphs in `orange-deep`, 5-step, tappable in the review form, read-only elsewhere.
 - **Avatars:** photo or initials on `paper-2`, full-round, `stone` ring.

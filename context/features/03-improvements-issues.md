@@ -85,7 +85,7 @@ The 02 session works in the same repo. To avoid collisions:
 | Item | Files it touches | Clash with 02 | Start |
 | ---- | ---------------- | ------------- | ----- |
 | A1 Role switch | `providers/auth-*`, profile sign-out, root layout | None | Now |
-| A2 Navigation | group and tab layouts, route moves, `Screen` | One navigation line in `post.tsx` | Now |
+| A2 Navigation | group and tab layouts, route moves, `Screen` | None (Post does not navigate after posting) | Now |
 | B Messages | new chat service and router, `messages.tsx` | None | Now (after A2 for the stack) |
 | C Board filters | `board.tsx`, `ranked-board.ts` | None | Now |
 | D Two-way assignment | jobs service, new table, both Job Detail screens, suggestions | 02 P2 "go with {cleaner}" pin | After 02 P2 |
@@ -145,8 +145,14 @@ tab bar.
   the tab's home. Add it to `design.md` (Navigation, Components) first.
 - Tapping the active tab again pops to its root. Re-check the web-only
   `tabPress` history listener against the nested stacks.
-- The Post success redirect becomes a push into the My Jobs stack. That
-  is a one-line change in `post.tsx`, coordinated with 02.
+- Post shows its "posted" state in place and does not navigate, so
+  `post.tsx` is untouched (no overlap with 02).
+- **Role guard (found while building A2):** `/job/:id`, `/chat/:jobId`,
+  `/review/:jobId`, `/my-jobs`, `/messages` and `/profile` exist in both
+  role groups, and a reload or deep link resolves to `(cleaner)` first, so
+  a host got the cleaner's screens. The group layouts now check the role
+  and send a user in the wrong group to the same screen in their own
+  (`routeForRole`).
 - The group-level Stack routes for job, chat and review are removed.
 
 **Done when:** every detail screen shows the back button and the tab bar

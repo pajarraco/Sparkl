@@ -1,27 +1,28 @@
 import type { ListOpenJobsInput, RankedJob } from "@sparkl/shared";
-import { useRouter } from "expo-router";
+import { useRouter, useSegments } from "expo-router";
 import { useCallback, useState } from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
-import { BodyText } from "../../../components/BodyText";
-import { JobCard } from "../../../components/JobCard";
-import { Screen } from "../../../components/Screen";
-import { SparklButton } from "../../../components/SparklButton";
-import { SparklTextField } from "../../../components/SparklTextField";
-import { sparklTrpc } from "../../../providers/app-providers";
-import { getStrings } from "../../../providers/i18n";
-import { statusLabelFor } from "../../../providers/my-jobs";
+import { BodyText } from "../../../../components/BodyText";
+import { JobCard } from "../../../../components/JobCard";
+import { Screen } from "../../../../components/Screen";
+import { SparklButton } from "../../../../components/SparklButton";
+import { SparklTextField } from "../../../../components/SparklTextField";
+import { sparklTrpc } from "../../../../providers/app-providers";
+import { getStrings } from "../../../../providers/i18n";
+import { statusLabelFor } from "../../../../providers/my-jobs";
 import {
   type BoardFilterErrors,
   type BoardServiceCenter,
   boardMetaLine,
   validateBoardFilters,
-} from "../../../providers/ranked-board";
+} from "../../../../providers/ranked-board";
+import { stackHref } from "../../../../providers/tabs";
 import {
   THEME_COLORS,
   THEME_FONT_FAMILY,
   THEME_RADII,
   THEME_SPACING,
-} from "../../../providers/theme";
+} from "../../../../providers/theme";
 
 // Cleaner Board (design.md Screen Inventory): ranked open jobs over one
 // jobs.listRanked query, filters for date / minimum price / distance.
@@ -67,6 +68,7 @@ const styles = StyleSheet.create({
 export default function CleanerBoardScreen() {
   const strings = getStrings();
   const router = useRouter();
+  const segments = useSegments();
   const [date, setDate] = useState("");
   const [minPrice, setMinPrice] = useState("");
   const [maxDistanceKm, setMaxDistanceKm] = useState("");
@@ -114,7 +116,7 @@ export default function CleanerBoardScreen() {
         onPress={() => {
           // push (not navigate): the detail is a stack screen, and push
           // unconditionally pushes it. navigate stayed on /board in E2E.
-          router.push(`/(cleaner)/job/${item.job.id}`);
+          router.push(stackHref("cleaner", segments, `job/${item.job.id}`));
         }}
         status={item.job.status}
         statusLabel={statusLabelFor(item.job.status)}
@@ -122,7 +124,7 @@ export default function CleanerBoardScreen() {
         title={strings.jobCard.title}
       />
     ),
-    [strings, router],
+    [strings, router, segments],
   );
 
   const jobs = boardQuery.data?.jobs;

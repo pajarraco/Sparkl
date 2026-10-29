@@ -1,4 +1,4 @@
-import { Tabs, router, usePathname } from "expo-router";
+import { Tabs, router } from "expo-router";
 import { Platform } from "react-native";
 import { TabBarIcon } from "../../../components/TabBarIcon";
 import { getTabsForRole } from "../../../providers/tabs";
@@ -10,7 +10,6 @@ import { THEME_COLORS } from "../../../providers/theme";
 const tabs = getTabsForRole("host");
 
 export default function HostTabsLayout() {
-  const pathname = usePathname();
   return (
     <Tabs
       backBehavior="history"
@@ -23,24 +22,23 @@ export default function HostTabsLayout() {
       {tabs.map((tab) => (
         <Tabs.Screen
           key={tab.key}
-          name={tab.route.split("/").pop() ?? tab.key}
-          listeners={{
-            // Web-only: every tab tap pushes a real history entry (E2E
-            // navigation suite) so the browser back button walks back
+          name={tab.screen}
+          listeners={({ navigation }) => ({
+            // Web-only: tapping another tab pushes a real history entry
+            // (E2E navigation suite) so the browser back button walks back
             // through tabs. One router.push owns both the focus and the
             // history write: the earlier hand-rolled pushState + navigate
             // pair raced (navigate pushed a duplicate of the just-pushed
-            // entry), so goBack stayed on the same tab. Native is
-            // untouched (hardware back is governed by backBehavior).
+            // entry), so goBack stayed on the same tab. Tapping the active
+            // tab keeps the default, which pops its stack to the root
+            // (design.md Navigation). Native is untouched (hardware back
+            // is governed by backBehavior).
             tabPress: (event) => {
-              if (Platform.OS !== "web") return;
+              if (Platform.OS !== "web" || navigation.isFocused()) return;
               event.preventDefault();
-              const target = tab.route.split("/").pop();
-              const current = pathname.split("/").pop();
-              if (target === current || target === undefined) return;
               router.push(tab.route);
             },
-          }}
+          })}
           options={{
             title: tab.title,
             tabBarIcon: ({ color, size }) => (

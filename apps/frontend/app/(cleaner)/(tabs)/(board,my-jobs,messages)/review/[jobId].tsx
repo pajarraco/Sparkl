@@ -1,12 +1,12 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { BodyText } from "../../../components/BodyText";
-import { Screen } from "../../../components/Screen";
-import { SparklButton } from "../../../components/SparklButton";
-import { SparklTextField } from "../../../components/SparklTextField";
-import { sparklTrpc } from "../../../providers/app-providers";
-import { getStrings } from "../../../providers/i18n";
+import { BodyText } from "../../../../../components/BodyText";
+import { DetailScreen } from "../../../../../components/DetailScreen";
+import { SparklButton } from "../../../../../components/SparklButton";
+import { SparklTextField } from "../../../../../components/SparklTextField";
+import { sparklTrpc } from "../../../../../providers/app-providers";
+import { getStrings } from "../../../../../providers/i18n";
 import {
   REVIEW_STARS,
   type ReviewFieldErrors,
@@ -14,13 +14,13 @@ import {
   cleanerReviewSubjectForJob,
   reviewSubmitErrorMessage,
   validateReviewForm,
-} from "../../../providers/leave-review";
+} from "../../../../../providers/leave-review";
 import {
   THEME_COLORS,
   THEME_FONT_FAMILY,
   THEME_RADII,
   THEME_SPACING,
-} from "../../../providers/theme";
+} from "../../../../../providers/theme";
 
 // Cleaner Leave Review screen (design.md Screen Inventory): 1–5
 // tappable ★ glyphs (orange-deep when selected, ink-mute when not) plus
@@ -131,20 +131,28 @@ export default function CleanerLeaveReviewScreen() {
 
   if (jobId === null) {
     return (
-      <Screen testID="cleaner-leave-review-screen" title={strings.review.title}>
+      <DetailScreen
+        userRole="cleaner"
+        testID="cleaner-leave-review-screen"
+        title={strings.review.title}
+      >
         <Text accessibilityLiveRegion="polite" style={styles.formError}>
           {strings.errors.generic}
         </Text>
-      </Screen>
+      </DetailScreen>
     );
   }
 
   if (jobsQuery.isPending) {
     return (
-      <Screen testID="cleaner-leave-review-screen" title={strings.review.title}>
+      <DetailScreen
+        userRole="cleaner"
+        testID="cleaner-leave-review-screen"
+        title={strings.review.title}
+      >
         <View style={styles.skeleton} />
         <View style={styles.skeleton} />
-      </Screen>
+      </DetailScreen>
     );
   }
 
@@ -157,7 +165,11 @@ export default function CleanerLeaveReviewScreen() {
 
   if (jobsQuery.isError || job === undefined || subjectId === null) {
     return (
-      <Screen testID="cleaner-leave-review-screen" title={strings.review.title}>
+      <DetailScreen
+        userRole="cleaner"
+        testID="cleaner-leave-review-screen"
+        title={strings.review.title}
+      >
         <Text accessibilityLiveRegion="polite" style={styles.formError}>
           {strings.errors.generic}
         </Text>
@@ -170,13 +182,14 @@ export default function CleanerLeaveReviewScreen() {
           title={strings.errors.retry}
           variant="secondary"
         />
-      </Screen>
+      </DetailScreen>
     );
   }
 
   if (job.status !== "completed") {
     return (
-      <Screen
+      <DetailScreen
+        userRole="cleaner"
         subtitle={job.address}
         testID="cleaner-leave-review-screen"
         title={strings.review.title}
@@ -184,13 +197,17 @@ export default function CleanerLeaveReviewScreen() {
         <Text accessibilityLiveRegion="polite" style={styles.formError}>
           {strings.errors.generic}
         </Text>
-      </Screen>
+      </DetailScreen>
     );
   }
 
   if (submitted) {
     return (
-      <Screen testID="cleaner-leave-review-screen" title={strings.review.title}>
+      <DetailScreen
+        userRole="cleaner"
+        testID="cleaner-leave-review-screen"
+        title={strings.review.title}
+      >
         <View style={styles.success}>
           <BodyText testID="leave-review-success">
             {strings.review.success}
@@ -205,12 +222,13 @@ export default function CleanerLeaveReviewScreen() {
             variant="secondary"
           />
         </View>
-      </Screen>
+      </DetailScreen>
     );
   }
 
   return (
-    <Screen
+    <DetailScreen
+      userRole="cleaner"
       subtitle={job.address}
       testID="cleaner-leave-review-screen"
       title={strings.review.title}
@@ -279,6 +297,6 @@ export default function CleanerLeaveReviewScreen() {
           title={strings.review.submit}
         />
       </View>
-    </Screen>
+    </DetailScreen>
   );
 }

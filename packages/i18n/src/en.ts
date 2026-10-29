@@ -23,6 +23,9 @@ export const en = {
     messages: "Messages",
     profile: "Profile",
   },
+  navigation: {
+    back: "Back",
+  },
   postJob: {
     title: "Post a job",
     addressLabel: "Property address",
