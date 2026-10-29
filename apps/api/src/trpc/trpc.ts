@@ -70,11 +70,11 @@ export const authedProcedure = t.procedure.use(errorMapper).use(requireAuth);
 
 export function roleProcedure(...allowed: UserRole[]) {
   const roles = allowed.map((r) => userRoleSchema.parse(r));
-  return authedProcedure.use(
-    t.middleware(async ({ ctx, next }) => {
-      if (!ctx.role || !roles.includes(ctx.role))
-        throw new TRPCError({ code: "FORBIDDEN" });
-      return next({ ctx });
-    }),
-  );
+  // Inline middleware (not t.middleware) so the signed-in ctx narrowing
+  // from authedProcedure carries through to the resolver.
+  return authedProcedure.use(async ({ ctx, next }) => {
+    if (!ctx.role || !roles.includes(ctx.role))
+      throw new TRPCError({ code: "FORBIDDEN" });
+    return next();
+  });
 }

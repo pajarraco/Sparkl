@@ -1,5 +1,6 @@
 import { chatRouter } from "./routers/chat.js";
 import { geoRouter } from "./routers/geo.js";
+import { jobAssistantRouter } from "./routers/job-assistant.js";
 import { jobsRouter } from "./routers/jobs.js";
 import { reviewsRouter } from "./routers/reviews.js";
 import { storageRouter } from "./routers/storage.js";
@@ -15,6 +16,7 @@ export const appRouter = router({
   reviews: reviewsRouter,
   storage: storageRouter,
   geo: geoRouter,
+  jobAssistant: jobAssistantRouter,
 });
 
 export type AppRouter = typeof appRouter;
