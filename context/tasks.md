@@ -86,7 +86,7 @@ Spec: `context/features/02-integrate-baseten.md` (approved 2026-10-29). Phases a
 - [x] Job-assistant agent loop (`update_draft`, `geocode_address`; 6-step cap; Zod on every tool argument and output) + `jobAssistant.turn` router
 - [x] Post tab assistant UI + pre-filled review form; "Use the form instead" keeps the draft
 - [x] `AddressMapPicker` on the review form (native + web), replacing the lat/lng fields
-- [ ] Cleaner `ServiceAreaMapPicker` (pin + radius) + a single save button for service area and availability (from 03)
+- [x] Cleaner `ServiceAreaMapPicker` (pin + radius) + a single save button for service area and availability (from 03)
 
 #### P2 — Smart
 

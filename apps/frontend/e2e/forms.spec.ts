@@ -237,10 +237,14 @@ test("board distance filter needs a service area first", async ({
       page.getByText("Set your service area in Profile to filter by distance."),
     ).toBeVisible();
     await page.getByRole("tab", { name: "Profile" }).click();
-    await page.getByTestId("cleaner-profile-latitude").fill("25.7617");
-    await page.getByTestId("cleaner-profile-longitude").fill("-80.1918");
-    await page.getByTestId("cleaner-profile-radius").fill("50");
-    await page.getByTestId("cleaner-profile-save-area").click();
+    await mockGeo(page);
+    await page
+      .getByTestId("cleaner-profile-address")
+      .fill("E2E base, obviously fake");
+    await page.getByTestId("cleaner-profile-place-0").click();
+    await page.getByTestId("cleaner-profile-radius-50").click();
+    await page.getByTestId("cleaner-profile-save").click();
+    await expect(page.getByTestId("cleaner-profile-saved")).toBeVisible();
     await page.getByRole("tab", { name: "Board" }).click();
     await page.getByTestId("cleaner-board-max-distance").fill("50");
     await page.getByTestId("cleaner-board-apply").click();

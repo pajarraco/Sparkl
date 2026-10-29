@@ -85,11 +85,18 @@ export interface AddressMapPickerProps {
   onChange: (value: AddressValue) => void;
   addressError?: string | undefined;
   coordsError?: string | undefined;
+  // Defaults fit Post Job; the cleaner service area overrides them.
+  label?: string | undefined;
+  mapHint?: string | undefined;
+  radiusKm?: number | undefined;
+  testIDPrefix?: string | undefined;
 }
 
 export function AddressMapPicker(props: AddressMapPickerProps) {
   const strings = getStrings();
   const utils = sparklTrpc.useUtils();
+  const prefix = props.testIDPrefix ?? "post-job";
+  const mapHint = props.mapHint ?? strings.postJob.mapHint;
   const coords = coordsOf(props.value);
   const picked = coords !== null;
   const query = useDebounced(
@@ -127,17 +134,17 @@ export function AddressMapPicker(props: AddressMapPickerProps) {
     <View style={styles.root}>
       <SparklTextField
         error={props.addressError}
-        label={strings.postJob.addressLabel}
+        label={props.label ?? strings.postJob.addressLabel}
         onChangeText={(text) => props.onChange(typedAddress(text))}
         placeholder={strings.postJob.addressHint}
-        testID="post-job-address"
+        testID={`${prefix}-address`}
         value={props.value.address}
       />
       {searching && suggestions.isFetching ? (
         <Text style={styles.meta}>{strings.postJob.searching}</Text>
       ) : null}
       {searching && suggestions.isSuccess && places.length === 0 ? (
-        <Text style={styles.meta} testID="post-job-no-matches">
+        <Text style={styles.meta} testID={`${prefix}-no-matches`}>
           {strings.postJob.noMatches}
         </Text>
       ) : null}
@@ -151,7 +158,7 @@ export function AddressMapPicker(props: AddressMapPickerProps) {
             styles.option,
             pressed ? styles.optionPressed : null,
           ]}
-          testID={`post-job-place-${index}`}
+          testID={`${prefix}-place-${index}`}
         >
           <Text style={styles.optionText}>{place.label}</Text>
         </Pressable>
@@ -160,16 +167,17 @@ export function AddressMapPicker(props: AddressMapPickerProps) {
         <>
           <View style={styles.mapFrame}>
             <PinMap
-              accessibilityLabel={strings.postJob.mapHint}
+              accessibilityLabel={mapHint}
               latitude={coords.latitude}
               longitude={coords.longitude}
+              radiusKm={props.radiusKm}
               onMove={(latitude, longitude) => {
                 void handlePinMove(latitude, longitude);
               }}
-              testID="post-job-map"
+              testID={`${prefix}-map`}
             />
           </View>
-          <BodyText soft>{strings.postJob.mapHint}</BodyText>
+          <BodyText soft>{mapHint}</BodyText>
           <Text style={styles.meta}>{strings.postJob.osmAttribution}</Text>
         </>
       )}
@@ -177,7 +185,7 @@ export function AddressMapPicker(props: AddressMapPickerProps) {
         <Text
           accessibilityLiveRegion="polite"
           style={styles.error}
-          testID="post-job-coords-error"
+          testID={`${prefix}-coords-error`}
         >
           {props.coordsError}
         </Text>

@@ -126,7 +126,14 @@ export const en = {
     photoLabel: "Photo",
     areaLabel: "Service area",
     radiusLabel: "Radius (km)",
-    saveArea: "Save service area",
+    baseAddressLabel: "Base address",
+    areaHint:
+      "Search your base address, then drag the pin. Jobs inside the circle rank higher.",
+    radiusOption: "{km} km",
+    pickArea:
+      "Pick your base address from the list or drop the pin on the map.",
+    save: "Save profile",
+    saved: "Profile saved.",
     ratingHeading: "Rating",
     jobsDoneHeading: "Jobs completed",
     viewPublic: "View public profile",
@@ -138,8 +145,6 @@ export const en = {
     hint: "When you are usually available for cleanings.",
     weekdaysLabel: "Weekdays",
     weekendLabel: "Weekends",
-    save: "Save availability",
-    saved: "Availability saved.",
   },
   filters: {
     title: "Filters",
