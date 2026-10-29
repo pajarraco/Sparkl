@@ -73,10 +73,10 @@ Spec: `context/features/02-integrate-baseten.md` (approved 2026-10-29). Phases a
 
 #### P0 — Spike (no merge)
 
-- [ ] Tool calling on Muse Spark Open (Baseten) and Glimmer (Ollama) with the four agent tools
+- [x] Tool calling on Muse Spark Open (Baseten) and Glimmer (Ollama) with the four agent tools (both pass; results in 02 Verified Facts)
 - [ ] `react-native-maps` + OSM `UrlTile` on RN 0.88 in Expo Go; `react-leaflet` on Expo web
-- [ ] Muse Voice Transcribe endpoint + audio formats with `META_MODEL_IMAGE_API_KEY`
-- [ ] Owner decision: properties table inside 02 P1, or address per job until 03
+- [x] Muse Voice Transcribe endpoint + audio formats with `META_MODEL_IMAGE_API_KEY` (WAV only; 02 Verified Facts)
+- [x] Owner decision: address per job in 02, properties table moves to 03
 
 #### P1 — Core
 
