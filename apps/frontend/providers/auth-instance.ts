@@ -9,7 +9,10 @@ import { createSparklAuthClient } from "./auth-client";
 // Expo inlines EXPO_PUBLIC_* vars at bundle time; without process.env the
 // app always targets localhost, which on a physical phone is the phone
 // itself and sign-in fails with a generic network error.
-const origin = getApiOrigin(process.env, getPageHostname());
+const origin = getApiOrigin(
+  { EXPO_PUBLIC_API_URL: process.env.EXPO_PUBLIC_API_URL },
+  getPageHostname(),
+);
 
 export const authClient = createSparklAuthClient({
   origin,

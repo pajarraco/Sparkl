@@ -15,6 +15,11 @@ export function normalizeOrigin(origin: string): string {
 }
 
 export function getApiOrigin(
+  // Weak type on purpose: call sites pass a picked object, never the whole
+  // process.env. process.env itself is not assignable here — it carries
+  // only an index signature (weak-type check TS2559) — and NodeJS.ProcessEnv
+  // is no good either, since expo-modules-core augments it with a required
+  // NODE_ENV that test literals cannot satisfy (TS2345).
   env?: {
     EXPO_PUBLIC_API_URL?: string | undefined;
   },

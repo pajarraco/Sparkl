@@ -24,7 +24,10 @@ import {
 // Same localhost note as providers/auth-instance: read the bundled env so
 // physical devices can target the dev PC's LAN address. On web the page
 // hostname wins so cookies stay same-site.
-const origin = getApiOrigin(process.env, getPageHostname());
+const origin = getApiOrigin(
+  { EXPO_PUBLIC_API_URL: process.env.EXPO_PUBLIC_API_URL },
+  getPageHostname(),
+);
 const queryClient = createQueryClient({
   onQueryError: handleExpiredSession,
   onMutationError: handleExpiredSession,

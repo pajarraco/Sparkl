@@ -54,12 +54,6 @@
 - [x] Seed script for demo accounts and jobs (`pnpm --filter @sparkl/api seed:demo`)
 - [ ] Full demo script passing on web + one native target
 
-### Stretch (only if time allows)
-
-- [ ] Push notifications
-- [ ] Spanish strings
-- [ ] Maestro e2e smoke test
-
 ### 9. Frontend — E2E testing (Playwright, web-only, local-only)
 
 Spec: `context/features/01-e2e-testing-implementation.md` (grilled, 14 decisions agreed).
@@ -72,6 +66,12 @@ Spec: `context/features/01-e2e-testing-implementation.md` (grilled, 14 decisions
 - [x] Scroll suite (seeded session): board FlatList scroll, pagination/lazy rows if present, no layout shift, at both viewports
 - [x] Happy-path suite (seeded session): post → claim → chat (history-refetch assertions) → in-progress → completed → both reviews, end to end on web
 - [x] Wire-up: separate documented `e2e` command (kept out of `pnpm verify`); tick Demo-gate boxes only with green `test` + `typecheck` + `lint` output quoted; `CHANGELOG.md` entry under `[Unreleased]`
+
+### Stretch (only if time allows)
+
+- [ ] Push notifications
+- [ ] Spanish strings
+- [ ] Maestro e2e smoke test
 
 ## Done
 
