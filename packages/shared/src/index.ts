@@ -10,3 +10,5 @@ export * from "./job-inputs";
 export * from "./user-inputs";
 export * from "./storage";
 export * from "./suggestions";
+export * from "./geo";
+export * from "./voice";
