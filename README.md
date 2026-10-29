@@ -43,6 +43,14 @@ Phone and PC must be on the same WiFi. Three gotchas from real debugging:
 - Expo reads `apps/frontend/.env`, not the repo-root `.env`. Put `EXPO_PUBLIC_API_URL=http://<PC-LAN-IP>:3000` there (gitignored). Fully restart Expo after changing it.
 - `TRUSTED_ORIGINS` in the root `.env` must include the Expo Go origin: `exp://<PC-LAN-IP>:8081`. Restart the API after changing it.
 - On web the app uses the page's own host for the API (same-site cookies); on native it uses `EXPO_PUBLIC_API_URL`. No per-device switching needed.
+- Chat rides SSE over the same HTTP `/trpc` endpoint; there is no `ws://` URL to configure.
+
+### On-device demo pass
+
+1. Get the PC's LAN IP (`ipconfig`, e.g. `192.168.1.20`). Root `.env`: copy from `.env.example`, set a real `BETTER_AUTH_SECRET` and `TRUSTED_ORIGINS=http://localhost:8081,exp://<PC-LAN-IP>:8081`. Restart the API after changing it.
+2. `pnpm install`, then `pnpm dev` (API on :3000, Expo on :8081). Scan the QR with the Expo Go app.
+3. Seed with `pnpm --filter @sparkl/api seed:demo` (see Demo Logins below).
+4. Walk the demo script in `context/project.md`: host posts a Friday turnover and sees ranked cleaners → cleaner sees the ranked job and claims it → chat to confirm → cleaner marks in progress, then completed → both leave 1–5 star reviews → the completed job shows in the host's history.
 
 ## Demo Logins (Testing)
 

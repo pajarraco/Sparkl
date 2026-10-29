@@ -1,7 +1,12 @@
 import { expect, test } from "@playwright/test";
 import type { Browser } from "@playwright/test";
 import type { Page } from "@playwright/test";
-import { newBrowserSession, seedOpenJob } from "./fixtures";
+import {
+  dayWindow,
+  newBrowserSession,
+  pinBoardToDay,
+  seedOpenJob,
+} from "./fixtures";
 
 // Happy-path suite (context/features/01-e2e-testing-implementation.md
 // step 7): post → claim → chat → in-progress → completed → both reviews,
@@ -25,6 +30,8 @@ async function newRolePage(
   return { page: await context.newPage(), close: () => context.close() };
 }
 
+const HAPPY_DAY_1 = "2036-06-06";
+
 test("claim, chat, history refetch", async ({ browser }, testInfo) => {
   test.setTimeout(120_000);
   const host = await newRolePage(browser, "host", testInfo.workerIndex);
@@ -34,10 +41,11 @@ test("claim, chat, history refetch", async ({ browser }, testInfo) => {
   const message = `Hello E2E ${Date.now()}, obviously fake`;
   const { id: jobId } = await seedOpenJob(host.page.context().request, {
     address,
+    ...dayWindow(HAPPY_DAY_1),
   });
   try {
-    // Cleaner claims from the board.
-    await cleaner.page.goto("/board");
+    // Cleaner claims from the board (pinned to our day, failing fast).
+    await pinBoardToDay(cleaner.page, HAPPY_DAY_1, jobId);
     await cleaner.page.getByTestId(`cleaner-board-card-${jobId}`).click();
     await cleaner.page.getByTestId("cleaner-job-claim").click();
     await expect(cleaner.page.getByTestId("cleaner-job-claimed")).toBeVisible();
@@ -64,6 +72,8 @@ test("claim, chat, history refetch", async ({ browser }, testInfo) => {
   }
 });
 
+const HAPPY_DAY_2 = "2036-06-07";
+
 test("start, complete, both reviews", async ({ browser }, testInfo) => {
   test.setTimeout(120_000);
   const host = await newRolePage(browser, "host", testInfo.workerIndex);
@@ -72,10 +82,11 @@ test("start, complete, both reviews", async ({ browser }, testInfo) => {
   const address = `E2E Done ${Date.now()}-w${testInfo.workerIndex}`;
   const { id: jobId } = await seedOpenJob(host.page.context().request, {
     address,
+    ...dayWindow(HAPPY_DAY_2),
   });
   try {
     // Cleaner claims through the UI so the job belongs to this session.
-    await cleaner.page.goto("/board");
+    await pinBoardToDay(cleaner.page, HAPPY_DAY_2, jobId);
     await cleaner.page.getByTestId(`cleaner-board-card-${jobId}`).click();
     await cleaner.page.getByTestId("cleaner-job-claim").click();
     await expect(cleaner.page.getByTestId("cleaner-job-claimed")).toBeVisible();

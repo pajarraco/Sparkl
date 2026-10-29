@@ -105,7 +105,7 @@ export default function CleanerMyJobsScreen() {
 
   const openJob = useCallback(
     (jobId: string) => {
-      router.push(`/(cleaner)/job/${jobId}`);
+      router.navigate(`/(cleaner)/job/${jobId}`);
     },
     [router],
   );

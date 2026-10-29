@@ -1,4 +1,4 @@
-import type { APIRequestContext, Browser } from "@playwright/test";
+import type { APIRequestContext, Browser, Page } from "@playwright/test";
 import { expect, request } from "@playwright/test";
 
 // Shared E2E fixtures (context/features/01-e2e-testing-implementation.md
@@ -97,6 +97,33 @@ export async function jobIdByAddress(
   const match = body[0]?.result?.data?.find((job) => job.address === address);
   expect(match?.id).toBeTruthy();
   return match?.id as string;
+}
+
+// Same-day 10:00–13:00 UTC window for a YYYY-MM-DD day string. Keeps the
+// windowStart/windowEnd clump in one place; spread into seedOpenJob.
+export function dayWindow(day: string): {
+  windowStart: string;
+  windowEnd: string;
+} {
+  return {
+    windowStart: `${day}T10:00:00Z`,
+    windowEnd: `${day}T13:00:00Z`,
+  };
+}
+
+// Pins the ranked board to one day and asserts the seeded card is visible.
+// The board is score-sorted with no pagination, so filtering beats relying
+// on rank position; the expect turns a missing card into a fast failure
+// (a raw click waits without a timeout).
+export async function pinBoardToDay(
+  page: Page,
+  day: string,
+  jobId: string,
+): Promise<void> {
+  await page.goto("/board");
+  await page.getByTestId("cleaner-board-date").fill(day);
+  await page.getByTestId("cleaner-board-apply").click();
+  await expect(page.getByTestId(`cleaner-board-card-${jobId}`)).toBeVisible();
 }
 
 // Authenticated API context for a fresh timestamped account: signs the

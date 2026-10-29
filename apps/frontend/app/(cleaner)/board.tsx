@@ -111,7 +111,7 @@ export default function CleanerBoardScreen() {
         address={item.job.address}
         metaLine={boardMetaLine(item.job, item.score)}
         onPress={() => {
-          router.push(`/(cleaner)/job/${item.job.id}`);
+          router.navigate(`/(cleaner)/job/${item.job.id}`);
         }}
         status={item.job.status}
         statusLabel={statusLabelFor(item.job.status)}

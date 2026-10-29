@@ -230,7 +230,7 @@ export default function CleanerJobDetailScreen() {
           <SparklButton
             accessibilityLabel={strings.jobDetail.openChat}
             onPress={() => {
-              router.push(`/(cleaner)/chat/${job.id}`);
+              router.navigate(`/(cleaner)/chat/${job.id}`);
             }}
             testID="cleaner-job-open-chat"
             title={strings.jobDetail.openChat}
@@ -241,7 +241,7 @@ export default function CleanerJobDetailScreen() {
           <SparklButton
             accessibilityLabel={strings.review.title}
             onPress={() => {
-              router.push(`/(cleaner)/review/${job.id}`);
+              router.navigate(`/(cleaner)/review/${job.id}`);
             }}
             testID="cleaner-job-leave-review"
             title={strings.review.title}

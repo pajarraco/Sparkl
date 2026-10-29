@@ -91,7 +91,7 @@ export default function HostMyJobsScreen() {
         address={item.address}
         metaLine={hostMetaLine(item)}
         onPress={() => {
-          router.push(`/(host)/job/${item.id}`);
+          router.navigate(`/(host)/job/${item.id}`);
         }}
         status={item.status}
         statusLabel={statusLabelFor(item.status)}

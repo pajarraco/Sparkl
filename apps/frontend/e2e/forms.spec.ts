@@ -2,9 +2,11 @@ import { expect, test } from "@playwright/test";
 import type { Browser } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import {
+  dayWindow,
   jobIdByAddress,
   newApiSession,
   newBrowserSession,
+  pinBoardToDay,
   seedOpenJob,
 } from "./fixtures";
 
@@ -220,8 +222,7 @@ test("claim CTA claims the job from its detail", async ({
   const address = `E2E Claim ${Date.now()}-w${testInfo.workerIndex}`;
   const { id } = await seedOpenJob(hostApi, {
     address,
-    windowStart: `${CLAIM_DAY}T10:00:00Z`,
-    windowEnd: `${CLAIM_DAY}T13:00:00Z`,
+    ...dayWindow(CLAIM_DAY),
   });
   const { context } = await newBrowserSession(
     browser,
@@ -230,9 +231,7 @@ test("claim CTA claims the job from its detail", async ({
   );
   try {
     const page = await context.newPage();
-    await page.goto("/board");
-    await page.getByTestId("cleaner-board-date").fill(CLAIM_DAY);
-    await page.getByTestId("cleaner-board-apply").click();
+    await pinBoardToDay(page, CLAIM_DAY, id);
     await page.getByTestId(`cleaner-board-card-${id}`).click();
     await expect(page.getByRole("button", { name: "Claim job" })).toBeVisible();
     await page.getByTestId("cleaner-job-claim").click();
