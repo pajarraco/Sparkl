@@ -18,11 +18,9 @@ import {
 // server; every stage itself is driven through the UI. Chat assertions
 // use history refetch (reload), never socket-push timing.
 //
-// Navigation stays inside each role's tab group: /my-jobs, /job/:id,
-// /chat/:jobId and /review/:jobId exist in BOTH the (host) and (cleaner)
-// groups, so a bare page.goto on those URLs can resolve to the wrong
-// group's screen. Only /post (host) and /board (cleaner) are unique and
-// safe to deep-link; everything else goes through tab taps and buttons.
+// Host screens live under /host/... and cleaner screens at the root, so
+// every URL belongs to one role and is safe to deep-link or reload. The
+// suite still drives stages through tab taps and buttons, like a user.
 // Detail screens are Stack screens without tabs: leave them with goBack
 // (or a goto to a tab screen after a reload), never a tab tap.
 
@@ -80,7 +78,7 @@ test("claim, chat, history refetch", async ({ browser }, testInfo) => {
 
     // Host reads the message from their own chat thread (claimed jobs
     // live under the Active segment).
-    await host.page.goto("/post");
+    await host.page.goto("/host/post");
     await host.page.getByRole("tab", { name: "My jobs" }).click();
     await host.page.getByTestId("host-my-jobs-segment-active").click();
     await tap(host.page, `host-job-card-${jobId}`);
@@ -118,7 +116,7 @@ test("start, complete, both reviews", async ({ browser }, testInfo) => {
     await tap(cleaner.page, `cleaner-job-card-${jobId}`);
     await tap(cleaner.page, "cleaner-job-start");
     await expect(cleaner.page.getByTestId("cleaner-job-start")).toHaveCount(0);
-    await host.page.goto("/post");
+    await host.page.goto("/host/post");
     await host.page.getByRole("tab", { name: "My jobs" }).click();
     await host.page.getByTestId("host-my-jobs-segment-active").click();
     await tap(host.page, `host-job-card-${jobId}`);

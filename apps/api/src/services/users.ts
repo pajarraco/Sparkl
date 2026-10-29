@@ -79,6 +79,15 @@ export async function updateServiceArea(
   userId: string,
   input: ServiceAreaInput,
 ): Promise<User> {
+  // Only cleaners have a service area (it feeds distance and ranking).
+  const user = await store.findById(userId);
+  if (!user) throw notFound("profile");
+  if (user.role !== "cleaner") {
+    throw new UsersError(
+      SPARKL_ERROR_CODES.FORBIDDEN,
+      "only cleaners can set a service area",
+    );
+  }
   const updated = await store.update(userId, {
     serviceLat: input.serviceLat,
     serviceLng: input.serviceLng,

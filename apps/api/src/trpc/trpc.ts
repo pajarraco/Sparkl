@@ -49,12 +49,17 @@ export function toTRPCError(err: unknown): TRPCError {
   return new TRPCError({ code: "INTERNAL_SERVER_ERROR", cause: err });
 }
 
+// tRPC v11 never throws past next(): a failing resolver comes back as
+// { ok: false, error } with the original error as `cause`. Map Sparkl
+// domain errors from there (a try/catch here never fires, which made
+// every domain error a 500).
 const errorMapper = t.middleware(async ({ next }) => {
-  try {
-    return await next();
-  } catch (err) {
-    throw toTRPCError(err);
+  const result = await next();
+  const cause = result.ok ? undefined : result.error.cause;
+  if (!(cause instanceof TRPCError) && isSparklError(cause)) {
+    throw toTRPCError(cause);
   }
+  return result;
 });
 
 const requireAuth = t.middleware(async ({ ctx, next }) => {

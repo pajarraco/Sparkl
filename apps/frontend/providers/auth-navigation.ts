@@ -5,7 +5,7 @@ import type { AppRole } from "./auth";
 // gating of deep links lands with the session provider.
 
 export function getHomeRouteForRole(role: AppRole): string {
-  return role === "host" ? "/(host)/my-jobs" : "/(cleaner)/board";
+  return role === "host" ? "/host/my-jobs" : "/(cleaner)/board";
 }
 
 export function getInitialRoute(role: AppRole | null): string {

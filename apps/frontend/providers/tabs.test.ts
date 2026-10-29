@@ -21,7 +21,7 @@ describe("role tabs", () => {
     ]);
     expect(defs.filter((d) => d.prominent).map((d) => d.key)).toEqual(["post"]);
     for (const def of defs) {
-      expect(def.route.startsWith("/(host)/")).toBe(true);
+      expect(def.route.startsWith("/host/")).toBe(true);
     }
   });
 

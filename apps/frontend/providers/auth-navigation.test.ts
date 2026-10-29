@@ -7,9 +7,9 @@ describe("auth navigation", () => {
   });
 
   it("sends hosts to their jobs and cleaners to the board", () => {
-    expect(getHomeRouteForRole("host")).toBe("/(host)/my-jobs");
+    expect(getHomeRouteForRole("host")).toBe("/host/my-jobs");
     expect(getHomeRouteForRole("cleaner")).toBe("/(cleaner)/board");
-    expect(getInitialRoute("host")).toBe("/(host)/my-jobs");
+    expect(getInitialRoute("host")).toBe("/host/my-jobs");
     expect(getInitialRoute("cleaner")).toBe("/(cleaner)/board");
   });
 });

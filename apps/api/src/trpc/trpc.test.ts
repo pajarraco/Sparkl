@@ -40,3 +40,40 @@ describe("roleProcedure", () => {
     expect(await codeOf(caller.hostOnly())).toBe("UNAUTHORIZED");
   });
 });
+
+describe("error mapping", () => {
+  // Services throw plain errors carrying a Sparkl code; routers must turn
+  // them into the matching tRPC code, never a 500.
+  function failing(code: string) {
+    return router({
+      run: roleProcedure("host").query(() => {
+        throw Object.assign(new Error(`failed with ${code}`), { code });
+      }),
+    }).createCaller(ctx("host-1", "host"));
+  }
+
+  it.each([
+    ["NOT_FOUND", "NOT_FOUND"],
+    ["FORBIDDEN", "FORBIDDEN"],
+    ["JOB_ALREADY_CLAIMED", "CONFLICT"],
+    ["VALIDATION_ERROR", "BAD_REQUEST"],
+    ["RATE_LIMITED", "TOO_MANY_REQUESTS"],
+    ["UPSTREAM_UNAVAILABLE", "SERVICE_UNAVAILABLE"],
+  ])("maps %s to %s and keeps the message", async (sparkl, trpc) => {
+    const err = await failing(sparkl)
+      .run()
+      .catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe(trpc);
+    expect((err as TRPCError).message).toBe(`failed with ${sparkl}`);
+  });
+
+  it("keeps unknown errors as INTERNAL_SERVER_ERROR", async () => {
+    const caller = router({
+      run: roleProcedure("host").query(() => {
+        throw new Error("boom");
+      }),
+    }).createCaller(ctx("host-1", "host"));
+    expect(await codeOf(caller.run())).toBe("INTERNAL_SERVER_ERROR");
+  });
+});

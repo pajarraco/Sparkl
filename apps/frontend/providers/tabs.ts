@@ -30,26 +30,26 @@ export function getTabsForRole(role: AppRole): TabDef[] {
       {
         key: "myJobs",
         title: tabs.myJobs,
-        route: "/(host)/my-jobs",
+        route: "/host/my-jobs",
         icon: "briefcase",
       },
       {
         key: "post",
         title: tabs.post,
-        route: "/(host)/post",
+        route: "/host/post",
         icon: "plus-circle",
         prominent: true,
       },
       {
         key: "messages",
         title: tabs.messages,
-        route: "/(host)/messages",
+        route: "/host/messages",
         icon: "message-circle",
       },
       {
         key: "profile",
         title: tabs.profile,
-        route: "/(host)/profile",
+        route: "/host/profile",
         icon: "user",
       },
     ];

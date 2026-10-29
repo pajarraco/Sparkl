@@ -62,7 +62,7 @@ async function newHostPage(
 
 async function fillPostForm(page: Page, address: string): Promise<void> {
   await mockGeo(page);
-  await page.goto("/post");
+  await page.goto("/host/post");
   // The Post tab opens on the assistant; the form is one tap away.
   await page.getByTestId("assistant-review").click();
   await page.getByTestId("post-job-address").fill(address);
@@ -103,7 +103,7 @@ test("host posts a job through the UI and sees success", async ({
 test("empty post form shows validation", async ({ browser }, testInfo) => {
   const { page, close } = await newHostPage(browser, testInfo.workerIndex);
   try {
-    await page.goto("/post");
+    await page.goto("/host/post");
     await page.getByTestId("assistant-review").click();
     await page.getByTestId("post-job-submit").click();
     await expect(page.getByText("This field is required.")).toBeVisible();

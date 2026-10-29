@@ -253,7 +253,7 @@ export default function HostJobDetailScreen() {
               <SparklButton
                 accessibilityLabel={strings.jobDetail.openChat}
                 onPress={() => {
-                  router.push(`/(host)/chat/${job.id}`);
+                  router.push(`/host/chat/${job.id}`);
                 }}
                 testID="host-job-open-chat"
                 title={strings.jobDetail.openChat}
@@ -264,7 +264,7 @@ export default function HostJobDetailScreen() {
               <SparklButton
                 accessibilityLabel={strings.review.title}
                 onPress={() => {
-                  router.push(`/(host)/review/${job.id}`);
+                  router.push(`/host/review/${job.id}`);
                 }}
                 testID="host-job-leave-review"
                 title={strings.review.title}

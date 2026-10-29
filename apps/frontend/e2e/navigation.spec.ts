@@ -59,6 +59,31 @@ test("history back returns to the previous tab", async ({ page }, testInfo) => {
   await expect(page).toHaveURL(/\/post$/);
 });
 
+test("a reload keeps each role on its own screens", async ({
+  page,
+  browser,
+}, testInfo) => {
+  // Regression: host and cleaner used to share /profile, /my-jobs and
+  // /messages, and a direct load always opened the cleaner screen.
+  await signUpAs(page, "host", testInfo.workerIndex);
+  await page.getByRole("tab", { name: "Profile" }).click();
+  await expect(page).toHaveURL(/\/host\/profile$/);
+  await page.reload();
+  await expect(page.getByTestId("host-profile-screen")).toBeVisible();
+  await expect(page.getByTestId("cleaner-profile-screen")).toHaveCount(0);
+  await page.goto("/host/my-jobs");
+  await expect(page.getByTestId("host-my-jobs-screen")).toBeVisible();
+
+  const fresh = await browser.newContext();
+  const cleanerPage = await fresh.newPage();
+  await signUpAs(cleanerPage, "cleaner", testInfo.workerIndex);
+  // Wait for the signed-in tabs before loading a URL directly.
+  await expect(cleanerPage.getByRole("tab", { name: "Board" })).toBeVisible();
+  await cleanerPage.goto("/profile");
+  await expect(cleanerPage.getByTestId("cleaner-profile-screen")).toBeVisible();
+  await fresh.close();
+});
+
 test("unknown route leaves the app usable", async ({ page }) => {
   await page.goto("/nope-not-a-route");
   await page.goto("/welcome");
