@@ -3,6 +3,7 @@ import type { Browser } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import {
   dayWindow,
+  expectChatMessagePersisted,
   fillInto,
   newBrowserSession,
   pinBoardToDay,
@@ -58,9 +59,24 @@ test("claim, chat, history refetch", async ({ browser }, testInfo) => {
     await tap(cleaner.page, "cleaner-job-open-chat");
     await fillInto(cleaner.page, "chat-input", message);
     await tap(cleaner.page, "chat-send");
+    // chat-list (not just the text) proves a real message row rendered —
+    // the composer input holding the draft must never satisfy this.
+    await expect(cleaner.page.getByTestId("chat-list")).toBeVisible();
     await expect(cleaner.page.getByText(message)).toBeVisible();
+    // Server truth before reload: the row must exist via chat.list on the
+    // host party session, or the UI echo above proved nothing.
+    await expectChatMessagePersisted(
+      host.page.context().request,
+      jobId,
+      message,
+    );
     await cleaner.page.reload();
-    await expect(cleaner.page.getByText(message)).toBeVisible();
+    // Generous timeout: a cold dev-server reload re-fetches the bundle,
+    // rehydrates the session from the cookie, then refetches history.
+    // The assertion is that refetch works, not that it works in 5s.
+    await expect(cleaner.page.getByText(message)).toBeVisible({
+      timeout: 15_000,
+    });
 
     // Host reads the message from their own chat thread (claimed jobs
     // live under the Active segment).

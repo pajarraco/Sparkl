@@ -144,6 +144,40 @@ export async function fillInto(
   await page.getByTestId(testId).fill(value);
 }
 
+// Server-truth check for chat: asserts chat.list (same party session)
+// already contains the body. Distinguishes a send that never persisted
+// (UI echo only) from a history/read failure after reload. Surfaces a
+// procedure-level error verbatim instead of collapsing it into "[]".
+export async function expectChatMessagePersisted(
+  api: APIRequestContext,
+  jobId: string,
+  body: string,
+): Promise<void> {
+  const response = await api.get(
+    `${API_URL}/trpc/chat.list?batch=1&input=${encodeURIComponent(
+      JSON.stringify({ "0": { jobId } }),
+    )}`,
+  );
+  expect(response.ok()).toBe(true);
+  const payload = (await response.json()) as Array<{
+    result?: {
+      data?: { messages?: Array<{ body?: string }>; total?: number };
+      error?: unknown;
+    };
+  }>;
+  const slot = payload[0]?.result;
+  expect(
+    slot,
+    `chat.list returned no result slot for job ${jobId}`,
+  ).toBeTruthy();
+  expect(
+    slot?.error ?? null,
+    `chat.list procedure failed for job ${jobId}`,
+  ).toBeNull();
+  const bodies = slot?.data?.messages?.map((m) => m.body) ?? [];
+  expect(bodies).toContain(body);
+}
+
 // Authenticated API context for a fresh timestamped account: signs the
 // account up (cookie lands in the context jar) and hands back both the
 // context and the account. Callers close the context.
