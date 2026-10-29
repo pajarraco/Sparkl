@@ -40,6 +40,12 @@ export const en = {
     timePlaceholder: "HH:MM",
     submit: "Post job",
     success: "Job posted. Suggested cleaners are below.",
+    addressHint: "Start typing, then pick your address from the list.",
+    searching: "Searching…",
+    noMatches: "No matches. Try the street and suburb.",
+    pickAddress: "Pick the address from the list or drop the pin on the map.",
+    mapHint: "Drag the pin to the exact entrance.",
+    osmAttribution: "© OpenStreetMap contributors",
   },
   assistant: {
     intro:

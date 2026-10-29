@@ -85,7 +85,7 @@ Spec: `context/features/02-integrate-baseten.md` (approved 2026-10-29). Phases a
 - [x] Geo service (OSM: Photon autocomplete, Nominatim geocode/reverse, cache, 1 req/s, User-Agent) + `geo` router
 - [x] Job-assistant agent loop (`update_draft`, `geocode_address`; 6-step cap; Zod on every tool argument and output) + `jobAssistant.turn` router
 - [x] Post tab assistant UI + pre-filled review form; "Use the form instead" keeps the draft
-- [ ] `AddressMapPicker` on the review form (native + web), replacing the lat/lng fields (waits for the map spike in P0)
+- [x] `AddressMapPicker` on the review form (native + web), replacing the lat/lng fields
 - [ ] Cleaner `ServiceAreaMapPicker` (pin + radius) + a single save button for service area and availability (from 03)
 
 #### P2 — Smart

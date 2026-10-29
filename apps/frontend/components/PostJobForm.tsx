@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import type { AddressValue } from "../providers/address-picker";
 import { sparklTrpc } from "../providers/app-providers";
 import { getStrings } from "../providers/i18n";
 import type { PostJobFormValues } from "../providers/job-assistant";
@@ -12,6 +13,7 @@ import {
   THEME_FONT_FAMILY,
   THEME_SPACING,
 } from "../providers/theme";
+import { AddressMapPicker } from "./AddressMapPicker";
 import { BodyText } from "./BodyText";
 import { SparklButton } from "./SparklButton";
 import { SparklTextField } from "./SparklTextField";
@@ -46,30 +48,32 @@ export function PostJobForm(props: PostJobFormProps) {
   const strings = getStrings();
   const createJob = sparklTrpc.jobs.create.useMutation();
   const initial = props.initialValues;
-  const [address, setAddress] = useState(initial.address);
+  const [place, setPlace] = useState<AddressValue>({
+    address: initial.address,
+    latitude: initial.latitude,
+    longitude: initial.longitude,
+  });
   const [date, setDate] = useState(initial.date);
   const [windowStart, setWindowStart] = useState(initial.windowStart);
   const [windowEnd, setWindowEnd] = useState(initial.windowEnd);
   const [sizeSqm, setSizeSqm] = useState(initial.sizeSqm);
   const [notes, setNotes] = useState(initial.notes);
   const [price, setPrice] = useState(initial.price);
-  const [latitude, setLatitude] = useState(initial.latitude);
-  const [longitude, setLongitude] = useState(initial.longitude);
   const [errors, setErrors] = useState<PostJobFieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [posted, setPosted] = useState(false);
 
   async function handlePost(): Promise<void> {
     const result = validatePostJob({
-      address,
+      address: place.address,
       date,
       windowStart,
       windowEnd,
       sizeSqm,
       notes,
       price,
-      latitude,
-      longitude,
+      latitude: place.latitude,
+      longitude: place.longitude,
     });
     setErrors(result.errors);
     if (result.data === null) return;
@@ -99,12 +103,15 @@ export function PostJobForm(props: PostJobFormProps) {
 
   return (
     <View style={styles.form}>
-      <SparklTextField
-        error={errors.address}
-        label={strings.postJob.addressLabel}
-        onChangeText={setAddress}
-        testID="post-job-address"
-        value={address}
+      <AddressMapPicker
+        addressError={errors.address}
+        coordsError={
+          errors.latitude !== undefined || errors.longitude !== undefined
+            ? strings.postJob.pickAddress
+            : undefined
+        }
+        onChange={setPlace}
+        value={place}
       />
       <SparklTextField
         error={errors.date}
@@ -154,22 +161,6 @@ export function PostJobForm(props: PostJobFormProps) {
         onChangeText={setPrice}
         testID="post-job-price"
         value={price}
-      />
-      <SparklTextField
-        error={errors.latitude}
-        keyboardType="numbers-and-punctuation"
-        label={strings.postJob.latitudeLabel}
-        onChangeText={setLatitude}
-        testID="post-job-latitude"
-        value={latitude}
-      />
-      <SparklTextField
-        error={errors.longitude}
-        keyboardType="numbers-and-punctuation"
-        label={strings.postJob.longitudeLabel}
-        onChangeText={setLongitude}
-        testID="post-job-longitude"
-        value={longitude}
       />
       {formError === null ? null : (
         <Text accessibilityLiveRegion="polite" style={styles.formError}>
