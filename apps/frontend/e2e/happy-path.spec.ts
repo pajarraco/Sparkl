@@ -22,6 +22,8 @@ import {
 // groups, so a bare page.goto on those URLs can resolve to the wrong
 // group's screen. Only /post (host) and /board (cleaner) are unique and
 // safe to deep-link; everything else goes through tab taps and buttons.
+// Detail screens are Stack screens without tabs: leave them with goBack
+// (or a goto to a tab screen after a reload), never a tab tap.
 
 async function newRolePage(
   browser: Browser,
@@ -93,7 +95,9 @@ test("start, complete, both reviews", async ({ browser }, testInfo) => {
     await tap(cleaner.page, "cleaner-job-claim");
     await expect(cleaner.page.getByTestId("cleaner-job-claimed")).toBeVisible();
 
-    // Cleaner starts; host completes.
+    // Cleaner starts; host completes. Detail is a Stack screen without
+    // tabs, so go back to the board first, then switch tabs.
+    await cleaner.page.goBack();
     await cleaner.page.getByRole("tab", { name: "My jobs" }).click();
     await tap(cleaner.page, `cleaner-job-card-${jobId}`);
     await tap(cleaner.page, "cleaner-job-start");
@@ -116,7 +120,9 @@ test("start, complete, both reviews", async ({ browser }, testInfo) => {
     // the host session, so reload first: the cleaner's myClaimed cache
     // still says in_progress and only a fresh query shows history.
     await cleaner.page.reload();
-    await cleaner.page.getByRole("tab", { name: "My jobs" }).click();
+    // Reload lands back on the tab-less detail screen: deep-link to
+    // My Jobs instead of tapping a tab that is not there.
+    await cleaner.page.goto("/my-jobs");
     await cleaner.page.getByTestId("cleaner-my-jobs-segment-history").click();
     await tap(cleaner.page, `cleaner-job-card-${jobId}`);
     await tap(cleaner.page, "cleaner-job-leave-review");
