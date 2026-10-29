@@ -85,6 +85,25 @@ test("claim, chat, history refetch", async ({ browser }, testInfo) => {
     await tap(host.page, `host-job-card-${jobId}`);
     await tap(host.page, "host-job-open-chat");
     await expect(host.page.getByText(message)).toBeVisible();
+
+    // Messages tab (03 B): both sides see the thread. The host opens the
+    // chat from it inside the Messages tab, and Back returns to the list.
+    await host.page.getByRole("tab", { name: "Messages" }).click();
+    const hostThread = host.page.getByTestId(`host-messages-thread-${jobId}`);
+    await expect(hostThread).toBeVisible();
+    await expect(hostThread).toContainText(message);
+    await hostThread.click();
+    await expect(
+      host.page.getByTestId("host-chat-thread-screen"),
+    ).toBeVisible();
+    await expect(host.page.getByRole("tab", { name: "Post" })).toBeVisible();
+    await host.page.getByRole("button", { name: "Back" }).click();
+    await expect(host.page.getByTestId("host-messages-screen")).toBeVisible();
+
+    await cleaner.page.getByRole("tab", { name: "Messages" }).click();
+    await expect(
+      cleaner.page.getByTestId(`cleaner-messages-thread-${jobId}`),
+    ).toContainText(`You: ${message}`);
   } finally {
     await host.close();
     await cleaner.close();

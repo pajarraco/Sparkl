@@ -1,14 +1,7 @@
-import { BodyText } from "../../../../components/BodyText";
-import { Screen } from "../../../../components/Screen";
-import { getStrings } from "../../../../providers/i18n";
+import { ThreadsScreen } from "../../../../components/ThreadsScreen";
 
-// Messages stub: the chat thread lands in tasks 6–7; the designed empty
-// state ships now.
+// Cleaner Messages tab: the conversation list (03 B). Chats open inside this
+// tab's stack (see the shared tab-stack layout).
 export default function CleanerMessagesScreen() {
-  const strings = getStrings();
-  return (
-    <Screen testID="cleaner-messages-screen" title={strings.chat.title}>
-      <BodyText>{strings.emptyStates.noMessages}</BodyText>
-    </Screen>
-  );
+  return <ThreadsScreen userRole="cleaner" />;
 }

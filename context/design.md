@@ -102,6 +102,7 @@ The one memorable component, used on the Board, My Jobs, and suggestions:
 - **Buttons:** primary = `indigo` fill, white uppercase label (600, +0.03em), radius 6. Secondary = white fill, 2px `indigo` border + text. Destructive = danger text, no fill. Loading state inside the button, never a bare spinner.
 - **Inputs:** white fill, `stone` border, radius 6, label above in eyebrow style. Focus: 2px `indigo` outline. Never strip the focus ring.
 - **Tab bar:** as in Navigation; 44pt minimum touch targets throughout.
+- **Thread row (Messages tab):** one per conversation, newest first. 40pt initials avatar (as Avatars), the other party's name (Body 500, `ink`), the job address as an uppercase caption in `ink-soft`, a one-line preview of the last message (Small, `ink-soft`, "You: " when the viewer wrote it), and the time or day at the right (Caption, tabular). Stone border, radius up to 14, no rail, no shadow; on press the name shifts to `indigo`.
 - **Back button:** Feather `chevron-left` (24) in `ink`, icon only, no fill or border, 44pt touch target, accessibility label "Back". Sits at the top-left, above the screen title; the pressed state shifts the icon to `indigo`.
 - **Badges/tags:** `orange-tint` background with `orange-deep` text, or `paper-2` with `ink-soft`.
 - **Stars:** ★ glyphs in `orange-deep`, 5-step, tappable in the review form, read-only elsewhere.

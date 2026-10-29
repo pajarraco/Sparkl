@@ -6,7 +6,7 @@ import type {
   Review,
   User,
 } from "@sparkl/shared";
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { ChatError, type ChatStore } from "../services/chat.js";
 import {
   type Clock,
@@ -312,6 +312,18 @@ export function drizzleChatStore(db: Db): ChatStore {
         .returning();
       if (!row) throw new ChatError("NOT_FOUND", "Message insert failed.");
       return toMessage(row);
+    },
+
+    // One row per job: DISTINCT ON keeps the newest message of each job
+    // (messages_job_created_idx covers the ordering).
+    async latestMessagesByJobs(jobIds) {
+      if (jobIds.length === 0) return [];
+      const rows = await db
+        .selectDistinctOn([messages.jobId])
+        .from(messages)
+        .where(inArray(messages.jobId, jobIds))
+        .orderBy(messages.jobId, desc(messages.createdAt));
+      return rows.map(toMessage);
     },
   };
 }
