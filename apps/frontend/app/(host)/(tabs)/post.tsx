@@ -1,20 +1,20 @@
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { BodyText } from "../../components/BodyText";
-import { Screen } from "../../components/Screen";
-import { SparklButton } from "../../components/SparklButton";
-import { SparklTextField } from "../../components/SparklTextField";
-import { sparklTrpc } from "../../providers/app-providers";
-import { getStrings } from "../../providers/i18n";
+import { BodyText } from "../../../components/BodyText";
+import { Screen } from "../../../components/Screen";
+import { SparklButton } from "../../../components/SparklButton";
+import { SparklTextField } from "../../../components/SparklTextField";
+import { sparklTrpc } from "../../../providers/app-providers";
+import { getStrings } from "../../../providers/i18n";
 import {
   type PostJobFieldErrors,
   validatePostJob,
-} from "../../providers/post-job";
+} from "../../../providers/post-job";
 import {
   THEME_COLORS,
   THEME_FONT_FAMILY,
   THEME_SPACING,
-} from "../../providers/theme";
+} from "../../../providers/theme";
 
 const styles = StyleSheet.create({
   form: {

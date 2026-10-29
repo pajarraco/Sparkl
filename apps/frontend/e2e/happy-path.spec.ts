@@ -3,9 +3,11 @@ import type { Browser } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import {
   dayWindow,
+  fillInto,
   newBrowserSession,
   pinBoardToDay,
   seedOpenJob,
+  tap,
 } from "./fixtures";
 
 // Happy-path suite (context/features/01-e2e-testing-implementation.md
@@ -46,14 +48,14 @@ test("claim, chat, history refetch", async ({ browser }, testInfo) => {
   try {
     // Cleaner claims from the board (pinned to our day, failing fast).
     await pinBoardToDay(cleaner.page, HAPPY_DAY_1, jobId);
-    await cleaner.page.getByTestId(`cleaner-board-card-${jobId}`).click();
-    await cleaner.page.getByTestId("cleaner-job-claim").click();
+    await tap(cleaner.page, `cleaner-board-card-${jobId}`);
+    await tap(cleaner.page, "cleaner-job-claim");
     await expect(cleaner.page.getByTestId("cleaner-job-claimed")).toBeVisible();
 
     // Cleaner opens chat and sends; reload proves history refetch.
-    await cleaner.page.getByTestId("cleaner-job-open-chat").click();
-    await cleaner.page.getByTestId("chat-input").fill(message);
-    await cleaner.page.getByTestId("chat-send").click();
+    await tap(cleaner.page, "cleaner-job-open-chat");
+    await fillInto(cleaner.page, "chat-input", message);
+    await tap(cleaner.page, "chat-send");
     await expect(cleaner.page.getByText(message)).toBeVisible();
     await cleaner.page.reload();
     await expect(cleaner.page.getByText(message)).toBeVisible();
@@ -63,8 +65,8 @@ test("claim, chat, history refetch", async ({ browser }, testInfo) => {
     await host.page.goto("/post");
     await host.page.getByRole("tab", { name: "My jobs" }).click();
     await host.page.getByTestId("host-my-jobs-segment-active").click();
-    await host.page.getByTestId(`host-job-card-${jobId}`).click();
-    await host.page.getByTestId("host-job-open-chat").click();
+    await tap(host.page, `host-job-card-${jobId}`);
+    await tap(host.page, "host-job-open-chat");
     await expect(host.page.getByText(message)).toBeVisible();
   } finally {
     await host.close();
@@ -87,29 +89,27 @@ test("start, complete, both reviews", async ({ browser }, testInfo) => {
   try {
     // Cleaner claims through the UI so the job belongs to this session.
     await pinBoardToDay(cleaner.page, HAPPY_DAY_2, jobId);
-    await cleaner.page.getByTestId(`cleaner-board-card-${jobId}`).click();
-    await cleaner.page.getByTestId("cleaner-job-claim").click();
+    await tap(cleaner.page, `cleaner-board-card-${jobId}`);
+    await tap(cleaner.page, "cleaner-job-claim");
     await expect(cleaner.page.getByTestId("cleaner-job-claimed")).toBeVisible();
 
     // Cleaner starts; host completes.
     await cleaner.page.getByRole("tab", { name: "My jobs" }).click();
-    await cleaner.page.getByTestId(`cleaner-job-card-${jobId}`).click();
-    await cleaner.page.getByTestId("cleaner-job-start").click();
+    await tap(cleaner.page, `cleaner-job-card-${jobId}`);
+    await tap(cleaner.page, "cleaner-job-start");
     await expect(cleaner.page.getByTestId("cleaner-job-start")).toHaveCount(0);
     await host.page.goto("/post");
     await host.page.getByRole("tab", { name: "My jobs" }).click();
     await host.page.getByTestId("host-my-jobs-segment-active").click();
-    await host.page.getByTestId(`host-job-card-${jobId}`).click();
-    await host.page.getByTestId("host-job-complete").click();
+    await tap(host.page, `host-job-card-${jobId}`);
+    await tap(host.page, "host-job-complete");
     await expect(host.page.getByTestId("host-job-complete")).toHaveCount(0);
 
     // Host reviews the cleaner.
-    await host.page.getByTestId("host-job-leave-review").click();
-    await host.page.getByTestId("review-star-5").click();
-    await host.page
-      .getByTestId("review-comment")
-      .fill("E2E review, obviously fake");
-    await host.page.getByTestId("review-submit").click();
+    await tap(host.page, "host-job-leave-review");
+    await tap(host.page, "review-star-5");
+    await fillInto(host.page, "review-comment", "E2E review, obviously fake");
+    await tap(host.page, "review-submit");
     await expect(host.page.getByTestId("leave-review-success")).toBeVisible();
 
     // Cleaner reviews the host from history. The completion happened in
@@ -118,10 +118,10 @@ test("start, complete, both reviews", async ({ browser }, testInfo) => {
     await cleaner.page.reload();
     await cleaner.page.getByRole("tab", { name: "My jobs" }).click();
     await cleaner.page.getByTestId("cleaner-my-jobs-segment-history").click();
-    await cleaner.page.getByTestId(`cleaner-job-card-${jobId}`).click();
-    await cleaner.page.getByTestId("cleaner-job-leave-review").click();
-    await cleaner.page.getByTestId("review-star-4").click();
-    await cleaner.page.getByTestId("review-submit").click();
+    await tap(cleaner.page, `cleaner-job-card-${jobId}`);
+    await tap(cleaner.page, "cleaner-job-leave-review");
+    await tap(cleaner.page, "review-star-4");
+    await tap(cleaner.page, "review-submit");
     await expect(
       cleaner.page.getByTestId("leave-review-success"),
     ).toBeVisible();

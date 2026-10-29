@@ -1,24 +1,24 @@
 import { useState } from "react";
 import { StyleSheet, Switch, Text, View } from "react-native";
-import { Screen } from "../../components/Screen";
-import { SparklButton } from "../../components/SparklButton";
-import { SparklTextField } from "../../components/SparklTextField";
-import { sparklTrpc } from "../../providers/app-providers";
-import { authClient } from "../../providers/auth-instance";
+import { Screen } from "../../../components/Screen";
+import { SparklButton } from "../../../components/SparklButton";
+import { SparklTextField } from "../../../components/SparklTextField";
+import { sparklTrpc } from "../../../providers/app-providers";
+import { authClient } from "../../../providers/auth-instance";
 import {
   type AvailabilityToggles,
   availabilitySlotsForToggles,
   initialsForName,
   togglesForAvailability,
   validateServiceArea,
-} from "../../providers/cleaner-profile";
-import { getStrings } from "../../providers/i18n";
+} from "../../../providers/cleaner-profile";
+import { getStrings } from "../../../providers/i18n";
 import {
   THEME_COLORS,
   THEME_FONT_FAMILY,
   THEME_RADII,
   THEME_SPACING,
-} from "../../providers/theme";
+} from "../../../providers/theme";
 
 // Cleaner Profile (design.md Screen Inventory): identity header (initials
 // avatar, name, rating and completed-job count), service-area editor

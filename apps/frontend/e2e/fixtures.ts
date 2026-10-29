@@ -126,6 +126,24 @@ export async function pinBoardToDay(
   await expect(page.getByTestId(`cleaner-board-card-${jobId}`)).toBeVisible();
 }
 
+// Visible-then-act wrappers. A raw click/fill waits without a timeout,
+// so a never-rendered target hangs the suite to the test timeout with no
+// location. These fail fast at the exact missing element instead; on the
+// success path they resolve immediately.
+export async function tap(page: Page, testId: string): Promise<void> {
+  await expect(page.getByTestId(testId)).toBeVisible();
+  await page.getByTestId(testId).click();
+}
+
+export async function fillInto(
+  page: Page,
+  testId: string,
+  value: string,
+): Promise<void> {
+  await expect(page.getByTestId(testId)).toBeVisible();
+  await page.getByTestId(testId).fill(value);
+}
+
 // Authenticated API context for a fresh timestamped account: signs the
 // account up (cookie lands in the context jar) and hands back both the
 // context and the account. Callers close the context.

@@ -2,24 +2,24 @@ import type { Job } from "@sparkl/shared";
 import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
-import { BodyText } from "../../components/BodyText";
-import { JobCard } from "../../components/JobCard";
-import { Screen } from "../../components/Screen";
-import { SparklButton } from "../../components/SparklButton";
-import { sparklTrpc } from "../../providers/app-providers";
-import { getStrings } from "../../providers/i18n";
+import { BodyText } from "../../../components/BodyText";
+import { JobCard } from "../../../components/JobCard";
+import { Screen } from "../../../components/Screen";
+import { SparklButton } from "../../../components/SparklButton";
+import { sparklTrpc } from "../../../providers/app-providers";
+import { getStrings } from "../../../providers/i18n";
 import {
   type MyJobsSegment,
   filterJobsBySegment,
   hostMetaLine,
   statusLabelFor,
-} from "../../providers/my-jobs";
+} from "../../../providers/my-jobs";
 import {
   THEME_COLORS,
   THEME_FONT_FAMILY,
   THEME_RADII,
   THEME_SPACING,
-} from "../../providers/theme";
+} from "../../../providers/theme";
 
 // Host My Jobs (design.md Screen Inventory): open / active / history
 // segments over one jobs.myJobs query, rows are memoized JobCards with
