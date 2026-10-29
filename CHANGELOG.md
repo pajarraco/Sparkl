@@ -133,6 +133,7 @@ Append-only: add a new entry under `## [Unreleased]` for any change, stamped `YY
 - `2026-10-27 05:16` — `context/hackathon.md`: eligibility confirmed.
 - `2026-10-27 05:17` — `context/rules.md`: scan for secrets before every commit.
 - `2026-10-28 19:24` — root `pnpm dev` now runs `turbo run dev --ui=tui`: Turbo's split-pane TUI keeps the API and Expo logs in separate panes so the Expo Go QR stays scannable instead of interleaved prefixed stream logs. Run `pnpm dev`, open the frontend pane, scan with Expo Go.
+- `2026-10-29 15:05` — parallel worktree stack: `docker-compose.dev.yml` takes `SPARKL_STACK`, `POSTGRES_PORT`, `REDIS_PORT`, `MINIO_PORT` and `MINIO_CONSOLE_PORT` (defaults unchanged: `sparkl-dev`, `sparkl-*` containers, 5432/6379/9000/9001), so the 03 worktree runs its own containers and volumes on 5433/6380/9002/9003 with the API on 3001 and Expo web on 8082. `playwright.config.ts` loads the repo-root `.env` and derives the API health URL and the Expo `--port` from it; `clean-e2e.mjs`, `seed-demo.mjs` and `ensure-buckets.mjs` load it too, so a worktree never wipes, seeds or uploads into the main stack. Uses Node's built-in `process.loadEnvFile`, no new dependency. `.env.example` documents the optional vars. Verified: `pnpm verify` green (shared 25, api 56, frontend 113 tests; `biome check` clean on 156 files; typecheck clean), 03 stack up next to the main one, migrations applied, buckets smoke ok on 9002, API 200 on 3001.
 
 ### Fixed
 
