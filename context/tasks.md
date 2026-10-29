@@ -67,6 +67,48 @@ Spec: `context/features/01-e2e-testing-implementation.md` (grilled, 14 decisions
 - [x] Happy-path suite (seeded session): post → claim → chat (history-refetch assertions) → in-progress → completed → both reviews, end to end on web
 - [x] Wire-up: separate documented `e2e` command (kept out of `pnpm verify`); tick Demo-gate boxes only with green `test` + `typecheck` + `lint` output quoted; `CHANGELOG.md` entry under `[Unreleased]`
 
+### 10. Job-post assistant (Muse Spark on Baseten) + OSM maps
+
+Spec: `context/features/02-integrate-baseten.md` (approved 2026-10-29). Phases are cut from the bottom (P4, then P3) if the Nov 4 deadline is at risk.
+
+#### P0 — Spike (no merge)
+
+- [ ] Tool calling on Muse Spark Open (Baseten) and Glimmer (Ollama) with the four agent tools
+- [ ] `react-native-maps` + OSM `UrlTile` on RN 0.88 in Expo Go; `react-leaflet` on Expo web
+- [ ] Muse Voice Transcribe endpoint + audio formats with `META_MODEL_IMAGE_API_KEY`
+- [ ] Owner decision: properties table inside 02 P1, or address per job until 03
+
+#### P1 — Core
+
+- [ ] Shared contracts: `jobDraftSchema`, assistant turn/finish, `geoPlaceSchema`, `transcribeInput`
+- [ ] LLM client (`services/llm.ts`, live + fake modes, `reasoning_effort: low`, token cap, timeout) + `.env.example` entries
+- [ ] Geo service (OSM: Photon autocomplete, Nominatim geocode/reverse, cache, 1 req/s, User-Agent) + `geo` router
+- [ ] Job-assistant agent loop (`update_draft`, `geocode_address`; 6-step cap; Zod on every tool argument and output) + `jobAssistant.turn` router
+- [ ] Post tab assistant UI + pre-filled review form with `AddressMapPicker` (native + web); "Use the form instead" keeps the draft
+- [ ] Cleaner `ServiceAreaMapPicker` (pin + radius) + a single save button for service area and availability (from 03)
+
+#### P2 — Smart
+
+- [ ] `assistant_sessions` migration (no message text) + `jobAssistant.finish` (review-form diff, outcome)
+- [ ] `get_host_history`, `singleProperty` / `usualCleaner` shortcuts, correction-rate prompt hints
+- [ ] `suggest_price` (median of nearby comparable jobs; per-m² fallback in the weights config) + checklist drafting into the notes
+- [ ] "Go with {cleaner} as always?" pins that cleaner to the top of the job's suggestions (real offer waits for 03's two-way assignment)
+
+#### P3 — Voice
+
+- [ ] Voice service + `voice.transcribe` router (base64, ~30s / 1.5 MB cap, never stored), mic button (`expo-audio` on native / `MediaRecorder` on web), transcript lands in the composer
+
+#### P4 — Stretch (cut first)
+
+- [ ] Smart match explanations on ranked suggestions
+
+#### Close-out
+
+- [ ] e2e: new `assistant.spec.ts` (fake model, geo mocked); update `forms.spec.ts` + happy path for the map picker
+- [ ] One real Baseten run, only after the owner approves the exact command (paid); tokens + latency recorded
+- [ ] Docs: `project.md`, `architecture.md` (new services, provider switches, SSE not WebSocket, stale banner), `design.md`, `hackathon.md` Our Entry, `code-standard.md` + `AGENTS.md` banners, `README.md`, `CHANGELOG.md`
+- [ ] Gates: `pnpm verify` green (coverage ≥ 80%) + `e2e` green, output quoted
+
 ### Stretch (only if time allows)
 
 Deferred in full on 2026-10-29 (owner decision, demo gate closed first).
