@@ -98,6 +98,20 @@ Status: approved by the owner on 2026-10-29. Tasks are in
     reply wording is never trusted, and `readyForReview` is computed by
     the service. Tools stay the main path; the JSON-mode loop is the
     fallback.
+- **Maps work** (P0 spike, 2026-10-29, branch `spike/maps`, not merged):
+  - Native: `react-native-maps@1.29.11` (the version bundled in Expo Go
+    for SDK 58) with an OSM `UrlTile`, a draggable `Marker` and a
+    `Circle` passed the owner's Expo Go check on **iPhone** (tiles, drag,
+    tap to move, radius). Android is not checked yet; there the map uses
+    `mapType="none"` so only OSM tiles show. The OSM tile server accepts
+    Android's default HTTP client (200).
+  - Web: `leaflet@1.9.4` + `react-leaflet@5.0.0` in a `.web.tsx` file,
+    checked in Playwright on both viewports: OSM tiles load, attribution
+    visible, click moves the pin, no console errors. A `divIcon` pin
+    avoids Leaflet's default marker images, which bundlers break. Metro
+    bundles `leaflet/dist/leaflet.css`; TypeScript needs a `*.css`
+    module declaration.
+  - Fallback (Leaflet in a WebView) not needed.
 - **Voice format gap:** the browser's `MediaRecorder` produces
   WebM/Opus, and on Android `expo-audio` records AAC/3GP. Neither is WAV.
   Planned fixes:
