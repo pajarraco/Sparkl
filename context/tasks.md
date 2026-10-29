@@ -80,7 +80,7 @@ Spec: `context/features/02-integrate-baseten.md` (approved 2026-10-29). Phases a
 
 #### P1 — Core
 
-- [ ] Shared contracts: `jobDraftSchema`, assistant turn/finish, `geoPlaceSchema`, `transcribeInput`
+- [x] Shared contracts: `jobDraftSchema`, assistant turn/finish, `geoPlaceSchema`, `transcribeInput`
 - [ ] LLM client (`services/llm.ts`, live + fake modes, `reasoning_effort: low`, token cap, timeout) + `.env.example` entries
 - [ ] Geo service (OSM: Photon autocomplete, Nominatim geocode/reverse, cache, 1 req/s, User-Agent) + `geo` router
 - [ ] Job-assistant agent loop (`update_draft`, `geocode_address`; 6-step cap; Zod on every tool argument and output) + `jobAssistant.turn` router
