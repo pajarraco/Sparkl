@@ -3,6 +3,7 @@ import {
   type AssistantTurnInput,
   type AssistantTurnOutput,
   type GeoPlace,
+  JOB_DRAFT_FIELDS,
   type JobDraft,
   type JobDraftField,
   SPARKL_ERROR_CODES,
@@ -11,6 +12,7 @@ import {
   assistantTurnOutput,
 } from "@sparkl/shared";
 import { z } from "zod";
+import type { AssistantSessionsStore } from "./assistant-sessions.js";
 import { type GeoService, getGeoService } from "./geo.js";
 import {
   type LlmClient,
@@ -213,12 +215,29 @@ export interface JobAssistantDeps {
   onTurn?: (event: AssistantTurnEvent) => void;
 }
 
+export interface JobAssistantTurnOptions {
+  onTurn?: (event: AssistantTurnEvent) => void;
+  // Session record (counts only). The router always passes it; tests of the
+  // loop alone may leave it out.
+  sessions?: AssistantSessionsStore;
+}
+
 export interface JobAssistant {
   turn(
     userId: string,
     input: AssistantTurnInput,
-    options?: { onTurn?: (event: AssistantTurnEvent) => void },
+    options?: JobAssistantTurnOptions,
   ): Promise<AssistantTurnOutput>;
+}
+
+// Fields this turn set or changed, from the service's own draft.
+export function filledFields(
+  before: JobDraft,
+  after: JobDraft,
+): JobDraftField[] {
+  return JOB_DRAFT_FIELDS.filter(
+    (field) => after[field] !== undefined && after[field] !== before[field],
+  );
 }
 
 export function createJobAssistant(deps: JobAssistantDeps): JobAssistant {
@@ -235,6 +254,22 @@ export function createJobAssistant(deps: JobAssistantDeps): JobAssistant {
     async turn(userId, input, options) {
       limiter.consume(userId);
       const started = now();
+      const sessions = options?.sessions;
+      // Pin the session to this host before any paid model call.
+      if (
+        sessions &&
+        !(await sessions.openTurn({
+          id: input.sessionId,
+          hostId: userId,
+          model: deps.llm.model,
+          nowIso: new Date(started).toISOString(),
+        }))
+      ) {
+        throw new AssistantError(
+          SPARKL_ERROR_CODES.NOT_FOUND,
+          "assistant session not found or finished, start over",
+        );
+      }
       const today = localToday(new Date(started), input.timeZone);
       let draft: JobDraft = { ...input.draft };
       const places = new Map<string, GeoPlace>();
@@ -243,6 +278,17 @@ export function createJobAssistant(deps: JobAssistantDeps): JobAssistant {
       let inputTokens = 0;
       let outputTokens = 0;
       let steps = 0;
+      let toolCalls = 0;
+
+      const record = async (): Promise<void> => {
+        await sessions?.recordTurn(input.sessionId, userId, {
+          toolCalls,
+          inputTokens,
+          outputTokens,
+          latencyMs: now() - started,
+          modelFilled: filledFields(input.draft, draft),
+        });
+      };
 
       const report = (outcome: AssistantTurnEvent["outcome"]) => {
         const event: AssistantTurnEvent = {
@@ -319,7 +365,6 @@ export function createJobAssistant(deps: JobAssistantDeps): JobAssistant {
 
       try {
         let reply: string | null = null;
-        let toolCalls = 0;
         while (steps < ASSISTANT_LIMITS.maxSteps && reply === null) {
           steps += 1;
           // The last allowed step, or a repair after an empty answer, goes
@@ -381,9 +426,12 @@ export function createJobAssistant(deps: JobAssistantDeps): JobAssistant {
           places: placeChosen ? [] : [...places.values()],
           priceHint: null,
         });
+        await record();
         report("reply");
         return output;
       } catch (err) {
+        // Keep the original error if the record write fails too.
+        await record().catch(() => undefined);
         report("error");
         if (err instanceof AssistantError) throw err;
         if (err instanceof LlmError || err instanceof z.ZodError) {

@@ -5,6 +5,10 @@ import {
   SPARKL_ERROR_CODES,
 } from "@sparkl/shared";
 import { describe, expect, it, vi } from "vitest";
+import type {
+  AssistantSessionsStore,
+  AssistantTurnStats,
+} from "./assistant-sessions.js";
 import type { GeoService } from "./geo.js";
 import {
   AssistantError,
@@ -12,6 +16,7 @@ import {
   applyPatch,
   buildSystemPrompt,
   createJobAssistant,
+  filledFields,
   localToday,
   missingFields,
 } from "./job-assistant.js";
@@ -64,6 +69,26 @@ function input(content: string, draft: JobDraft = {}): AssistantTurnInput {
     draft,
     messages: [{ role: "user", content }],
   };
+}
+
+// Records what the assistant writes; openTurn answers `open`.
+function sessionsStub(open = true) {
+  const opened: Parameters<AssistantSessionsStore["openTurn"]>[0][] = [];
+  const recorded: { id: string; hostId: string; stats: AssistantTurnStats }[] =
+    [];
+  const sessions: AssistantSessionsStore = {
+    async openTurn(args) {
+      opened.push(args);
+      return open;
+    },
+    async recordTurn(id, hostId, stats) {
+      recorded.push({ id, hostId, stats });
+    },
+    async finish() {
+      throw new Error("finish is not called by a turn");
+    },
+  };
+  return { sessions, opened, recorded };
 }
 
 // The JSON a tool returned, read back from the follow-up request.
@@ -157,6 +182,22 @@ describe("pure helpers", () => {
       draft: { notes: "keep" },
       error: "unknown placeId: call geocode_address and use one of its ids",
     });
+  });
+
+  it("filledFields", () => {
+    expect(filledFields({}, {})).toEqual([]);
+    expect(
+      filledFields(
+        { date: "2026-10-30", notes: "keys" },
+        {
+          address: "A",
+          latitude: "1",
+          longitude: "2",
+          date: "2026-10-31",
+          notes: "keys",
+        },
+      ),
+    ).toEqual(["address", "latitude", "longitude", "date"]);
   });
 
   it("buildSystemPrompt", () => {
@@ -566,5 +607,106 @@ describe("createJobAssistant", () => {
     await expect(
       assistant.turn("host-2", input("12 Ocean St, Bondi")),
     ).resolves.toBeDefined();
+  });
+
+  describe("session record", () => {
+    it("opens the session before the model and records the turn", async () => {
+      const { llm } = scripted([
+        {
+          toolCalls: [
+            call("c1", "geocode_address", { text: "12 Ocean St, Bondi" }),
+            call("c2", "update_draft", { date: "2026-10-30" }),
+          ],
+          inputTokens: 100,
+          outputTokens: 20,
+        },
+        {
+          toolCalls: [call("c3", "update_draft", { placeId: PLACE.id })],
+          inputTokens: 150,
+          outputTokens: 10,
+        },
+        { content: "What time?", inputTokens: 200, outputTokens: 5 },
+      ]);
+      const { sessions, opened, recorded } = sessionsStub();
+      const assistant = createJobAssistant({
+        llm,
+        geo: geoStub(),
+        now: fixedNow,
+      });
+
+      await assistant.turn(
+        "host-1",
+        input("12 Ocean St, Bondi", { notes: "keys" }),
+        { sessions },
+      );
+
+      expect(opened).toEqual([
+        {
+          id: SESSION,
+          hostId: "host-1",
+          model: "fake",
+          nowIso: "2026-10-29T03:00:00.000Z",
+        },
+      ]);
+      expect(recorded).toEqual([
+        {
+          id: SESSION,
+          hostId: "host-1",
+          stats: {
+            toolCalls: 3,
+            inputTokens: 450,
+            outputTokens: 35,
+            latencyMs: 0,
+            // notes came from the host, not this turn.
+            modelFilled: ["address", "latitude", "longitude", "date"],
+          },
+        },
+      ]);
+    });
+
+    it("refuses a foreign or finished session without calling the model", async () => {
+      const llm = createFakeLlmClient(() => {
+        throw new Error("the model must not be called");
+      });
+      const { sessions, recorded } = sessionsStub(false);
+      const assistant = createJobAssistant({
+        llm,
+        geo: geoStub(),
+        now: fixedNow,
+      });
+
+      const error = await assistant
+        .turn("host-1", input("hi"), { sessions })
+        .catch((err: unknown) => err);
+
+      expect(error).toBeInstanceOf(AssistantError);
+      expect((error as AssistantError).code).toBe(SPARKL_ERROR_CODES.NOT_FOUND);
+      expect(recorded).toEqual([]);
+    });
+
+    it("records a failed turn and keeps the original error", async () => {
+      const llm = createFakeLlmClient(() => {
+        throw new LlmError("timeout", "t");
+      });
+      const { sessions, recorded } = sessionsStub();
+      sessions.recordTurn = async (id, hostId, stats) => {
+        recorded.push({ id, hostId, stats });
+        throw new Error("db down");
+      };
+      const assistant = createJobAssistant({
+        llm,
+        geo: geoStub(),
+        now: fixedNow,
+      });
+
+      const error = await assistant
+        .turn("host-1", input("hi"), { sessions })
+        .catch((err: unknown) => err);
+
+      expect((error as AssistantError).code).toBe(
+        SPARKL_ERROR_CODES.UPSTREAM_UNAVAILABLE,
+      );
+      expect(recorded.map((r) => r.stats.modelFilled)).toEqual([[]]);
+    });
   });
 });

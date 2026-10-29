@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
   doublePrecision,
@@ -194,4 +195,39 @@ export const reviews = pgTable(
     index("reviews_subject_idx").on(t.subjectId),
     uniqueIndex("reviews_job_author_unique").on(t.jobId, t.authorId),
   ],
+);
+
+// Post-tab assistant learning (02). Counts and draft field names only:
+// never message text, addresses or prices. The id is the client's session
+// uuid; host_id pins it to one host. outcome is null while the session is
+// open (shared assistantOutcomeSchema once finished).
+export const assistantSessions = pgTable(
+  "assistant_sessions",
+  {
+    id: text("id").primaryKey(),
+    hostId: text("host_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    jobId: text("job_id").references(() => jobs.id, { onDelete: "set null" }),
+    model: text("model"),
+    turns: integer("turns").notNull().default(0),
+    toolCalls: integer("tool_calls").notNull().default(0),
+    inputTokens: integer("input_tokens").notNull().default(0),
+    outputTokens: integer("output_tokens").notNull().default(0),
+    latencyMs: integer("latency_ms").notNull().default(0),
+    modelFilled: text("model_filled")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    hostChanged: text("host_changed")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    outcome: text("outcome"),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .defaultNow()
+      .notNull(),
+    finishedAt: timestamp("finished_at", { withTimezone: true, mode: "date" }),
+  },
+  (t) => [index("assistant_sessions_host_idx").on(t.hostId, t.createdAt)],
 );

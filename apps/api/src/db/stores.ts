@@ -7,6 +7,7 @@ import type {
   User,
 } from "@sparkl/shared";
 import { and, eq, sql } from "drizzle-orm";
+import type { AssistantSessionsStore } from "../services/assistant-sessions.js";
 import { ChatError, type ChatStore } from "../services/chat.js";
 import {
   type Clock,
@@ -18,6 +19,7 @@ import { ReviewsError, type ReviewsStore } from "../services/reviews.js";
 import type { ProfilePatch, UsersStore } from "../services/users.js";
 import type { Db } from "./client.js";
 import {
+  assistantSessions,
   cleanerAvailability,
   jobs,
   messages,
@@ -362,6 +364,68 @@ export function drizzleReviewsStore(db: Db): ReviewsStore {
         .from(reviews)
         .where(eq(reviews.subjectId, subjectId));
       return rows.map(toReview);
+    },
+  };
+}
+
+// Every write is one statement whose WHERE pins the row to the calling host
+// and to an open session, so a guessed or replayed session id can't touch
+// another host's record or reopen a finished one.
+export function drizzleAssistantSessionsStore(db: Db): AssistantSessionsStore {
+  const t = assistantSessions;
+  const ownOpen = (hostId: string) =>
+    sql`${t.hostId} = ${hostId} and ${t.outcome} is null`;
+  return {
+    async openTurn({ id, hostId, model, nowIso }) {
+      const rows = await db
+        .insert(t)
+        .values({ id, hostId, model, turns: 1, createdAt: new Date(nowIso) })
+        .onConflictDoUpdate({
+          target: t.id,
+          set: { turns: sql`${t.turns} + 1`, model },
+          setWhere: ownOpen(hostId),
+        })
+        .returning({ id: t.id });
+      return rows.length === 1;
+    },
+
+    async recordTurn(id, hostId, stats) {
+      const filled = sql.join(
+        stats.modelFilled.map((field) => sql`${field}`),
+        sql`, `,
+      );
+      await db
+        .update(t)
+        .set({
+          toolCalls: sql`${t.toolCalls} + ${stats.toolCalls}`,
+          inputTokens: sql`${t.inputTokens} + ${stats.inputTokens}`,
+          outputTokens: sql`${t.outputTokens} + ${stats.outputTokens}`,
+          latencyMs: sql`${t.latencyMs} + ${stats.latencyMs}`,
+          modelFilled: sql`array(select distinct unnest(${t.modelFilled} || ARRAY[${filled}]::text[]) order by 1)`,
+        })
+        .where(and(eq(t.id, id), ownOpen(hostId)));
+    },
+
+    async finish({ id, hostId, outcome, jobId, hostChanged, nowIso }) {
+      const finishedAt = new Date(nowIso);
+      const rows = await db
+        .insert(t)
+        .values({
+          id,
+          hostId,
+          outcome,
+          jobId,
+          hostChanged,
+          createdAt: finishedAt,
+          finishedAt,
+        })
+        .onConflictDoUpdate({
+          target: t.id,
+          set: { outcome, jobId, hostChanged, finishedAt },
+          setWhere: ownOpen(hostId),
+        })
+        .returning({ id: t.id });
+      return rows.length === 1;
     },
   };
 }

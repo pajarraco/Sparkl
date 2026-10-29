@@ -113,14 +113,14 @@ export const ASSISTANT_OUTCOMES = ["posted", "abandoned", "fell_back"] as const;
 export const assistantOutcomeSchema = z.enum(ASSISTANT_OUTCOMES);
 export type AssistantOutcome = z.infer<typeof assistantOutcomeSchema>;
 
-// Records what the model filled and what the host changed on the review
-// form. Never carries message text.
+// Closes a session with its outcome and the fields the host changed on the
+// review form. What the model filled is recorded by the server from its own
+// turns, not taken from the client. Never carries message text.
 export const assistantFinishInput = z
   .object({
     sessionId: z.string().uuid(),
     outcome: assistantOutcomeSchema,
     jobId: z.string().uuid().optional(),
-    modelFilled: z.array(jobDraftFieldSchema).max(JOB_DRAFT_FIELDS.length),
     hostChanged: z.array(jobDraftFieldSchema).max(JOB_DRAFT_FIELDS.length),
   })
   .strict()

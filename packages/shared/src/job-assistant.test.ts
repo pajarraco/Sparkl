@@ -219,7 +219,6 @@ describe("job-assistant", () => {
         assistantFinishInput.parse({
           sessionId: "11111111-1111-4111-8111-111111111111",
           outcome: "posted",
-          modelFilled: [],
           hostChanged: [],
         }),
       ).toThrow();
@@ -231,7 +230,6 @@ describe("job-assistant", () => {
           sessionId: "11111111-1111-4111-8111-111111111111",
           outcome: "abandoned",
           jobId: "22222222-2222-4222-8222-222222222222",
-          modelFilled: [],
           hostChanged: [],
         }),
       ).toThrow();
@@ -242,7 +240,6 @@ describe("job-assistant", () => {
         sessionId: "11111111-1111-4111-8111-111111111111",
         outcome: "posted",
         jobId: "22222222-2222-4222-8222-222222222222",
-        modelFilled: [],
         hostChanged: [],
       };
       expect(assistantFinishInput.parse(input)).toEqual(input);
@@ -252,10 +249,20 @@ describe("job-assistant", () => {
       const input = {
         sessionId: "11111111-1111-4111-8111-111111111111",
         outcome: "fell_back",
-        modelFilled: [],
         hostChanged: [],
       };
       expect(assistantFinishInput.parse(input)).toEqual(input);
+    });
+
+    it("should reject a client-supplied modelFilled", () => {
+      expect(() =>
+        assistantFinishInput.parse({
+          sessionId: "11111111-1111-4111-8111-111111111111",
+          outcome: "abandoned",
+          modelFilled: ["address"],
+          hostChanged: [],
+        }),
+      ).toThrow();
     });
 
     it("should reject invalid hostChanged field", () => {
@@ -264,7 +271,6 @@ describe("job-assistant", () => {
           sessionId: "11111111-1111-4111-8111-111111111111",
           outcome: "posted",
           jobId: "22222222-2222-4222-8222-222222222222",
-          modelFilled: [],
           hostChanged: ["hostId"],
         }),
       ).toThrow();
