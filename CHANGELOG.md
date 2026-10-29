@@ -119,6 +119,9 @@ Append-only: add a new entry under `## [Unreleased]` for any change, stamped `YY
 - `2026-10-29 12:15` — post-reload still empty at 15s despite the row existing in older runs, so the test now asserts server truth first: new `expectChatMessagePersisted(api, jobId, body)` fixture (raw `chat.list` over the host party session) runs between send-visible and reload. Fails there = send never persisted (UI echo only); passes-then-empty-after-reload = read/session path after reload. Verified: `biome check` clean; needs your `e2e happy-path` run to read the verdict.
 - `2026-10-29 12:20` — hardened the discriminator: the fixture now surfaces procedure-level `chat.list` errors verbatim (a tRPC error body used to collapse into silent `[]`), and the test asserts `chat-list` rendered (a real message row, never the composer draft) before the text check. Next run distinguishes three outcomes: server error text, genuinely empty list, or green. Verified: `biome check` clean.
 - `2026-10-29 12:25` — happy-path fully green on your terminal (claim → chat → history refetch → start → complete → both reviews, both viewports). Note: no app code changed between the last red and this green, so a cold-start flake may still lurk — the full `e2e` suite is the real gate, not this single run.
+- `2026-10-29 12:30` — full `e2e` suite green on your terminal (web path of the demo gate proven end to end). `tasks.md` §8 box stays unchecked until the native-target Expo Go pass lands with it.
+- `2026-10-29 12:35` — demo gate CLOSED: owner-completed Expo Go device pass joins the green web `e2e`, green `pnpm verify` (unit + `tsc` + `biome check .`), and 12/12 navigation. `tasks.md` §8 ticked. Remaining: stretch triage decision (push, Spanish, Maestro).
+- `2026-10-29 12:40` — stretch deferred in full (owner decision): push notifications, Spanish strings, Maestro smoke all parked in `tasks.md` until post-demo. No code changes.
 
 ### Changed
 

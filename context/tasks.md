@@ -52,7 +52,7 @@
 ### 8. Demo gate
 
 - [x] Seed script for demo accounts and jobs (`pnpm --filter @sparkl/api seed:demo`)
-- [ ] Full demo script passing on web + one native target
+- [x] Full demo script passing on web + one native target (web: full `e2e` green both viewports; native: Expo Go device pass; gates: `pnpm verify` green — unit 165 + `tsc` clean + `biome check .` clean, all owner-observed this session)
 
 ### 9. Frontend — E2E testing (Playwright, web-only, local-only)
 
@@ -68,6 +68,8 @@ Spec: `context/features/01-e2e-testing-implementation.md` (grilled, 14 decisions
 - [x] Wire-up: separate documented `e2e` command (kept out of `pnpm verify`); tick Demo-gate boxes only with green `test` + `typecheck` + `lint` output quoted; `CHANGELOG.md` entry under `[Unreleased]`
 
 ### Stretch (only if time allows)
+
+Deferred in full on 2026-10-29 (owner decision, demo gate closed first).
 
 - [ ] Push notifications
 - [ ] Spanish strings
