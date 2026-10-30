@@ -2,6 +2,7 @@ import type {
   CleanerAvailability,
   Job,
   JobDraftField,
+  JobRequest,
   JobStatus,
   Message,
   Review,
@@ -16,9 +17,13 @@ import {
   solutionStatusSchema,
   solutionTagSchema,
 } from "@sparkl/shared";
-import { and, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import type { AssistantSessionsStore } from "../services/assistant-sessions.js";
 import { ChatError, type ChatStore } from "../services/chat.js";
+import {
+  JobRequestsError,
+  type JobRequestsStore,
+} from "../services/job-requests.js";
 import {
   type Clock,
   JobsServiceError,
@@ -39,6 +44,7 @@ import {
   assistantSolutionEvents,
   assistantSolutions,
   cleanerAvailability,
+  jobRequests,
   jobs,
   messages,
   reviews,
@@ -733,6 +739,201 @@ export function drizzleSolutionsStore(db: Db): SolutionsStore {
 
     async setStatus(id, status, at) {
       await db.update(s).set({ status, updatedAt: at }).where(eq(s.id, id));
+    },
+  };
+}
+
+function toJobRequest(row: typeof jobRequests.$inferSelect): JobRequest {
+  return {
+    id: row.id,
+    jobId: row.jobId,
+    cleanerId: row.cleanerId,
+    initiatedBy: row.initiatedBy as JobRequest["initiatedBy"],
+    status: row.status as JobRequest["status"],
+    createdAt: row.createdAt.toISOString(),
+    respondedAt: row.respondedAt?.toISOString() ?? null,
+  };
+}
+
+export function drizzleJobRequestsStore(db: Db): JobRequestsStore {
+  return {
+    async insertRequest(request) {
+      const [row] = await db
+        .insert(jobRequests)
+        .values({
+          id: request.id,
+          jobId: request.jobId,
+          cleanerId: request.cleanerId,
+          initiatedBy: request.initiatedBy,
+          status: request.status,
+          createdAt: new Date(request.createdAt),
+          respondedAt: request.respondedAt
+            ? new Date(request.respondedAt)
+            : null,
+        })
+        .returning();
+      if (!row) {
+        throw new JobRequestsError("NOT_FOUND", "Request insert failed.");
+      }
+      return toJobRequest(row);
+    },
+
+    async findRequestById(id) {
+      const [row] = await db
+        .select()
+        .from(jobRequests)
+        .where(eq(jobRequests.id, id))
+        .limit(1);
+      return row ? toJobRequest(row) : null;
+    },
+
+    async findPendingByJobAndCleaner(jobId, cleanerId) {
+      const [row] = await db
+        .select()
+        .from(jobRequests)
+        .where(
+          and(
+            eq(jobRequests.jobId, jobId),
+            eq(jobRequests.cleanerId, cleanerId),
+            eq(jobRequests.status, "pending"),
+          ),
+        )
+        .limit(1);
+      return row ? toJobRequest(row) : null;
+    },
+
+    async listByJob(jobId) {
+      const rows = await db
+        .select()
+        .from(jobRequests)
+        .where(eq(jobRequests.jobId, jobId));
+      return rows.map(toJobRequest);
+    },
+
+    async listByCleaner(cleanerId) {
+      const rows = await db
+        .select()
+        .from(jobRequests)
+        .where(eq(jobRequests.cleanerId, cleanerId));
+      return rows.map(toJobRequest);
+    },
+
+    async countPendingOffersForJob(jobId) {
+      const [row] = await db
+        .select({ value: count() })
+        .from(jobRequests)
+        .where(
+          and(
+            eq(jobRequests.jobId, jobId),
+            eq(jobRequests.initiatedBy, "host"),
+            eq(jobRequests.status, "pending"),
+          ),
+        );
+      return row?.value ?? 0;
+    },
+
+    async countPendingRequestsForCleaner(cleanerId) {
+      const [row] = await db
+        .select({ value: count() })
+        .from(jobRequests)
+        .where(
+          and(
+            eq(jobRequests.cleanerId, cleanerId),
+            eq(jobRequests.initiatedBy, "cleaner"),
+            eq(jobRequests.status, "pending"),
+          ),
+        );
+      return row?.value ?? 0;
+    },
+
+    // One transaction: re-check job open + request pending, claim the job,
+    // accept this request, close every other pending request on the job.
+    // The loser of a concurrent accept throws from the re-check below.
+    async acceptRequest({ requestId, jobId, cleanerId, nowIso }) {
+      const now = new Date(nowIso);
+      const result = await db.transaction(async (tx) => {
+        const [claimedJob] = await tx
+          .update(jobs)
+          .set({
+            status: "claimed",
+            claimedByCleanerId: cleanerId,
+            updatedAt: now,
+          })
+          .where(and(eq(jobs.id, jobId), eq(jobs.status, "open")))
+          .returning();
+        if (!claimedJob) return null;
+        const [acceptedRequest] = await tx
+          .update(jobRequests)
+          .set({ status: "accepted", respondedAt: now })
+          .where(
+            and(
+              eq(jobRequests.id, requestId),
+              eq(jobRequests.status, "pending"),
+            ),
+          )
+          .returning();
+        if (!acceptedRequest) return null;
+        await tx
+          .update(jobRequests)
+          .set({ status: "closed", respondedAt: now })
+          .where(
+            and(
+              eq(jobRequests.jobId, jobId),
+              eq(jobRequests.status, "pending"),
+            ),
+          );
+        return { job: claimedJob, request: acceptedRequest };
+      });
+      if (result) {
+        return {
+          job: toJob(result.job),
+          request: toJobRequest(result.request),
+        };
+      }
+      const [currentJob] = await db
+        .select()
+        .from(jobs)
+        .where(eq(jobs.id, jobId))
+        .limit(1);
+      if (!currentJob) {
+        throw new JobRequestsError("NOT_FOUND", "Job not found.");
+      }
+      if (currentJob.status === "claimed") {
+        throw new JobRequestsError(
+          "JOB_ALREADY_CLAIMED",
+          "Job was already claimed.",
+        );
+      }
+      if (currentJob.status !== "open") {
+        throw new JobRequestsError(
+          "JOB_NOT_OPEN",
+          `Job is ${currentJob.status}, not open.`,
+        );
+      }
+      throw new JobRequestsError(
+        "JOB_REQUEST_NOT_PENDING",
+        "Request is no longer pending.",
+      );
+    },
+
+    async updateStatus({ requestId, status, respondedAt }) {
+      const [row] = await db
+        .update(jobRequests)
+        .set({ status, respondedAt: new Date(respondedAt) })
+        .where(
+          and(eq(jobRequests.id, requestId), eq(jobRequests.status, "pending")),
+        )
+        .returning();
+      return row ? toJobRequest(row) : null;
+    },
+
+    async closeAllPendingForJob(jobId) {
+      await db
+        .update(jobRequests)
+        .set({ status: "closed", respondedAt: new Date() })
+        .where(
+          and(eq(jobRequests.jobId, jobId), eq(jobRequests.status, "pending")),
+        );
     },
   };
 }

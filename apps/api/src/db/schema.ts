@@ -160,6 +160,38 @@ export const jobs = pgTable(
   (t) => [index("jobs_status_window_idx").on(t.status, t.windowStart)],
 );
 
+// A cleaner's request or a host's offer on one job (03 D). At most one
+// pending row per (job, cleaner): mutual interest resolves by accepting
+// the other side's existing row instead of inserting a second one.
+export const jobRequests = pgTable(
+  "job_requests",
+  {
+    id: text("id").primaryKey(),
+    jobId: text("job_id")
+      .notNull()
+      .references(() => jobs.id, { onDelete: "cascade" }),
+    cleanerId: text("cleaner_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    initiatedBy: text("initiated_by").notNull(), // "host" | "cleaner"
+    status: text("status").notNull().default("pending"), // shared jobRequestStatusSchema
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .defaultNow()
+      .notNull(),
+    respondedAt: timestamp("responded_at", {
+      withTimezone: true,
+      mode: "date",
+    }),
+  },
+  (t) => [
+    index("job_requests_job_idx").on(t.jobId),
+    index("job_requests_cleaner_idx").on(t.cleanerId),
+    uniqueIndex("job_requests_job_cleaner_pending_unique")
+      .on(t.jobId, t.cleanerId)
+      .where(sql`${t.status} = 'pending'`),
+  ],
+);
+
 export const messages = pgTable(
   "messages",
   {

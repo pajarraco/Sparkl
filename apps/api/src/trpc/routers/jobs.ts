@@ -9,11 +9,13 @@ import {
 } from "@sparkl/shared";
 import { TRPCError } from "@trpc/server";
 import {
+  drizzleJobRequestsStore,
   drizzleJobsStore,
   drizzleMessagesRead,
   drizzleUsersStore,
   systemClock,
 } from "../../db/stores.js";
+import * as jobRequestsService from "../../services/job-requests.js";
 import * as jobsService from "../../services/jobs.js";
 import * as matchingService from "../../services/matching.js";
 import { authedProcedure, router } from "../trpc.js";
@@ -111,7 +113,7 @@ export const jobsRouter = router({
           code: "FORBIDDEN",
           message: "Role missing from session.",
         });
-      return jobsService.cancelJob(
+      const job = await jobsService.cancelJob(
         drizzleJobsStore(ctx.db),
         systemClock,
         {
@@ -121,6 +123,13 @@ export const jobsRouter = router({
         },
         drizzleUsersStore(ctx.db),
       );
+      // A cancelled job never reaches claimed, so any pending request or
+      // offer on it is closed rather than left dangling.
+      await jobRequestsService.closePendingForCancelledJob(
+        { requests: drizzleJobRequestsStore(ctx.db) },
+        job.id,
+      );
+      return job;
     }),
 
   // Cleaner board: ranked by match instead of newest-first. Scoring lives in
