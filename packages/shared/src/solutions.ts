@@ -72,10 +72,12 @@ export type WindowPreferencePayload = z.infer<
 >;
 
 export const SOLUTION_OFFERS = ["price_hint", "usual_cleaner"] as const;
+// The host's answer is a vote on the row (accepted / rejected), not a field.
+export type SolutionOffer = (typeof SOLUTION_OFFERS)[number];
+
 export const offerPreferencePayloadSchema = z
   .object({
     offer: z.enum(SOLUTION_OFFERS),
-    accepted: z.boolean(),
   })
   .strict();
 export type OfferPreferencePayload = z.infer<

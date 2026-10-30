@@ -147,17 +147,17 @@ Spec: `context/features/03-improvements-issues.md` (approved 2026-10-29). Built 
 
 Spec: `context/features/04-assistant-learning.md` (approved 2026-10-29). L1 ships before Nov 4, ahead of 02 P4. Votes come only from the host's response; only answers are stored, never messages or personal data; shared across hosts with the host's own first.
 
-Resume here (2026-10-30): the first unchecked box below (steps 1–4 done on `feat/04-assistant-learning`; `0003` and `0004` applied to the local dev DB). Apply migrations with `pnpm --filter @sparkl/api exec drizzle-kit migrate`. 02 P2 is done and migration `0002_job_preferred_cleaner` is applied on the local dev DB (main tree only, not the 03 worktree DB).
+Resume here (2026-10-30): the first unchecked box below. Steps 1–9 are done on `feat/04-assistant-learning`. The chips and the finish calls are in the Post screen, verified by unit tests and typecheck only (not yet run in a browser). Left in §12: the gates (`pnpm verify` plus `e2e`, and docs). Migrations `0003` and `0004` are applied to the local dev DB. The stack starts with `docker compose -f docker-compose.dev.yml up -d`. 02 P2 is done and migration `0002_job_preferred_cleaner` is applied on the local dev DB (main tree only, not the 03 worktree DB).
 
 - [x] Shared: solution kinds + payload schemas, `SOLUTION_TAGS`, `SOLUTION_RANKING_CONFIG`, `proposals` on the turn output, `assistantFeedbackInput`
 - [x] Pure services + tests: ranking (Wilson × recency, host-first), personal-data check, payload fingerprint
 - [x] `assistant_solutions` + `assistant_solution_events` migration (`0003`) and store
 - [x] `find_solutions` / `save_solution` tools in the agent loop (Zod args, save cap, quoted results, `proposed` events)
-- [ ] Feedback: `jobAssistant.feedback` (chip taps) + accept/reject from the review-form diff in `finish`
-- [ ] Sharing: fingerprint → global row, 3 distinct hosts with posted jobs, rejected-by-host never re-proposed, `solutions:retire` script
-- [ ] 02 price hint + usual-cleaner offer report into `offer_preference`
-- [ ] UI: "Use this" / "Not this" chips under proposals (i18n; `design.md` first if a style is new)
-- [ ] Seed: 3 obviously-fake global checklists + 3 FAQ entries
+- [x] Feedback: `jobAssistant.feedback` (chip taps) + accept/reject from the review-form diff in `finish`
+- [x] Sharing: fingerprint → global row, 3 distinct hosts with posted jobs, rejected-by-host never re-proposed, `solutions:retire` script
+- [x] 02 price hint + usual-cleaner offer report into `offer_preference`
+- [x] UI: "Use this" / "Not this" chips under proposals (i18n; `design.md` first if a style is new)
+- [x] Seed: 3 obviously-fake global checklists + 3 FAQ entries
 - [ ] Gates: `pnpm verify` green + e2e (saved checklist proposed first in session 2; a checklist with a phone number refused), output quoted; `CHANGELOG.md` and docs updated
 
 ### Stretch (only if time allows)

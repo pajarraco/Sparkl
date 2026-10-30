@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import {
   ASSISTANT_REQUIRED_FIELDS,
   type AssistantTurnInput,
@@ -8,6 +9,7 @@ import {
   type JobDraftField,
   type PriceHint,
   SPARKL_ERROR_CODES,
+  type SolutionOffer,
   type SparklErrorCode,
   assistantDraftPatchSchema,
   assistantTurnOutput,
@@ -31,6 +33,7 @@ import {
 } from "./llm.js";
 import { type PriceQuery, suggestPriceHint } from "./price-hint.js";
 import { type UserRateLimiter, createUserRateLimiter } from "./rate-limit.js";
+import { noteOfferShown, suppressedOffers } from "./solution-offers.js";
 import type { SolutionsStore } from "./solutions-store.js";
 import { createSolutionTools } from "./solutions.js";
 
@@ -421,11 +424,26 @@ export function createJobAssistant(deps: JobAssistantDeps): JobAssistant {
       ) {
         draft = { ...draft, preferredCleanerId: undefined };
       }
-      const pricing = options?.pricing;
+      // Offers the host has retired (04 step 7) are not offered at all.
+      const offerStore = options?.solutions?.store;
+      const suppressed = offerStore
+        ? await suppressedOffers(offerStore, userId)
+        : new Set<SolutionOffer>();
+      const pricing = suppressed.has("price_hint")
+        ? undefined
+        : options?.pricing;
+      // The pin still works for the draft; only the offer is hidden.
+      const usualOffer =
+        memory?.usualCleaner && !suppressed.has("usual_cleaner")
+          ? memory.usualCleaner
+          : null;
+      const offerMemory = memory
+        ? { ...memory, usualCleaner: usualOffer }
+        : null;
       const tools: LlmTool[] = [...ASSISTANT_TOOLS];
       if (memory) tools.push(HOST_HISTORY_TOOL);
       if (pricing) tools.push(SUGGEST_PRICE_TOOL);
-      if (memory?.usualCleaner) tools.push(PIN_USUAL_CLEANER_TOOL);
+      if (usualOffer) tools.push(PIN_USUAL_CLEANER_TOOL);
       const solutionTools = options?.solutions
         ? createSolutionTools({
             store: options.solutions.store,
@@ -475,6 +493,22 @@ export function createJobAssistant(deps: JobAssistantDeps): JobAssistant {
         options?.onTurn?.(event);
       };
 
+      // An offer counts as shown once it is in front of the host, so the
+      // answer later can be learned from (04 step 7).
+      const noteShown = async (offer: SolutionOffer): Promise<void> => {
+        if (!offerStore) return;
+        await noteOfferShown(offerStore, {
+          hostId: userId,
+          sessionId: input.sessionId,
+          offer,
+          at: new Date(started),
+          newId: randomUUID,
+        }).catch(() => undefined);
+      };
+      if (usualOffer && !draft.preferredCleanerId) {
+        await noteShown("usual_cleaner");
+      }
+
       const messages: LlmMessage[] = [
         {
           role: "system",
@@ -482,7 +516,7 @@ export function createJobAssistant(deps: JobAssistantDeps): JobAssistant {
             today,
             draft,
             missing: missingFields(draft),
-            memory,
+            memory: offerMemory,
             canSuggestPrice: pricing !== undefined,
             canFindSolutions: solutionTools !== null,
           }),
@@ -554,6 +588,7 @@ export function createJobAssistant(deps: JobAssistantDeps): JobAssistant {
               query,
               await pricing.listJobsForPricing(),
             );
+            await noteShown("price_hint");
             return priceHint;
           } catch {
             return { error: "price comparables unavailable" };

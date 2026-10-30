@@ -6,6 +6,7 @@ import {
 import { describe, expect, it } from "vitest";
 import { getStrings } from "./i18n";
 import {
+  abandonedFinishInput,
   applyTurnOutput,
   assistantErrorMessage,
   buildTurnInput,
@@ -14,8 +15,13 @@ import {
   deviceTimeZone,
   draftSummary,
   draftToFormValues,
+  hostChangedFields,
   newSessionId,
+  openProposals,
+  postedFinishInput,
   priceHintLine,
+  priceHintResponseFor,
+  recordVote,
   validateAssistantMessage,
   withUserMessage,
 } from "./job-assistant";
@@ -44,6 +50,8 @@ describe("createAssistantState", () => {
       readyForReview: false,
       places: [],
       priceHint: null,
+      proposals: [],
+      votes: {},
     });
   });
 
@@ -58,6 +66,8 @@ describe("createAssistantState", () => {
       readyForReview: false,
       places: [],
       priceHint: null,
+      proposals: [],
+      votes: {},
     });
   });
 });
@@ -370,5 +380,127 @@ describe("newSessionId", () => {
         configurable: true,
       });
     }
+  });
+});
+
+describe("proposal chips", () => {
+  const proposal = {
+    id: "44444444-4444-4444-8444-444444444444",
+    kind: "checklist" as const,
+    label: "Checklist (2 items)",
+  };
+  const turn = (proposals?: (typeof proposal)[]) =>
+    ({
+      reply: "Use your usual checklist?",
+      draft: {},
+      missingFields: [],
+      readyForReview: false,
+      quickReplies: [],
+      places: [],
+      priceHint: null,
+      ...(proposals === undefined ? {} : { proposals }),
+    }) as AssistantTurnOutput;
+
+  it("shows the latest reply's proposals until the host votes", () => {
+    const state = applyTurnOutput(createAssistantState("s1"), turn([proposal]));
+    expect(openProposals(state)).toEqual([proposal]);
+    expect(openProposals(recordVote(state, proposal.id, "rejected"))).toEqual(
+      [],
+    );
+  });
+
+  it("treats a reply without proposals as none", () => {
+    const state = applyTurnOutput(createAssistantState("s1"), turn());
+    expect(state.proposals).toEqual([]);
+  });
+});
+
+describe("hostChangedFields", () => {
+  it("lists only the fields that differ from the opened draft", () => {
+    const opened = { notes: "Keys under the mat", price: "120" };
+    const values = {
+      ...draftToFormValues(opened),
+      notes: "Keys with Maria",
+      price: "120",
+    };
+    expect(hostChangedFields(opened, values)).toEqual(["notes"]);
+  });
+
+  it("ignores surrounding spaces", () => {
+    const opened = { notes: "Keys" };
+    const values = { ...draftToFormValues(opened), notes: "  Keys  " };
+    expect(hostChangedFields(opened, values)).toEqual([]);
+  });
+});
+
+describe("priceHintResponseFor", () => {
+  const hint = {
+    medianMinorUnits: 12000,
+    comparables: 4,
+    source: "comparables" as const,
+  };
+
+  it("accepts a posted price equal to the hint", () => {
+    expect(priceHintResponseFor(hint, "120")).toBe("accepted");
+    expect(priceHintResponseFor(hint, "120.00")).toBe("accepted");
+  });
+
+  it("ignores a different or unreadable price", () => {
+    expect(priceHintResponseFor(hint, "95")).toBe("ignored");
+    expect(priceHintResponseFor(hint, "about 120")).toBe("ignored");
+  });
+
+  it("returns undefined when no hint was shown", () => {
+    expect(priceHintResponseFor(null, "120")).toBeUndefined();
+  });
+});
+
+describe("finish inputs", () => {
+  const state = {
+    ...createAssistantState("55555555-5555-4555-8555-555555555555", {
+      notes: "Mop",
+    }),
+  };
+  const values = draftToFormValues({ notes: "Mop and vacuum", price: "120" });
+
+  it("posted carries the job, the changed fields and the price response", () => {
+    const withHint = {
+      ...state,
+      priceHint: {
+        medianMinorUnits: 12000,
+        comparables: 4,
+        source: "comparables" as const,
+      },
+    };
+    expect(
+      postedFinishInput(
+        withHint,
+        "66666666-6666-4666-8666-666666666666",
+        values,
+      ),
+    ).toEqual({
+      sessionId: state.sessionId,
+      outcome: "posted",
+      jobId: "66666666-6666-4666-8666-666666666666",
+      hostChanged: ["notes", "price"],
+      priceHintResponse: "accepted",
+    });
+  });
+
+  it("posted without a hint sends no price response", () => {
+    const input = postedFinishInput(
+      state,
+      "66666666-6666-4666-8666-666666666666",
+      values,
+    );
+    expect(input).not.toHaveProperty("priceHintResponse");
+  });
+
+  it("abandoned takes no votes", () => {
+    expect(abandonedFinishInput(state)).toEqual({
+      sessionId: state.sessionId,
+      outcome: "abandoned",
+      hostChanged: [],
+    });
   });
 });

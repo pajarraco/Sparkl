@@ -1,5 +1,6 @@
 import {
   SOLUTION_RANKING_CONFIG,
+  assistantFeedbackInput,
   assistantFinishInput,
   assistantTurnInput,
   assistantTurnOutput,
@@ -14,6 +15,7 @@ import {
 } from "../../db/stores.js";
 import { finishAssistantSession } from "../../services/assistant-sessions.js";
 import { getJobAssistant } from "../../services/job-assistant.js";
+import { recordChipVote } from "../../services/solution-feedback.js";
 import { roleProcedure, router } from "../trpc.js";
 
 // Post-tab chat assistant. Mutations, so the transcript travels in the
@@ -64,6 +66,21 @@ export const jobAssistantRouter = router({
         {
           sessions: drizzleAssistantSessionsStore(ctx.db),
           jobs: drizzleJobsStore(ctx.db),
+          solutions: drizzleSolutionsStore(ctx.db),
+        },
+        systemClock,
+        { ...input, hostId: ctx.sessionUserId },
+      ),
+    ),
+
+  // "Use this" / "Not this" under a proposal: the host's own vote, at once.
+  feedback: roleProcedure("host")
+    .input(assistantFeedbackInput)
+    .mutation(({ ctx, input }) =>
+      recordChipVote(
+        {
+          solutions: drizzleSolutionsStore(ctx.db),
+          sessions: drizzleAssistantSessionsStore(ctx.db),
         },
         systemClock,
         { ...input, hostId: ctx.sessionUserId },

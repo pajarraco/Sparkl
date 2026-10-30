@@ -1,10 +1,11 @@
-import type { GeoPlace } from "@sparkl/shared";
+import type { GeoPlace, SolutionProposal, SolutionVote } from "@sparkl/shared";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { getStrings } from "../providers/i18n";
 import {
   type AssistantState,
   draftSummary,
+  openProposals,
   priceHintLine,
   validateAssistantMessage,
 } from "../providers/job-assistant";
@@ -90,6 +91,42 @@ const styles = StyleSheet.create({
   placePressed: {
     backgroundColor: THEME_COLORS.paper2,
   },
+  proposal: {
+    gap: THEME_SPACING.rowMin,
+  },
+  proposalActions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: THEME_SPACING.rowMin,
+  },
+  chip: {
+    minHeight: 44,
+    justifyContent: "center",
+    paddingHorizontal: THEME_SPACING.rowMax,
+    borderRadius: THEME_RADII.control,
+    borderWidth: 1,
+  },
+  chipUse: {
+    borderColor: THEME_COLORS.indigo,
+    backgroundColor: THEME_COLORS.paper2,
+  },
+  chipNot: {
+    borderColor: THEME_COLORS.stone,
+    backgroundColor: THEME_COLORS.paper,
+  },
+  chipPressed: {
+    opacity: 0.7,
+  },
+  chipUseText: {
+    fontFamily: THEME_FONT_FAMILY.medium,
+    fontSize: 14,
+    color: THEME_COLORS.indigo,
+  },
+  chipNotText: {
+    fontFamily: THEME_FONT_FAMILY.medium,
+    fontSize: 14,
+    color: THEME_COLORS.inkSoft,
+  },
   placeText: {
     fontFamily: THEME_FONT_FAMILY.regular,
     fontSize: 14,
@@ -171,6 +208,7 @@ export interface AssistantChatProps {
   onChoosePlace: (place: GeoPlace) => void;
   onReview: () => void;
   onStartOver: () => void;
+  onVote: (proposal: SolutionProposal, vote: SolutionVote) => void;
 }
 
 export function AssistantChat(props: AssistantChatProps) {
@@ -227,6 +265,52 @@ export function AssistantChat(props: AssistantChatProps) {
           </Text>
         )}
       </View>
+
+      {openProposals(props.state).length > 0 && !props.pending ? (
+        <View style={styles.section} testID="assistant-proposals">
+          {openProposals(props.state).map((proposal) => (
+            <View
+              key={proposal.id}
+              style={styles.proposal}
+              testID={`assistant-proposal-${proposal.id}`}
+            >
+              <Text style={styles.placeText}>{proposal.label}</Text>
+              <View style={styles.proposalActions}>
+                <Pressable
+                  accessibilityLabel={`${strings.assistant.useThis}: ${proposal.label}`}
+                  accessibilityRole="button"
+                  onPress={() => props.onVote(proposal, "accepted")}
+                  style={({ pressed }) => [
+                    styles.chip,
+                    styles.chipUse,
+                    pressed ? styles.chipPressed : null,
+                  ]}
+                  testID={`assistant-proposal-${proposal.id}-accepted`}
+                >
+                  <Text style={styles.chipUseText}>
+                    {strings.assistant.useThis}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  accessibilityLabel={`${strings.assistant.notThis}: ${proposal.label}`}
+                  accessibilityRole="button"
+                  onPress={() => props.onVote(proposal, "rejected")}
+                  style={({ pressed }) => [
+                    styles.chip,
+                    styles.chipNot,
+                    pressed ? styles.chipPressed : null,
+                  ]}
+                  testID={`assistant-proposal-${proposal.id}-rejected`}
+                >
+                  <Text style={styles.chipNotText}>
+                    {strings.assistant.notThis}
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          ))}
+        </View>
+      ) : null}
 
       {props.state.places.length > 0 && !props.pending ? (
         <View style={styles.section} testID="assistant-places">

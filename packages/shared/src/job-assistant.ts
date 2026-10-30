@@ -130,6 +130,9 @@ export const assistantFinishInput = z
     outcome: assistantOutcomeSchema,
     jobId: z.string().uuid().optional(),
     hostChanged: z.array(jobDraftFieldSchema).max(JOB_DRAFT_FIELDS.length),
+    // Whether the host's posted price followed the price hint (04 step 7).
+    // Sent by the client, which holds the hint; absent when no hint was shown.
+    priceHintResponse: z.enum(["accepted", "ignored"]).optional(),
   })
   .strict()
   .refine((v) => (v.outcome === "posted") === (v.jobId !== undefined), {

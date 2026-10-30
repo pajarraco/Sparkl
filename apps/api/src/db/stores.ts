@@ -444,6 +444,20 @@ export function drizzleAssistantSessionsStore(db: Db): AssistantSessionsStore {
         .where(and(eq(t.id, id), ownOpen(hostId)));
     },
 
+    async sessionFills(id, hostId) {
+      const [row] = await db
+        .select({ outcome: t.outcome, modelFilled: t.modelFilled })
+        .from(t)
+        .where(and(eq(t.id, id), eq(t.hostId, hostId)))
+        .limit(1);
+      if (!row) return null;
+      const fields = row.modelFilled.filter(
+        (value): value is JobDraftField =>
+          jobDraftFieldSchema.safeParse(value).success,
+      );
+      return { open: row.outcome === null, modelFilled: fields };
+    },
+
     async reserveSolutionSave({ id, hostId, max }) {
       const rows = await db
         .update(t)
@@ -638,12 +652,79 @@ export function drizzleSolutionsStore(db: Db): SolutionsStore {
     },
 
     async acceptingHostIds(fingerprint) {
+      // Only hosts with at least one posted job count toward sharing, so a
+      // throwaway account cannot promote an answer on its own.
       const rows = await db
         .selectDistinct({ hostId: e.hostId })
         .from(e)
         .innerJoin(s, eq(s.id, e.solutionId))
-        .where(and(eq(s.fingerprint, fingerprint), eq(e.event, "accepted")));
+        .where(
+          and(
+            eq(s.fingerprint, fingerprint),
+            eq(e.event, "accepted"),
+            sql`exists (select 1 from ${jobs} where ${jobs.hostId} = ${e.hostId})`,
+          ),
+        );
       return rows.map((row) => row.hostId);
+    },
+
+    async proposedSolutionIds(sessionId, hostId) {
+      const rows = await db
+        .selectDistinct({ solutionId: e.solutionId })
+        .from(e)
+        .where(
+          and(
+            eq(e.sessionId, sessionId),
+            eq(e.hostId, hostId),
+            eq(e.event, "proposed"),
+          ),
+        );
+      return rows.map((row) => row.solutionId);
+    },
+
+    async votedSolutionIds(sessionId) {
+      const rows = await db
+        .selectDistinct({ solutionId: e.solutionId })
+        .from(e)
+        .where(
+          and(
+            eq(e.sessionId, sessionId),
+            inArray(e.event, ["accepted", "rejected"]),
+          ),
+        );
+      return rows.map((row) => row.solutionId);
+    },
+
+    async hostHasVoted(solutionId, hostId) {
+      const rows = await db
+        .select({ id: e.id })
+        .from(e)
+        .where(
+          and(
+            eq(e.solutionId, solutionId),
+            eq(e.hostId, hostId),
+            inArray(e.event, ["accepted", "rejected"]),
+          ),
+        )
+        .limit(1);
+      return rows.length > 0;
+    },
+
+    async recentVotes(solutionId, n) {
+      const rows = await db
+        .select({ event: e.event })
+        .from(e)
+        .where(
+          and(
+            eq(e.solutionId, solutionId),
+            inArray(e.event, ["accepted", "rejected"]),
+          ),
+        )
+        .orderBy(desc(e.at))
+        .limit(n);
+      return rows.map((row) =>
+        row.event === "accepted" ? "accepted" : "rejected",
+      );
     },
 
     async setScore(id, score, at) {

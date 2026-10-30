@@ -1,91 +1,10 @@
 import { SOLUTION_RANKING_CONFIG } from "@sparkl/shared";
 import { describe, expect, it } from "vitest";
-import type {
-  NewSolution,
-  SolutionEventInput,
-  SolutionRow,
-  SolutionsStore,
-} from "./solutions-store.js";
+import { fakeStore } from "./solutions-fake.js";
+import type { SolutionRow, SolutionsStore } from "./solutions-store.js";
 import { createSolutionTools, solutionLabel } from "./solutions.js";
 
 const NOW = new Date("2026-10-30T09:00:00Z");
-
-function fakeStore(seed: SolutionRow[] = []) {
-  const rows = [...seed];
-  const events: SolutionEventInput[] = [];
-  const rejected: Array<{ hostId: string; solutionId: string }> = [];
-  const store: SolutionsStore = {
-    async insert(row: NewSolution) {
-      const clash = rows.some(
-        (r) =>
-          r.fingerprint === row.fingerprint &&
-          (row.scope === "global"
-            ? r.scope === "global"
-            : r.scope === "host" && r.hostId === row.hostId),
-      );
-      if (clash) return false;
-      rows.push({
-        id: row.id,
-        scope: row.scope,
-        hostId: row.hostId,
-        kind: row.kind,
-        tags: row.tags,
-        payload: row.payload,
-        fingerprint: row.fingerprint,
-        source: row.source,
-        status: row.status,
-        proposed: 0,
-        accepted: 0,
-        rejected: 0,
-        score: 0,
-        lastAcceptedAt: null,
-        createdAt: row.at,
-        updatedAt: row.at,
-      });
-      return true;
-    },
-    async findById(id) {
-      return rows.find((r) => r.id === id) ?? null;
-    },
-    async findByFingerprint(scope, hostId, fingerprint) {
-      return (
-        rows.find(
-          (r) =>
-            r.scope === scope &&
-            r.fingerprint === fingerprint &&
-            (scope === "global" || r.hostId === hostId),
-        ) ?? null
-      );
-    },
-    async listForHost(hostId, kind) {
-      return rows.filter(
-        (r) => r.kind === kind && (r.scope === "global" || r.hostId === hostId),
-      );
-    },
-    async rejectedByHost(hostId) {
-      return rejected
-        .filter((r) => r.hostId === hostId)
-        .map((r) => r.solutionId);
-    },
-    async recordEvent(event) {
-      const dup = events.some(
-        (e) =>
-          e.solutionId === event.solutionId &&
-          e.sessionId === event.sessionId &&
-          e.event === event.event,
-      );
-      if (dup) return false;
-      events.push(event);
-      return true;
-    },
-    async acceptingHostIds() {
-      return [];
-    },
-    async setScore() {},
-    async setStatus() {},
-  };
-  return { store, rows, events, rejected };
-}
 
 function row(
   overrides: Partial<SolutionRow> & Pick<SolutionRow, "id">,

@@ -32,6 +32,7 @@ import {
   createFakeLlmClient,
 } from "./llm.js";
 import { RateLimitError } from "./rate-limit.js";
+import { offerFingerprint } from "./solution-offers.js";
 import type {
   SolutionEventInput,
   SolutionRow,
@@ -95,6 +96,9 @@ function sessionsStub(open = true) {
     },
     async reserveSolutionSave() {
       return true;
+    },
+    async sessionFills() {
+      return null;
     },
     async listFinishedByHost() {
       return [];
@@ -1259,6 +1263,18 @@ function solutionsStub(rows: SolutionRow[] = [SAVED_ROW]) {
     async acceptingHostIds() {
       return [];
     },
+    async proposedSolutionIds() {
+      return [];
+    },
+    async votedSolutionIds() {
+      return [];
+    },
+    async hostHasVoted() {
+      return false;
+    },
+    async recentVotes() {
+      return [];
+    },
     async setScore() {},
     async setStatus() {},
   };
@@ -1355,5 +1371,75 @@ describe("solution tools in the loop", () => {
       solutions: { store: solutionsStub([]).store },
     });
     expect(output.proposals).toEqual([]);
+  });
+});
+
+describe("offer suppression in the loop", () => {
+  function priceOfferStore(status: SolutionRow["status"]) {
+    const offer: SolutionRow = {
+      id: "33333333-3333-4333-8333-333333333333",
+      scope: "host",
+      hostId: "host-1",
+      kind: "offer_preference",
+      tags: [],
+      payload: { offer: "price_hint" },
+      fingerprint: offerFingerprint("price_hint"),
+      source: "service",
+      status,
+      proposed: 0,
+      accepted: 0,
+      rejected: 0,
+      score: 0,
+      lastAcceptedAt: null,
+      createdAt: new Date("2026-10-01T00:00:00Z"),
+      updatedAt: new Date("2026-10-01T00:00:00Z"),
+    };
+    const base = solutionsStub([]).store;
+    return {
+      ...base,
+      async findByFingerprint(
+        scope: string,
+        hostId: string | null,
+        fingerprint: string,
+      ) {
+        return scope === "host" &&
+          hostId === "host-1" &&
+          fingerprint === offer.fingerprint
+          ? offer
+          : null;
+      },
+    } as SolutionsStore;
+  }
+
+  it("does not offer suggest_price once the host has retired the price hint", async () => {
+    const { llm, requests } = scripted([
+      { content: "Hi", inputTokens: 1, outputTokens: 1 },
+    ]);
+    await createJobAssistant({ llm, geo: geoStub(), now: fixedNow }).turn(
+      "host-1",
+      input("Hi"),
+      {
+        pricing: { listJobsForPricing: async () => [] },
+        solutions: { store: priceOfferStore("retired") },
+      },
+    );
+    expect(requests[0]?.tools?.map((t) => t.name)).not.toContain(
+      "suggest_price",
+    );
+  });
+
+  it("still offers suggest_price while the price hint is active", async () => {
+    const { llm, requests } = scripted([
+      { content: "Hi", inputTokens: 1, outputTokens: 1 },
+    ]);
+    await createJobAssistant({ llm, geo: geoStub(), now: fixedNow }).turn(
+      "host-1",
+      input("Hi"),
+      {
+        pricing: { listJobsForPricing: async () => [] },
+        solutions: { store: priceOfferStore("active") },
+      },
+    );
+    expect(requests[0]?.tools?.map((t) => t.name)).toContain("suggest_price");
   });
 });

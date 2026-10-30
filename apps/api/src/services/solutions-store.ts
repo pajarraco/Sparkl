@@ -71,8 +71,20 @@ export interface SolutionsStore {
   // Inserts the event once per (solution, session, event) and bumps the
   // counter in the same transaction. False when the event already exists.
   recordEvent(event: SolutionEventInput): Promise<boolean>;
-  // Distinct hosts with an accepted event on any row with this fingerprint.
+  // Distinct hosts with an accepted event on any row with this fingerprint,
+  // counting only hosts with at least one posted job.
   acceptingHostIds(fingerprint: string): Promise<string[]>;
+  // Solution ids proposed to this host in this session (proposed events).
+  proposedSolutionIds(sessionId: string, hostId: string): Promise<string[]>;
+  // Solution ids with an accepted or rejected vote in this session.
+  votedSolutionIds(sessionId: string): Promise<string[]>;
+  // True when this host has already voted on the solution, in any session.
+  hostHasVoted(solutionId: string, hostId: string): Promise<boolean>;
+  // The latest n votes on a solution, newest first.
+  recentVotes(
+    solutionId: string,
+    n: number,
+  ): Promise<Array<"accepted" | "rejected">>;
   setScore(id: string, score: number, at: Date): Promise<void>;
   setStatus(id: string, status: SolutionStatus, at: Date): Promise<void>;
 }

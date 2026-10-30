@@ -76,6 +76,8 @@ export const en = {
     priceRate: "Based on the size, about {price}. You set the final price.",
     pinned:
       "Your usual cleaner is pinned to the top of this job's suggestions.",
+    useThis: "Use this",
+    notThis: "Not this",
   },
   board: {
     title: "Open jobs",

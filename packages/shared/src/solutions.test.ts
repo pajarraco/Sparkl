@@ -109,16 +109,12 @@ describe("window preference payload", () => {
 
 describe("offer preference payload", () => {
   it("should accept only the computed offers", () => {
-    expect(
-      offerPreferencePayloadSchema.parse({
-        offer: "price_hint",
-        accepted: false,
-      }),
-    ).toEqual({ offer: "price_hint", accepted: false });
+    expect(offerPreferencePayloadSchema.parse({ offer: "price_hint" })).toEqual(
+      { offer: "price_hint" },
+    );
     expect(
       offerPreferencePayloadSchema.safeParse({
         offer: "free_cleaning",
-        accepted: true,
       }).success,
     ).toBe(false);
   });
