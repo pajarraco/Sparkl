@@ -29,7 +29,7 @@ Expo app ──HTTP + WebSocket──▶ Fastify + tRPC ──▶ Service layer 
 | Folder | Responsibility |
 | ------ | -------------- |
 | `trpc/` | Routers, procedures, auth middleware. Validate → authorize → call service. |
-| `services/` | Business logic: jobs, matching, chat, reviews, users, storage. Framework-free. |
+| `services/` | Business logic: jobs, matching, chat, reviews, users, storage, the job-post assistant and its solutions store. Framework-free. |
 | `db/` | Drizzle schema, migrations, client. |
 | `plugins/` | Fastify plugins: auth, CORS, WebSocket, error handling. |
 | `jobs/` | BullMQ workers (stat recomputation, cleanup). Minimal in MVP. |
@@ -51,6 +51,9 @@ PostgreSQL via Docker locally; Drizzle ORM with versioned migrations in the repo
 | `jobs` | id, host id, address + lat/lng, date/time window, size and notes, price, status, claimed-by cleaner id, timestamps |
 | `messages` | id, job id, sender id, body, created at |
 | `reviews` | id, job id, author id, subject id, stars (1–5), comment; unique per (job, author) |
+| `assistant_sessions` | id (client uuid), host id, job id, outcome, counts (turns, tool calls, tokens, latency), fields the model filled and the host changed, solution saves (cap 3); never message text |
+| `assistant_solutions` | id, scope (`host` / `global`), host id, kind, tags (closed list), JSON payload checked against its kind's schema, fingerprint, source, status, counters, score; partial unique indexes on (host, fingerprint) and (global fingerprint) |
+| `assistant_solution_events` | solution id, session id, host id, event (`proposed` / `accepted` / `rejected`), at; unique per (solution, session, event) |
 
 - **Job status:** `open → claimed → in_progress → completed`, plus `cancelled`.
 - **Indexes:** `jobs(status, date)`, `messages(job_id, created_at)`, `reviews(subject_id)`.
@@ -87,6 +90,16 @@ Every input and output is validated with the shared Zod schemas. No public REST 
 - Signals: average rating, distance, availability overlap, completed-job count, claim acceptance rate, response time.
 - Weights live in one config object behind an Unleash flag so they can be tuned without deploys.
 
+## Assistant Learning (Solutions Store, 04)
+
+- The assistant reuses answers it has seen work. Kinds are closed: `checklist`, `window_preference`, `offer_preference`, `faq`. Tags come from a closed list. No free text is ever stored as a trigger, and no message text is stored.
+- **Writers:** the model may save only checklists and window preferences, at most 3 per session (enforced by one conditional `UPDATE` on `assistant_sessions`). FAQs are seed-only, and the service owns offers. Every save passes a personal-data check (emails, URLs, phone numbers, runs of 4+ digits, street addresses, and the host's or usual cleaner's name).
+- **Ranking:** `score = Wilson lower bound (95%) × recency (30-day half-life)` over accepted and rejected votes. Proposals alone never raise a score. The host's own rows come first, other hosts' rows are never read, and a global row the host rejected is never proposed to them again.
+- **Votes come only from the host:** the "Use this" / "Not this" chips (`jobAssistant.feedback`) and, at `jobAssistant.finish` for a posted job, whether the host kept a field the model filled. The model never votes. One vote per session; a host candidate becomes active on its first acceptance and is retired after 3 rejections in a row.
+- **Sharing:** an accepted host checklist also makes one global copy, keyed by the fingerprint of its normalised payload. It turns active after 3 distinct hosts, each with a posted job, accept it. The owner retires global rows with `pnpm --filter @sparkl/api solutions:retire <id>`.
+- **Offers:** the price hint and the usual-cleaner suggestion are host-scope rows too. Three ignores in a row stop the offer being shown. The usual cleaner is read from the saved job. The price-hint response is sent by the client, because the server does not store the hint's value.
+- **Failure:** the store is best effort. Errors in finding, saving or voting make the tool answer with an error, and the turn carries on without solutions.
+
 ## Data Flows
 
 **Post a job:** Host app → `jobs.create` → service validates and inserts → returns the job.
@@ -96,6 +109,12 @@ Every input and output is validated with the shared Zod schemas. No public REST 
 **Claim:** `jobs.claim` → service re-checks `status = open` in a transaction → sets `claimed`, records cleaner → chat unlocks.
 
 **Chat:** `chat.send` → service checks sender is a party to the job → inserts message → publishes to the job channel → subscribers receive it.
+
+**Assistant turn:** Post tab → `jobAssistant.turn` → service opens or counts the session (pinned to the caller), runs the tool loop (draft, geocoder, history, price hint, `find_solutions`, `save_solution`) and returns the reply, draft and `proposals`.
+
+**Assistant feedback:** chip tap → `jobAssistant.feedback` → service checks the session is the caller's and open and the proposal was shown in it → one vote, with the status rules above.
+
+**Assistant finish:** posting → `jobs.create`, then `jobAssistant.finish` (posted, job id, changed fields, price-hint response) → review-form votes and offer votes. Discarding a conversation sends "abandoned", which takes no votes.
 
 **Review:** `reviews.create` → service checks job is `completed`, author is a party, and no review exists yet for (job, author) → inserts → recomputes subject's average rating.
 

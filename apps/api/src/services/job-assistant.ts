@@ -23,6 +23,7 @@ import {
   buildHostMemory,
 } from "./host-memory.js";
 import type { JobsStore } from "./jobs.js";
+import { e2eScriptedResponder } from "./llm-scripted.js";
 import {
   type LlmClient,
   LlmError,
@@ -696,7 +697,7 @@ let singleton: JobAssistant | undefined;
 // LLM_MODE=fake needs a scripted responder, which the e2e boot wires in.
 export function getJobAssistant(): JobAssistant {
   singleton ??= createJobAssistant({
-    llm: createLlmClientFromEnv(),
+    llm: createLlmClientFromEnv(process.env, e2eScriptedResponder()),
     geo: getGeoService(),
   });
   return singleton;

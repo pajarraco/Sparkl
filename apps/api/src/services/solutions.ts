@@ -96,7 +96,8 @@ const saveArgsSchema = z
 export function solutionLabel(kind: SolutionKind, payload: unknown): string {
   if (kind === "checklist") {
     const items = (payload as { items?: unknown[] }).items ?? [];
-    return `Checklist (${items.length} items)`.slice(0, 80);
+    const noun = items.length === 1 ? "item" : "items";
+    return `Checklist (${items.length} ${noun})`.slice(0, 80);
   }
   if (kind === "window_preference") {
     const window = payload as { start: string; end: string };
@@ -162,6 +163,32 @@ export function createSolutionTools(deps: SolutionToolsDeps): SolutionTools {
   const shown: SolutionProposal[] = [];
   let turnSaves = 0;
 
+  // Offers one row to the host in this turn: logs the proposed event and
+  // adds the chip. A saved candidate is offered this way, so the host can
+  // accept it and it turns active.
+  async function offer(row: {
+    id: string;
+    kind: SolutionKind;
+    payload: unknown;
+  }): Promise<void> {
+    await deps.store.recordEvent({
+      id: newId(),
+      solutionId: row.id,
+      sessionId: deps.sessionId,
+      hostId: deps.hostId,
+      event: "proposed",
+      at: deps.now,
+    });
+    const alreadyShown = shown.some((p) => p.id === row.id);
+    if (!alreadyShown && shown.length < SOLUTION_RANKING_CONFIG.topK) {
+      shown.push({
+        id: row.id,
+        kind: row.kind,
+        label: solutionLabel(row.kind, row.payload),
+      });
+    }
+  }
+
   async function find(args: unknown): Promise<unknown> {
     const parsed = findArgsSchema.safeParse(args);
     if (!parsed.success) return { error: "invalid arguments" };
@@ -190,17 +217,7 @@ export function createSolutionTools(deps: SolutionToolsDeps): SolutionTools {
       })),
     );
     for (const item of items) {
-      await deps.store.recordEvent({
-        id: newId(),
-        solutionId: item.id,
-        sessionId: deps.sessionId,
-        hostId: deps.hostId,
-        event: "proposed",
-        at: deps.now,
-      });
-      if (!shown.some((p) => p.id === item.id)) {
-        shown.push({ id: item.id, kind: item.kind, label: item.label });
-      }
+      await offer({ id: item.id, kind: item.kind, payload: item.payload });
     }
     return { solutions: items };
   }
@@ -235,7 +252,12 @@ export function createSolutionTools(deps: SolutionToolsDeps): SolutionTools {
       deps.hostId,
       fingerprint,
     );
-    if (existing) return { ok: true, id: existing.id, duplicate: true };
+    if (existing) {
+      if (existing.status !== "retired") {
+        await offer({ id: existing.id, kind, payload: payload.data });
+      }
+      return { ok: true, id: existing.id, duplicate: true };
+    }
 
     const reserved = deps.reserveSave
       ? await deps.reserveSave()
@@ -258,6 +280,7 @@ export function createSolutionTools(deps: SolutionToolsDeps): SolutionTools {
     });
     if (!inserted) return { error: "could not save, try again later" };
     turnSaves += 1;
+    await offer({ id, kind, payload: payload.data });
     return { ok: true, id, duplicate: false };
   }
 

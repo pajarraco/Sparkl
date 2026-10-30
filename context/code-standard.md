@@ -1,6 +1,6 @@
 # Sparkl — Code Standards
 
-> Status: planned — no implementation exists yet. Code rules for humans and agents. Structure lives in [architecture.md](architecture.md), visuals in [design.md](design.md).
+> Status: implemented (MVP build). Code rules for humans and agents. Structure lives in [architecture.md](architecture.md), visuals in [design.md](design.md).
 
 ## Language
 

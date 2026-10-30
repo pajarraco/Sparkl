@@ -277,3 +277,21 @@ describe("save_solution", () => {
     expect(await tools(store).run("update_draft", {})).toBeUndefined();
   });
 });
+
+describe("a saved candidate is offered in the same turn", () => {
+  it("proposes the new save so the host can accept it", async () => {
+    const { store, events, rows } = fakeStore();
+    const t = tools(store);
+    const saved = (await t.run("save_solution", {
+      kind: "checklist",
+      payload: { items: ["Mop the hall"] },
+    })) as { id: string };
+    expect(rows[0]?.status).toBe("candidate");
+    expect(events).toEqual([
+      expect.objectContaining({ solutionId: saved.id, event: "proposed" }),
+    ]);
+    expect(t.proposals()).toEqual([
+      { id: saved.id, kind: "checklist", label: "Checklist (1 item)" },
+    ]);
+  });
+});
