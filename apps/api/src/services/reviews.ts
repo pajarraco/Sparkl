@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import type {
   CreateReviewInput,
   ListReviewsInput,
+  MyReviewForJobInput,
   Review,
   SparklErrorCode,
   UserRole,
@@ -108,4 +109,17 @@ export async function listReviewsBySubject(
     reviews: all.slice(args.offset, args.offset + args.limit),
     total: all.length,
   };
+}
+
+// The caller's own review of a job (author = session user), or null before
+// they have reviewed it.
+export async function getMyReviewForJob(
+  stores: Pick<ReviewStores, "reviews">,
+  args: MyReviewForJobInput & { authorId: string },
+): Promise<{ review: Review | null }> {
+  const review = await stores.reviews.findReviewByJobAndAuthor(
+    args.jobId,
+    args.authorId,
+  );
+  return { review };
 }

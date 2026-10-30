@@ -5,6 +5,7 @@ import {
   type ReviewStores,
   ReviewsError,
   createReview,
+  getMyReviewForJob,
   listReviewsBySubject,
 } from "./reviews.js";
 import type { ProfilePatch } from "./users.js";
@@ -275,5 +276,25 @@ describe("reviews service", () => {
       "2026-02-03T10:00:00.000Z",
       "2026-02-02T10:00:00.000Z",
     ]);
+  });
+
+  it("returns only the caller's own review of a job, or null", async () => {
+    const job = makeJob();
+    const mine = makeReview({ jobId: job.id, authorId: HOST });
+    const fakes = makeFakes(
+      [job],
+      [makeUser({ id: HOST }), makeUser({ id: CLEANER, role: "cleaner" })],
+      [mine],
+    );
+    const own = await getMyReviewForJob(fakes.stores, {
+      jobId: job.id,
+      authorId: HOST,
+    });
+    expect(own.review).toEqual(mine);
+    const theirs = await getMyReviewForJob(fakes.stores, {
+      jobId: job.id,
+      authorId: CLEANER,
+    });
+    expect(theirs.review).toBeNull();
   });
 });

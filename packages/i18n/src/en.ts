@@ -134,6 +134,11 @@ export const en = {
     submit: "Submit review",
     success: "Thanks. Your review was submitted.",
     historyHint: "You can review past jobs from history.",
+    yourReview: "Your review",
+    alreadyReviewed: "You already reviewed this job. Here is what you sent.",
+    starsOutOf: "{stars} out of 5 stars",
+    receivedTitle: "Reviews",
+    receivedEmpty: "No reviews yet.",
   },
   profile: {
     title: "Profile",

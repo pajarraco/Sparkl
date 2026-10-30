@@ -51,3 +51,22 @@ export const listReviewsOutputSchema = z
   .strict();
 
 export type ListReviewsOutput = z.infer<typeof listReviewsOutputSchema>;
+
+// reviews.mineForJob input: the caller's own review of one job. The caller
+// is the author from the session, so the input carries only the job.
+export const myReviewForJobInputSchema = z
+  .object({
+    jobId: z.string().uuid(),
+  })
+  .strict();
+
+export type MyReviewForJobInput = z.infer<typeof myReviewForJobInputSchema>;
+
+// Null until the caller has reviewed the job.
+export const myReviewForJobOutputSchema = z
+  .object({
+    review: reviewSchema.nullable(),
+  })
+  .strict();
+
+export type MyReviewForJobOutput = z.infer<typeof myReviewForJobOutputSchema>;

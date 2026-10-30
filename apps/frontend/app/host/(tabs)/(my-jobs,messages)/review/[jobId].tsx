@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { BodyText } from "../../../../../components/BodyText";
 import { DetailScreen } from "../../../../../components/DetailScreen";
+import { ReviewCard } from "../../../../../components/ReviewCard";
 import { SparklButton } from "../../../../../components/SparklButton";
 import { SparklTextField } from "../../../../../components/SparklTextField";
 import { sparklTrpc } from "../../../../../providers/app-providers";
@@ -101,6 +102,11 @@ export default function HostLeaveReviewScreen() {
     { enabled: jobId !== null },
   );
   const createReview = sparklTrpc.reviews.create.useMutation();
+  // The review this caller already sent for the job, if any.
+  const myReviewQuery = sparklTrpc.reviews.mineForJob.useQuery(
+    { jobId: jobId ?? "" },
+    { enabled: jobId !== null },
+  );
 
   const [stars, setStars] = useState<ReviewStars | null>(null);
   const [comment, setComment] = useState("");
@@ -123,6 +129,8 @@ export default function HostLeaveReviewScreen() {
       setSubmitted(true);
     } catch (err) {
       setFormError(reviewSubmitErrorMessage(err));
+      // A duplicate means a review exists; refetch so it shows instead.
+      void myReviewQuery.refetch();
     }
   }
 
@@ -140,7 +148,7 @@ export default function HostLeaveReviewScreen() {
     );
   }
 
-  if (jobsQuery.isPending) {
+  if (jobsQuery.isPending || myReviewQuery.isPending) {
     return (
       <DetailScreen
         userRole="host"
@@ -193,6 +201,23 @@ export default function HostLeaveReviewScreen() {
         <Text accessibilityLiveRegion="polite" style={styles.formError}>
           {strings.errors.generic}
         </Text>
+      </DetailScreen>
+    );
+  }
+
+  const existingReview = myReviewQuery.data?.review ?? null;
+  if (existingReview !== null && !submitted) {
+    return (
+      <DetailScreen
+        userRole="host"
+        subtitle={job.address}
+        testID="host-leave-review-screen"
+        title={strings.review.yourReview}
+      >
+        <BodyText testID="leave-review-existing-hint">
+          {strings.review.alreadyReviewed}
+        </BodyText>
+        <ReviewCard review={existingReview} testID="leave-review-existing" />
       </DetailScreen>
     );
   }

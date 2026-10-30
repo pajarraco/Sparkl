@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Switch, Text, View } from "react-native";
 import { AddressMapPicker } from "../../../components/AddressMapPicker";
+import { ReviewsReceived } from "../../../components/ReviewsReceived";
 import { Screen } from "../../../components/Screen";
 import { SparklButton } from "../../../components/SparklButton";
 import type { AddressValue } from "../../../providers/address-picker";
@@ -379,6 +380,7 @@ export default function CleanerProfileScreen() {
           title={strings.profile.save}
         />
       </View>
+      <ReviewsReceived subjectId={profile.id} />
       <View style={styles.section}>
         <Text style={styles.heading}>{strings.profile.settingsHeading}</Text>
         <SparklButton

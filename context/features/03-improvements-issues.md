@@ -60,6 +60,29 @@ work starts.
 Status: approved by the owner on 2026-10-29. Tasks are in `context/tasks.md`
 §11.
 
+Status as of 2026-10-30 (checked against the code and the e2e suite):
+
+- **A0 Review submit:** partly done. Reviews are now visible: the Leave
+  Review screen shows the review already sent (`reviews.mineForJob`), and
+  both profiles list the reviews received. The original "Something went
+  wrong" error is not reproduced. The review flow passes e2e, and real
+  saved reviews pass the response schema. Open until someone reproduces
+  it with the network response.
+- **A1 Role switch:** not reproduced. The cache is already cleared on owner
+  change (`trackSessionOwner` in `app/_layout.tsx`), and the role-switch e2e
+  tests pass. Open until a web repro (URL used, reload or fresh profile)
+  is available.
+- **A2 Navigation:** host screens are back under `app/host` (`/host/...`),
+  with the tab bar on detail screens. Covered by the navigation e2e suite,
+  which passes. Reload-then-Back lands on a host tab root, not a fixed tab,
+  because browser history is not reliable after a reload.
+- **B Messages:** done (2026-10-29 18:05). The Messages tab lists the
+  caller's conversations.
+- **C Board filters:** done (2026-10-29 19:05). Filters are a chip row with
+  a one-field bottom sheet.
+- **D Two-way assignment:** not started. Depends on 02 P2, which is done.
+- **E Properties:** not started. Depends on 02 P1, which is done.
+
 ### Decisions (owner, 2026-10-29)
 
 1. **Two-way assignment:** both sides always confirm. A cleaner's claim
@@ -171,7 +194,7 @@ the tabs, with `headerShown: false`. So there is no back button and no
 tab bar.
 
 - **Nested stacks inside the tabs**, using Expo Router shared routes:
-  `app/(host)/(tabs)/(my-jobs,messages)/` holds a `_layout.tsx` Stack
+  `app/host/(tabs)/(my-jobs,messages)/` holds a `_layout.tsx` Stack
   plus `job/[id]`, `chat/[jobId]` and `review/[jobId]`. Same for the
   cleaner with `(board,my-jobs,messages)`. A detail screen opens inside
   the tab it was opened from, and the tab bar stays visible.

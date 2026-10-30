@@ -156,6 +156,12 @@ test("start, complete, both reviews", async ({ browser }, testInfo) => {
     await fillInto(host.page, "review-comment", "E2E review, obviously fake");
     await tap(host.page, "review-submit");
     await expect(host.page.getByTestId("leave-review-success")).toBeVisible();
+    // Reopening the review shows what was sent, not the form again.
+    await host.page.reload();
+    await expect(host.page.getByTestId("leave-review-existing")).toContainText(
+      "5 out of 5 stars",
+    );
+    await expect(host.page.getByTestId("review-submit")).toHaveCount(0);
 
     // Cleaner reviews the host from history. The completion happened in
     // the host session, so reload first: the cleaner's myClaimed cache
@@ -172,6 +178,15 @@ test("start, complete, both reviews", async ({ browser }, testInfo) => {
     await expect(
       cleaner.page.getByTestId("leave-review-success"),
     ).toBeVisible();
+
+    // The host's profile lists the review the cleaner sent.
+    await host.page.goto("/host/profile");
+    await expect(
+      host.page
+        .getByTestId("reviews-received")
+        .getByTestId("review-card")
+        .first(),
+    ).toContainText("4 out of 5 stars");
   } finally {
     await host.close();
     await cleaner.close();

@@ -2,6 +2,8 @@ import {
   createReviewInputSchema,
   listReviewsInputSchema,
   listReviewsOutputSchema,
+  myReviewForJobInputSchema,
+  myReviewForJobOutputSchema,
   reviewSchema,
 } from "@sparkl/shared";
 import { TRPCError } from "@trpc/server";
@@ -38,6 +40,17 @@ export const reviewsRouter = router({
           authorId: ctx.sessionUserId,
           authorRole: ctx.role,
         },
+      );
+    }),
+
+  // The caller's own review of a job, so Leave Review can show what was sent.
+  mineForJob: authedProcedure
+    .input(myReviewForJobInputSchema)
+    .output(myReviewForJobOutputSchema)
+    .query(async ({ ctx, input }) => {
+      return reviewsService.getMyReviewForJob(
+        { reviews: drizzleReviewsStore(ctx.db) },
+        { ...input, authorId: ctx.sessionUserId },
       );
     }),
 
