@@ -1,4 +1,5 @@
 import {
+  SOLUTION_RANKING_CONFIG,
   assistantFinishInput,
   assistantTurnInput,
   assistantTurnOutput,
@@ -7,6 +8,7 @@ import {
   drizzleAssistantSessionsStore,
   drizzleJobsStore,
   drizzleReviewsStore,
+  drizzleSolutionsStore,
   drizzleUsersStore,
   systemClock,
 } from "../../db/stores.js";
@@ -20,17 +22,34 @@ export const jobAssistantRouter = router({
   turn: roleProcedure("host")
     .input(assistantTurnInput)
     .output(assistantTurnOutput)
-    .mutation(({ ctx, input }) => {
+    .mutation(async ({ ctx, input }) => {
       const sessions = drizzleAssistantSessionsStore(ctx.db);
+      const users = drizzleUsersStore(ctx.db);
+      // A failed name read only drops one name from the personal-data check.
+      const hostName = await users
+        .findById(ctx.sessionUserId)
+        .then((host) => host?.name ?? null)
+        .catch(() => null);
       return getJobAssistant().turn(ctx.sessionUserId, input, {
         sessions,
         memory: {
           jobs: drizzleJobsStore(ctx.db),
-          users: drizzleUsersStore(ctx.db),
+          users,
           reviews: drizzleReviewsStore(ctx.db),
           sessions,
         },
         pricing: drizzleJobsStore(ctx.db),
+        solutions: {
+          store: drizzleSolutionsStore(ctx.db),
+          hostName,
+          // Session-wide cap, enforced by the database on each save.
+          reserveSave: () =>
+            sessions.reserveSolutionSave({
+              id: input.sessionId,
+              hostId: ctx.sessionUserId,
+              max: SOLUTION_RANKING_CONFIG.maxSavesPerSession,
+            }),
+        },
         onTurn: (event) =>
           ctx.req.log.info({ assistantTurn: event }, "assistant turn"),
       });

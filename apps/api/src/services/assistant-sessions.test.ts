@@ -43,6 +43,7 @@ function sessionsFake(result = true) {
   const store: AssistantSessionsStore = {
     openTurn: () => Promise.reject(new Error("not used")),
     recordTurn: () => Promise.reject(new Error("not used")),
+    reserveSolutionSave: () => Promise.reject(new Error("not used")),
     listFinishedByHost: () => Promise.reject(new Error("not used")),
     finish: async (args) => {
       calls.push(args);

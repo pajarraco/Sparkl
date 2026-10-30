@@ -56,6 +56,14 @@ export interface AssistantSessionsStore {
   // Finished sessions of one host, newest first, for correction-rate
   // hints. Counts and field names only, never message text.
   listFinishedByHost(hostId: string): Promise<SessionCorrections[]>;
+  // Reserves one solution save for an open session of hostId. Atomic: the
+  // row is updated only while it is under `max`. False at the cap, for
+  // another host's session, or once the session is finished.
+  reserveSolutionSave(args: {
+    id: string;
+    hostId: string;
+    max: number;
+  }): Promise<boolean>;
   // Closes the session (inserting it when it never had a turn). False when
   // the id belongs to another host or the session is already finished.
   finish(args: {

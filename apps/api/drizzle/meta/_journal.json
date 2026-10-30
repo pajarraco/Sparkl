@@ -22,6 +22,20 @@
       "when": 1793270952163,
       "tag": "0002_job_preferred_cleaner",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793315368585,
+      "tag": "0003_assistant_solutions",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793318339674,
+      "tag": "0004_solution_saves_per_session",
+      "breakpoints": true
     }
   ]
 }

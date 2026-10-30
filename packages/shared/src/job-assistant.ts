@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { geoPlaceSchema } from "./geo";
+import { SOLUTION_RANKING_CONFIG, solutionProposalSchema } from "./solutions";
+import { TIME_RE } from "./time";
 
 export const ASSISTANT_MAX_TURNS = 20; // messages per request
 export const ASSISTANT_MAX_MESSAGE_CHARS = 1000;
@@ -29,7 +31,6 @@ export const ASSISTANT_REQUIRED_FIELDS = [
 ] as const satisfies readonly JobDraftField[];
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 // Strings, like the form inputs; validatePostJob stays the final authority.
 export const jobDraftSchema = z
@@ -107,6 +108,11 @@ export const assistantTurnOutput = z
       .max(ASSISTANT_MAX_QUICK_REPLIES),
     places: z.array(geoPlaceSchema).max(5),
     priceHint: priceHintSchema.nullable(),
+    // Solutions offered this turn (04). Optional until the agent loop emits it.
+    proposals: z
+      .array(solutionProposalSchema)
+      .max(SOLUTION_RANKING_CONFIG.topK)
+      .optional(),
   })
   .strict();
 export type AssistantTurnOutput = z.infer<typeof assistantTurnOutput>;

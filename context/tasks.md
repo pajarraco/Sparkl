@@ -147,12 +147,12 @@ Spec: `context/features/03-improvements-issues.md` (approved 2026-10-29). Built 
 
 Spec: `context/features/04-assistant-learning.md` (approved 2026-10-29). L1 ships before Nov 4, ahead of 02 P4. Votes come only from the host's response; only answers are stored, never messages or personal data; shared across hosts with the host's own first.
 
-Resume here (2026-10-30): the first box below. 02 P2 is done and migration `0002_job_preferred_cleaner` is applied on the local dev DB (main tree only, not the 03 worktree DB).
+Resume here (2026-10-30): the first unchecked box below (steps 1–4 done on `feat/04-assistant-learning`; `0003` and `0004` applied to the local dev DB). Apply migrations with `pnpm --filter @sparkl/api exec drizzle-kit migrate`. 02 P2 is done and migration `0002_job_preferred_cleaner` is applied on the local dev DB (main tree only, not the 03 worktree DB).
 
-- [ ] Shared: solution kinds + payload schemas, `SOLUTION_TAGS`, `SOLUTION_RANKING_CONFIG`, `proposals` on the turn output, `assistantFeedbackInput`
-- [ ] Pure services + tests: ranking (Wilson × recency, host-first), personal-data check, payload fingerprint
-- [ ] `assistant_solutions` + `assistant_solution_events` migration (`0003`) and store
-- [ ] `find_solutions` / `save_solution` tools in the agent loop (Zod args, save cap, quoted results, `proposed` events)
+- [x] Shared: solution kinds + payload schemas, `SOLUTION_TAGS`, `SOLUTION_RANKING_CONFIG`, `proposals` on the turn output, `assistantFeedbackInput`
+- [x] Pure services + tests: ranking (Wilson × recency, host-first), personal-data check, payload fingerprint
+- [x] `assistant_solutions` + `assistant_solution_events` migration (`0003`) and store
+- [x] `find_solutions` / `save_solution` tools in the agent loop (Zod args, save cap, quoted results, `proposed` events)
 - [ ] Feedback: `jobAssistant.feedback` (chip taps) + accept/reject from the review-form diff in `finish`
 - [ ] Sharing: fingerprint → global row, 3 distinct hosts with posted jobs, rejected-by-host never re-proposed, `solutions:retire` script
 - [ ] 02 price hint + usual-cleaner offer report into `offer_preference`
