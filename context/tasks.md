@@ -147,7 +147,7 @@ Spec: `context/features/03-improvements-issues.md` (approved 2026-10-29). Built 
 
 Spec: `context/features/04-assistant-learning.md` (approved 2026-10-29). L1 ships before Nov 4, ahead of 02 P4. Votes come only from the host's response; only answers are stored, never messages or personal data; shared across hosts with the host's own first.
 
-Resume here (2026-10-30): the first unchecked box below. Steps 1–9 are done on `feat/04-assistant-learning`. The chips and the finish calls are in the Post screen, verified by unit tests and typecheck only (not yet run in a browser). Left in §12: the gates (`pnpm verify` plus `e2e`, and docs). Migrations `0003` and `0004` are applied to the local dev DB. The stack starts with `docker compose -f docker-compose.dev.yml up -d`. 02 P2 is done and migration `0002_job_preferred_cleaner` is applied on the local dev DB (main tree only, not the 03 worktree DB).
+Resume here (2026-10-30): §12 steps 1–10 are done on `feat/04-assistant-learning` (not committed by the agent; the owner committed the work). The only open box is the e2e gate, which is blocked by pre-existing failures in the older suites until branch 03 merges (see the gates line). Migrations `0003` and `0004` are applied to the local dev DB. Start the stack with `docker compose -f docker-compose.dev.yml up -d`.
 
 - [x] Shared: solution kinds + payload schemas, `SOLUTION_TAGS`, `SOLUTION_RANKING_CONFIG`, `proposals` on the turn output, `assistantFeedbackInput`
 - [x] Pure services + tests: ranking (Wilson × recency, host-first), personal-data check, payload fingerprint
@@ -158,7 +158,7 @@ Resume here (2026-10-30): the first unchecked box below. Steps 1–9 are done on
 - [x] 02 price hint + usual-cleaner offer report into `offer_preference`
 - [x] UI: "Use this" / "Not this" chips under proposals (i18n; `design.md` first if a style is new)
 - [x] Seed: 3 obviously-fake global checklists + 3 FAQ entries
-- [ ] Gates: `pnpm verify` green + e2e (saved checklist proposed first in session 2; a checklist with a phone number refused), output quoted; `CHANGELOG.md` and docs updated
+- [ ] Gates: `pnpm verify` green + e2e (saved checklist proposed first in session 2; a checklist with a phone number refused), output quoted; `CHANGELOG.md` and docs updated. **Status:** `pnpm verify` green (shared 95, api 314, frontend 186). The assistant spec passes on both viewports. Full e2e is 34 passed, 36 failed, all in the older suites, and all pre-existing on the starting commit `180d0cf`: auth (host sign-up, sign-in, duplicate registration, the three role switches), forms (the two post-form tests), happy-path (both) and navigation (eight tests). Root causes are on branch 03, not here: the host tab bar is missing (03 item A2, nested stacks) and the old suites use `/host/...` URLs (03's URL move). Left open on purpose: close this gate after 03 merges and the full e2e run is green, output quoted. Docs and changelog for 04 are updated.
 
 ### Stretch (only if time allows)
 
