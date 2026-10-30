@@ -42,6 +42,8 @@ const styles = StyleSheet.create({
 export interface PostJobFormProps {
   initialValues: PostJobFormValues;
   onPostAgain: () => void;
+  // Called once the job exists, with the values the host posted (04 step 8).
+  onPosted?: (jobId: string, values: PostJobFormValues) => void;
 }
 
 export function PostJobForm(props: PostJobFormProps) {
@@ -80,12 +82,24 @@ export function PostJobForm(props: PostJobFormProps) {
     setFormError(null);
     try {
       // The pin came from the assistant's memory; the server re-checks it.
-      await createJob.mutateAsync(
+      const job = await createJob.mutateAsync(
         initial.preferredCleanerId === ""
           ? result.data
           : { ...result.data, preferredCleanerId: initial.preferredCleanerId },
       );
       setPosted(true);
+      props.onPosted?.(job.id, {
+        address: place.address,
+        latitude: place.latitude,
+        longitude: place.longitude,
+        date,
+        windowStart,
+        windowEnd,
+        sizeSqm,
+        notes,
+        price,
+        preferredCleanerId: initial.preferredCleanerId,
+      });
     } catch {
       setFormError(strings.errors.generic);
     }

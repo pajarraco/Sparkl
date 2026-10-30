@@ -1,3 +1,4 @@
+import type { SolutionProposal, SolutionVote } from "@sparkl/shared";
 import { useState } from "react";
 import { AssistantChat } from "../../../components/AssistantChat";
 import { PostJobForm } from "../../../components/PostJobForm";
@@ -7,6 +8,8 @@ import { sparklTrpc } from "../../../providers/app-providers";
 import { getStrings } from "../../../providers/i18n";
 import {
   type AssistantState,
+  type PostJobFormValues,
+  abandonedFinishInput,
   applyTurnOutput,
   assistantErrorMessage,
   buildTurnInput,
@@ -15,6 +18,8 @@ import {
   deviceTimeZone,
   draftToFormValues,
   newSessionId,
+  postedFinishInput,
+  recordVote,
   withUserMessage,
 } from "../../../providers/job-assistant";
 
@@ -29,6 +34,8 @@ type Mode = "assistant" | "form";
 export default function HostPostScreen() {
   const strings = getStrings();
   const turn = sparklTrpc.jobAssistant.turn.useMutation();
+  const feedback = sparklTrpc.jobAssistant.feedback.useMutation();
+  const finish = sparklTrpc.jobAssistant.finish.useMutation();
   const [mode, setMode] = useState<Mode>("assistant");
   const [assistant, setAssistant] = useState<AssistantState>(() =>
     createAssistantState(newSessionId()),
@@ -59,7 +66,42 @@ export default function HostPostScreen() {
     setMode("form");
   }
 
-  function startOver(): void {
+  // A chip tap is a vote at once. The chips stay if the vote fails.
+  async function handleVote(
+    proposal: SolutionProposal,
+    vote: SolutionVote,
+  ): Promise<void> {
+    setError(null);
+    try {
+      await feedback.mutateAsync({
+        sessionId: assistant.sessionId,
+        proposalId: proposal.id,
+        vote,
+      });
+      setAssistant((current) => recordVote(current, proposal.id, vote));
+    } catch (err) {
+      setError(assistantErrorMessage(err));
+    }
+  }
+
+  // Closes the session with the posted job. Best effort: the job is saved
+  // whatever happens to the learning record.
+  function handlePosted(jobId: string, values: PostJobFormValues): void {
+    finish
+      .mutateAsync(postedFinishInput(assistant, jobId, values))
+      .catch(() => undefined);
+    // The session is closed now, so its chips can no longer be answered.
+    setAssistant((current) => ({ ...current, proposals: [] }));
+  }
+
+  // A discarded session closes as abandoned, which takes no votes. After a
+  // post the session is already closed, so the caller passes abandon=false.
+  function startOver({ abandon }: { abandon: boolean }): void {
+    if (abandon && assistant.messages.length > 0) {
+      finish
+        .mutateAsync(abandonedFinishInput(assistant))
+        .catch(() => undefined);
+    }
     setAssistant(createAssistantState(newSessionId()));
     setError(null);
   }
@@ -77,8 +119,9 @@ export default function HostPostScreen() {
         <PostJobForm
           initialValues={draftToFormValues(assistant.draft)}
           key={formKey}
+          onPosted={handlePosted}
           onPostAgain={() => {
-            startOver();
+            startOver({ abandon: false });
             openForm();
           }}
         />
@@ -97,7 +140,10 @@ export default function HostPostScreen() {
         onSend={(text) => {
           void handleSend(text);
         }}
-        onStartOver={startOver}
+        onStartOver={() => startOver({ abandon: true })}
+        onVote={(proposal, vote) => {
+          void handleVote(proposal, vote);
+        }}
         pending={turn.isPending}
         state={assistant}
       />

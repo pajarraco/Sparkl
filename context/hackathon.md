@@ -50,7 +50,7 @@
 
 - Track: Startup — judged on technical execution and whether it holds up in production. The demo must hold up, not just look good.
 - Theme: Build for Your World — Meta models inside a cleaning marketplace.
-- Primary Meta AI integration: smart match explanations (Muse Spark) on ranked suggestions. A second integration only if time allows.
+- Primary Meta AI integration: the job-post assistant (Muse Spark), with saved answers that improve with use, shipped. Smart match explanations were cut for time; they are the next integration if there is room.
 
 ## Meta AI Candidates for Sparkl
 

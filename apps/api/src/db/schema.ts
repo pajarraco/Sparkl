@@ -4,6 +4,7 @@ import {
   doublePrecision,
   index,
   integer,
+  jsonb,
   pgTable,
   primaryKey,
   text,
@@ -229,10 +230,83 @@ export const assistantSessions = pgTable(
       .notNull()
       .default(sql`'{}'::text[]`),
     outcome: text("outcome"),
+    // Solutions saved in this session (04), capped by reserveSolutionSave.
+    solutionSaves: integer("solution_saves").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
       .defaultNow()
       .notNull(),
     finishedAt: timestamp("finished_at", { withTimezone: true, mode: "date" }),
   },
   (t) => [index("assistant_sessions_host_idx").on(t.hostId, t.createdAt)],
+);
+
+// Solutions store (04 L1). `payload` is checked against the shared Zod
+// schema for its kind on every write and read. No message text is stored.
+export const assistantSolutions = pgTable(
+  "assistant_solutions",
+  {
+    id: text("id").primaryKey(),
+    scope: text("scope").notNull(), // shared solutionScopeSchema: "host" | "global"
+    hostId: text("host_id").references(() => user.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(), // shared solutionKindSchema
+    tags: text("tags").array().notNull().default(sql`'{}'::text[]`),
+    payload: jsonb("payload").notNull(),
+    fingerprint: text("fingerprint").notNull(),
+    source: text("source").notNull(), // shared solutionSourceSchema
+    status: text("status").notNull().default("candidate"), // shared solutionStatusSchema
+    proposed: integer("proposed").notNull().default(0),
+    accepted: integer("accepted").notNull().default(0),
+    rejected: integer("rejected").notNull().default(0),
+    score: doublePrecision("score").notNull().default(0),
+    lastAcceptedAt: timestamp("last_accepted_at", {
+      withTimezone: true,
+      mode: "date",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
+      .defaultNow()
+      .notNull(),
+  },
+  (t) => [
+    index("assistant_solutions_kind_status_idx").on(t.kind, t.status),
+    index("assistant_solutions_tags_idx").using("gin", t.tags),
+    uniqueIndex("assistant_solutions_host_fingerprint_unique")
+      .on(t.hostId, t.fingerprint)
+      .where(sql`${t.scope} = 'host'`),
+    uniqueIndex("assistant_solutions_global_fingerprint_unique")
+      .on(t.fingerprint)
+      .where(sql`${t.scope} = 'global'`),
+  ],
+);
+
+// One row per (solution, session, event): the audit trail behind the
+// counters, and the one-vote-per-session rule.
+export const assistantSolutionEvents = pgTable(
+  "assistant_solution_events",
+  {
+    id: text("id").primaryKey(),
+    solutionId: text("solution_id")
+      .notNull()
+      .references(() => assistantSolutions.id, { onDelete: "cascade" }),
+    sessionId: text("session_id")
+      .notNull()
+      .references(() => assistantSessions.id, { onDelete: "cascade" }),
+    hostId: text("host_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    event: text("event").notNull(), // "proposed" | "accepted" | "rejected"
+    at: timestamp("at", { withTimezone: true, mode: "date" })
+      .defaultNow()
+      .notNull(),
+  },
+  (t) => [
+    uniqueIndex("assistant_solution_events_once_unique").on(
+      t.solutionId,
+      t.sessionId,
+      t.event,
+    ),
+    index("assistant_solution_events_host_idx").on(t.hostId, t.solutionId),
+  ],
 );

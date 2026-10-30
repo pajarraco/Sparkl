@@ -13,3 +13,4 @@ export * from "./suggestions";
 export * from "./geo";
 export * from "./voice";
 export * from "./job-assistant";
+export * from "./solutions";

@@ -1,13 +1,17 @@
 import {
   ASSISTANT_MAX_MESSAGE_CHARS,
   ASSISTANT_MAX_TURNS,
+  type AssistantFinishInput,
   type AssistantMessage,
   type AssistantTurnInput,
   type AssistantTurnOutput,
   type GeoPlace,
+  JOB_DRAFT_FIELDS,
   type JobDraft,
   type JobDraftField,
   type PriceHint,
+  type SolutionProposal,
+  type SolutionVote,
 } from "@sparkl/shared";
 import { getStrings } from "./i18n";
 import { formatPriceMinorUnits } from "./my-jobs";
@@ -26,6 +30,10 @@ export interface AssistantState {
   readyForReview: boolean;
   places: GeoPlace[];
   priceHint: PriceHint | null;
+  // Saved answers offered by the latest reply, and the host's vote on each
+  // (04 step 8). Votes persist across turns so a voted answer stays hidden.
+  proposals: SolutionProposal[];
+  votes: Record<string, SolutionVote>;
 }
 
 export function createAssistantState(
@@ -40,6 +48,8 @@ export function createAssistantState(
     readyForReview: false,
     places: [],
     priceHint: null,
+    proposals: [],
+    votes: {},
   };
 }
 
@@ -88,6 +98,73 @@ export function applyTurnOutput(
     readyForReview: output.readyForReview,
     places: output.places,
     priceHint: output.priceHint,
+    proposals: output.proposals ?? [],
+  };
+}
+
+// Proposals still waiting for the host's chip tap.
+export function openProposals(state: AssistantState): SolutionProposal[] {
+  return state.proposals.filter((proposal) => !state.votes[proposal.id]);
+}
+
+export function recordVote(
+  state: AssistantState,
+  proposalId: string,
+  vote: SolutionVote,
+): AssistantState {
+  return { ...state, votes: { ...state.votes, [proposalId]: vote } };
+}
+
+// The review-form fields the host changed from the draft the form opened
+// with. The server only votes on fields the model had filled.
+export function hostChangedFields(
+  opened: JobDraft,
+  values: PostJobFormValues,
+): JobDraftField[] {
+  const before = draftToFormValues(opened);
+  return JOB_DRAFT_FIELDS.filter(
+    (field) => before[field].trim() !== values[field].trim(),
+  );
+}
+
+// "accepted" when the posted price is exactly the hint; "ignored" otherwise.
+// Undefined when no hint was shown, so nothing is voted on.
+export function priceHintResponseFor(
+  hint: PriceHint | null,
+  postedPrice: string,
+): "accepted" | "ignored" | undefined {
+  if (hint === null) return undefined;
+  const trimmed = postedPrice.trim();
+  const posted = /^\d+(\.\d{1,2})?$/.test(trimmed)
+    ? Math.round(Number(trimmed) * 100)
+    : null;
+  return posted === hint.medianMinorUnits ? "accepted" : "ignored";
+}
+
+// Closes the session as posted, with the host's review-form answers.
+export function postedFinishInput(
+  state: AssistantState,
+  jobId: string,
+  values: PostJobFormValues,
+): AssistantFinishInput {
+  const priceHintResponse = priceHintResponseFor(state.priceHint, values.price);
+  return {
+    sessionId: state.sessionId,
+    outcome: "posted",
+    jobId,
+    hostChanged: hostChangedFields(state.draft, values),
+    ...(priceHintResponse === undefined ? {} : { priceHintResponse }),
+  };
+}
+
+// Closes a session the host discarded. No votes are taken from it.
+export function abandonedFinishInput(
+  state: AssistantState,
+): AssistantFinishInput {
+  return {
+    sessionId: state.sessionId,
+    outcome: "abandoned",
+    hostChanged: [],
   };
 }
 

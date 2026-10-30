@@ -13,7 +13,7 @@ Read these before doing anything:
 - `context/rules.md` — dos and don'ts (when created)
 - `context/tasks.md` — pending and completed work (when created)
 
-No implementation exists yet — the `context/` files are the build spec.
+The implementation exists. The `context/` files are the build spec and the record of decisions; where code and a spec differ, say so in `context/tasks.md` rather than editing history.
 
 ## Working Agreements
 

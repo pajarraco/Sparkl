@@ -32,6 +32,12 @@ import {
   createFakeLlmClient,
 } from "./llm.js";
 import { RateLimitError } from "./rate-limit.js";
+import { offerFingerprint } from "./solution-offers.js";
+import type {
+  SolutionEventInput,
+  SolutionRow,
+  SolutionsStore,
+} from "./solutions-store.js";
 
 const SESSION = "11111111-1111-4111-8111-111111111111";
 const PLACE: GeoPlace = {
@@ -87,6 +93,12 @@ function sessionsStub(open = true) {
     },
     async recordTurn(id, hostId, stats) {
       recorded.push({ id, hostId, stats });
+    },
+    async reserveSolutionSave() {
+      return true;
+    },
+    async sessionFills() {
+      return null;
     },
     async listFinishedByHost() {
       return [];
@@ -1202,5 +1214,232 @@ describe("price hint and usual cleaner", () => {
     expect(prompt).not.toContain("Go with Maria as always?");
     expect(prompt).toContain("call suggest_price");
     expect(prompt).toContain("cleaning checklist");
+  });
+});
+
+// A saved checklist the host has accepted before, offered to this turn.
+const SAVED_ID = "22222222-2222-4222-8222-222222222222";
+const SAVED_ROW: SolutionRow = {
+  id: SAVED_ID,
+  scope: "global",
+  hostId: null,
+  kind: "checklist",
+  tags: [],
+  payload: { items: ["Wipe the hob", "Vacuum the rugs"] },
+  fingerprint: "fp-saved",
+  source: "seed",
+  status: "active",
+  proposed: 0,
+  accepted: 3,
+  rejected: 0,
+  score: 0.5,
+  lastAcceptedAt: new Date("2026-10-28T00:00:00Z"),
+  createdAt: new Date("2026-10-01T00:00:00Z"),
+  updatedAt: new Date("2026-10-28T00:00:00Z"),
+};
+
+function solutionsStub(rows: SolutionRow[] = [SAVED_ROW]) {
+  const events: SolutionEventInput[] = [];
+  const store: SolutionsStore = {
+    async insert() {
+      return true;
+    },
+    async findById() {
+      return null;
+    },
+    async findByFingerprint() {
+      return null;
+    },
+    async listForHost() {
+      return rows;
+    },
+    async rejectedByHost() {
+      return [];
+    },
+    async recordEvent(event) {
+      events.push(event);
+      return true;
+    },
+    async acceptingHostIds() {
+      return [];
+    },
+    async proposedSolutionIds() {
+      return [];
+    },
+    async votedSolutionIds() {
+      return [];
+    },
+    async hostHasVoted() {
+      return false;
+    },
+    async recentVotes() {
+      return [];
+    },
+    async setScore() {},
+    async setStatus() {},
+  };
+  return { store, events };
+}
+
+describe("solution tools in the loop", () => {
+  it("offers find_solutions and save_solution only with the solutions store", async () => {
+    const plain = scripted([
+      { content: "Hi", inputTokens: 1, outputTokens: 1 },
+    ]);
+    await createJobAssistant({
+      llm: plain.llm,
+      geo: geoStub(),
+      now: fixedNow,
+    }).turn("host-1", input("Hi"));
+    expect(plain.requests[0]?.tools?.map((t) => t.name)).not.toContain(
+      "find_solutions",
+    );
+
+    const offered = scripted([
+      { content: "Hi", inputTokens: 1, outputTokens: 1 },
+    ]);
+    await createJobAssistant({
+      llm: offered.llm,
+      geo: geoStub(),
+      now: fixedNow,
+    }).turn("host-1", input("Hi"), {
+      solutions: { store: solutionsStub().store },
+    });
+    const names = offered.requests[0]?.tools?.map((t) => t.name) ?? [];
+    expect(names).toEqual(
+      expect.arrayContaining(["find_solutions", "save_solution"]),
+    );
+    expect(offered.requests[0]?.messages[0]?.content).toContain(
+      "call find_solutions with kind checklist",
+    );
+  });
+
+  it("proposes a saved checklist, logs the proposal and returns it in the output", async () => {
+    const { llm, requests } = scripted([
+      {
+        toolCalls: [call("s1", "find_solutions", { kind: "checklist" })],
+        inputTokens: 10,
+        outputTokens: 2,
+      },
+      {
+        content: "Shall I use your usual checklist?",
+        inputTokens: 20,
+        outputTokens: 5,
+      },
+    ]);
+    const { store, events } = solutionsStub();
+    const output = await createJobAssistant({
+      llm,
+      geo: geoStub(),
+      now: fixedNow,
+    }).turn("host-1", input("Can you do a checklist?"), {
+      solutions: { store, hostName: "Ernesto" },
+    });
+
+    expect(toolOutput(requests[1], "s1")).toEqual({
+      solutions: [
+        {
+          id: SAVED_ID,
+          kind: "checklist",
+          label: "Checklist (2 items)",
+          payload: { items: ["Wipe the hob", "Vacuum the rugs"] },
+        },
+      ],
+    });
+    expect(output.proposals).toEqual([
+      { id: SAVED_ID, kind: "checklist", label: "Checklist (2 items)" },
+    ]);
+    expect(events).toEqual([
+      expect.objectContaining({
+        solutionId: SAVED_ID,
+        sessionId: SESSION,
+        hostId: "host-1",
+        event: "proposed",
+      }),
+    ]);
+  });
+
+  it("returns an empty proposals list when nothing is offered", async () => {
+    const { llm } = scripted([
+      { content: "Hi", inputTokens: 1, outputTokens: 1 },
+    ]);
+    const output = await createJobAssistant({
+      llm,
+      geo: geoStub(),
+      now: fixedNow,
+    }).turn("host-1", input("Hi"), {
+      solutions: { store: solutionsStub([]).store },
+    });
+    expect(output.proposals).toEqual([]);
+  });
+});
+
+describe("offer suppression in the loop", () => {
+  function priceOfferStore(status: SolutionRow["status"]) {
+    const offer: SolutionRow = {
+      id: "33333333-3333-4333-8333-333333333333",
+      scope: "host",
+      hostId: "host-1",
+      kind: "offer_preference",
+      tags: [],
+      payload: { offer: "price_hint" },
+      fingerprint: offerFingerprint("price_hint"),
+      source: "service",
+      status,
+      proposed: 0,
+      accepted: 0,
+      rejected: 0,
+      score: 0,
+      lastAcceptedAt: null,
+      createdAt: new Date("2026-10-01T00:00:00Z"),
+      updatedAt: new Date("2026-10-01T00:00:00Z"),
+    };
+    const base = solutionsStub([]).store;
+    return {
+      ...base,
+      async findByFingerprint(
+        scope: string,
+        hostId: string | null,
+        fingerprint: string,
+      ) {
+        return scope === "host" &&
+          hostId === "host-1" &&
+          fingerprint === offer.fingerprint
+          ? offer
+          : null;
+      },
+    } as SolutionsStore;
+  }
+
+  it("does not offer suggest_price once the host has retired the price hint", async () => {
+    const { llm, requests } = scripted([
+      { content: "Hi", inputTokens: 1, outputTokens: 1 },
+    ]);
+    await createJobAssistant({ llm, geo: geoStub(), now: fixedNow }).turn(
+      "host-1",
+      input("Hi"),
+      {
+        pricing: { listJobsForPricing: async () => [] },
+        solutions: { store: priceOfferStore("retired") },
+      },
+    );
+    expect(requests[0]?.tools?.map((t) => t.name)).not.toContain(
+      "suggest_price",
+    );
+  });
+
+  it("still offers suggest_price while the price hint is active", async () => {
+    const { llm, requests } = scripted([
+      { content: "Hi", inputTokens: 1, outputTokens: 1 },
+    ]);
+    await createJobAssistant({ llm, geo: geoStub(), now: fixedNow }).turn(
+      "host-1",
+      input("Hi"),
+      {
+        pricing: { listJobsForPricing: async () => [] },
+        solutions: { store: priceOfferStore("active") },
+      },
+    );
+    expect(requests[0]?.tools?.map((t) => t.name)).toContain("suggest_price");
   });
 });

@@ -1,0 +1,1 @@
+ALTER TABLE "assistant_sessions" ADD COLUMN "solution_saves" integer DEFAULT 0 NOT NULL;

@@ -5,9 +5,17 @@ import type {
   JobStatus,
   Message,
   Review,
+  SolutionTag,
   User,
 } from "@sparkl/shared";
-import { jobDraftFieldSchema } from "@sparkl/shared";
+import {
+  jobDraftFieldSchema,
+  solutionKindSchema,
+  solutionScopeSchema,
+  solutionSourceSchema,
+  solutionStatusSchema,
+  solutionTagSchema,
+} from "@sparkl/shared";
 import { and, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import type { AssistantSessionsStore } from "../services/assistant-sessions.js";
 import { ChatError, type ChatStore } from "../services/chat.js";
@@ -18,10 +26,18 @@ import {
 } from "../services/jobs.js";
 import type { MessagesRead } from "../services/matching.js";
 import { ReviewsError, type ReviewsStore } from "../services/reviews.js";
+import type {
+  NewSolution,
+  SolutionEventInput,
+  SolutionRow,
+  SolutionsStore,
+} from "../services/solutions-store.js";
 import type { ProfilePatch, UsersStore } from "../services/users.js";
 import type { Db } from "./client.js";
 import {
   assistantSessions,
+  assistantSolutionEvents,
+  assistantSolutions,
   cleanerAvailability,
   jobs,
   messages,
@@ -428,6 +444,31 @@ export function drizzleAssistantSessionsStore(db: Db): AssistantSessionsStore {
         .where(and(eq(t.id, id), ownOpen(hostId)));
     },
 
+    async sessionFills(id, hostId) {
+      const [row] = await db
+        .select({ outcome: t.outcome, modelFilled: t.modelFilled })
+        .from(t)
+        .where(and(eq(t.id, id), eq(t.hostId, hostId)))
+        .limit(1);
+      if (!row) return null;
+      const fields = row.modelFilled.filter(
+        (value): value is JobDraftField =>
+          jobDraftFieldSchema.safeParse(value).success,
+      );
+      return { open: row.outcome === null, modelFilled: fields };
+    },
+
+    async reserveSolutionSave({ id, hostId, max }) {
+      const rows = await db
+        .update(t)
+        .set({ solutionSaves: sql`${t.solutionSaves} + 1` })
+        .where(
+          and(eq(t.id, id), ownOpen(hostId), sql`${t.solutionSaves} < ${max}`),
+        )
+        .returning({ id: t.id });
+      return rows.length === 1;
+    },
+
     async listFinishedByHost(hostId) {
       const rows = await db
         .select({ modelFilled: t.modelFilled, hostChanged: t.hostChanged })
@@ -468,6 +509,230 @@ export function drizzleAssistantSessionsStore(db: Db): AssistantSessionsStore {
         })
         .returning({ id: t.id });
       return rows.length === 1;
+    },
+  };
+}
+
+type SolutionRecord = typeof assistantSolutions.$inferSelect;
+
+// Re-checks the closed enums on every read, so a foreign or legacy value
+// can never reach the ranking or the prompt. Unknown values drop the row.
+function toSolutionRow(record: SolutionRecord): SolutionRow | null {
+  const scope = solutionScopeSchema.safeParse(record.scope);
+  const kind = solutionKindSchema.safeParse(record.kind);
+  const source = solutionSourceSchema.safeParse(record.source);
+  const status = solutionStatusSchema.safeParse(record.status);
+  if (!scope.success || !kind.success || !source.success || !status.success) {
+    return null;
+  }
+  const tags = record.tags.filter(
+    (tag): tag is SolutionTag => solutionTagSchema.safeParse(tag).success,
+  );
+  return {
+    id: record.id,
+    scope: scope.data,
+    hostId: record.hostId,
+    kind: kind.data,
+    tags,
+    payload: record.payload,
+    fingerprint: record.fingerprint,
+    source: source.data,
+    status: status.data,
+    proposed: record.proposed,
+    accepted: record.accepted,
+    rejected: record.rejected,
+    score: record.score,
+    lastAcceptedAt: record.lastAcceptedAt,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
+  };
+}
+
+export function drizzleSolutionsStore(db: Db): SolutionsStore {
+  const s = assistantSolutions;
+  const e = assistantSolutionEvents;
+  const rowsOf = (records: SolutionRecord[]): SolutionRow[] =>
+    records.flatMap((record) => {
+      const row = toSolutionRow(record);
+      return row ? [row] : [];
+    });
+
+  return {
+    async insert(row: NewSolution) {
+      const inserted = await db
+        .insert(s)
+        .values({
+          id: row.id,
+          scope: row.scope,
+          hostId: row.hostId,
+          kind: row.kind,
+          tags: row.tags,
+          payload: row.payload,
+          fingerprint: row.fingerprint,
+          source: row.source,
+          status: row.status,
+          createdAt: row.at,
+          updatedAt: row.at,
+        })
+        .onConflictDoNothing()
+        .returning({ id: s.id });
+      return inserted.length === 1;
+    },
+
+    async findById(id) {
+      const [record] = await db.select().from(s).where(eq(s.id, id)).limit(1);
+      return record ? toSolutionRow(record) : null;
+    },
+
+    async findByFingerprint(scope, hostId, fingerprint) {
+      if (scope === "host" && hostId === null) return null;
+      const where =
+        scope === "host"
+          ? and(
+              eq(s.scope, "host"),
+              eq(s.hostId, hostId ?? ""),
+              eq(s.fingerprint, fingerprint),
+            )
+          : and(eq(s.scope, "global"), eq(s.fingerprint, fingerprint));
+      const [record] = await db.select().from(s).where(where).limit(1);
+      return record ? toSolutionRow(record) : null;
+    },
+
+    async listForHost(hostId, kind) {
+      const records = await db
+        .select()
+        .from(s)
+        .where(
+          and(
+            eq(s.kind, kind),
+            sql`(${s.scope} = 'global' or ${s.hostId} = ${hostId})`,
+          ),
+        );
+      return rowsOf(records);
+    },
+
+    async rejectedByHost(hostId) {
+      const rows = await db
+        .selectDistinct({ solutionId: e.solutionId })
+        .from(e)
+        .where(and(eq(e.hostId, hostId), eq(e.event, "rejected")));
+      return rows.map((row) => row.solutionId);
+    },
+
+    async recordEvent(event: SolutionEventInput) {
+      return db.transaction(async (tx) => {
+        const inserted = await tx
+          .insert(e)
+          .values({
+            id: event.id,
+            solutionId: event.solutionId,
+            sessionId: event.sessionId,
+            hostId: event.hostId,
+            event: event.event,
+            at: event.at,
+          })
+          .onConflictDoNothing()
+          .returning({ id: e.id });
+        if (inserted.length === 0) return false;
+        const counter = {
+          proposed: sql`${s.proposed} + 1`,
+          accepted: sql`${s.accepted} + 1`,
+          rejected: sql`${s.rejected} + 1`,
+        }[event.event];
+        await tx
+          .update(s)
+          .set({
+            [event.event]: counter,
+            ...(event.event === "accepted" ? { lastAcceptedAt: event.at } : {}),
+            updatedAt: event.at,
+          })
+          .where(eq(s.id, event.solutionId));
+        return true;
+      });
+    },
+
+    async acceptingHostIds(fingerprint) {
+      // Only hosts with at least one posted job count toward sharing, so a
+      // throwaway account cannot promote an answer on its own.
+      const rows = await db
+        .selectDistinct({ hostId: e.hostId })
+        .from(e)
+        .innerJoin(s, eq(s.id, e.solutionId))
+        .where(
+          and(
+            eq(s.fingerprint, fingerprint),
+            eq(e.event, "accepted"),
+            sql`exists (select 1 from ${jobs} where ${jobs.hostId} = ${e.hostId})`,
+          ),
+        );
+      return rows.map((row) => row.hostId);
+    },
+
+    async proposedSolutionIds(sessionId, hostId) {
+      const rows = await db
+        .selectDistinct({ solutionId: e.solutionId })
+        .from(e)
+        .where(
+          and(
+            eq(e.sessionId, sessionId),
+            eq(e.hostId, hostId),
+            eq(e.event, "proposed"),
+          ),
+        );
+      return rows.map((row) => row.solutionId);
+    },
+
+    async votedSolutionIds(sessionId) {
+      const rows = await db
+        .selectDistinct({ solutionId: e.solutionId })
+        .from(e)
+        .where(
+          and(
+            eq(e.sessionId, sessionId),
+            inArray(e.event, ["accepted", "rejected"]),
+          ),
+        );
+      return rows.map((row) => row.solutionId);
+    },
+
+    async hostHasVoted(solutionId, hostId) {
+      const rows = await db
+        .select({ id: e.id })
+        .from(e)
+        .where(
+          and(
+            eq(e.solutionId, solutionId),
+            eq(e.hostId, hostId),
+            inArray(e.event, ["accepted", "rejected"]),
+          ),
+        )
+        .limit(1);
+      return rows.length > 0;
+    },
+
+    async recentVotes(solutionId, n) {
+      const rows = await db
+        .select({ event: e.event })
+        .from(e)
+        .where(
+          and(
+            eq(e.solutionId, solutionId),
+            inArray(e.event, ["accepted", "rejected"]),
+          ),
+        )
+        .orderBy(desc(e.at))
+        .limit(n);
+      return rows.map((row) =>
+        row.event === "accepted" ? "accepted" : "rejected",
+      );
+    },
+
+    async setScore(id, score, at) {
+      await db.update(s).set({ score, updatedAt: at }).where(eq(s.id, id));
+    },
+
+    async setStatus(id, status, at) {
+      await db.update(s).set({ status, updatedAt: at }).where(eq(s.id, id));
     },
   };
 }

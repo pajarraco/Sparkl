@@ -7,7 +7,8 @@ Built for the Meta Global AI Developer Hackathon with Expo (iOS, Android, Web), 
 ## MVP Scope
 
 - Auth with host/cleaner roles
-- Hosts post cleaning jobs; cleaners browse a ranked board and claim jobs
+- Hosts post cleaning jobs, by chatting with an assistant or with the form; the assistant reuses saved checklists and offers that hosts have accepted
+- Cleaners browse a ranked board and claim jobs
 - Ranked suggestions in both directions (hosts see suggested cleaners, cleaners see ranked jobs)
 - Job lifecycle: open → claimed → in progress → completed
 - Per-job realtime chat

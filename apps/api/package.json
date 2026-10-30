@@ -8,6 +8,8 @@
     "buckets": "node scripts/ensure-buckets.mjs",
     "clean:e2e": "node scripts/clean-e2e.mjs",
     "seed:demo": "node scripts/seed-demo.mjs",
+    "solutions:retire": "tsx scripts/solutions-retire.ts",
+    "seed:solutions": "tsx scripts/seed-solutions.ts",
     "build": "tsc -p tsconfig.json",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit -p tsconfig.json"
