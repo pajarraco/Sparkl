@@ -59,6 +59,9 @@ export default defineConfig({
       url: `${apiUrl}/api/auth/get-session`,
       reuseExistingServer: true,
       timeout: 120_000,
+      // The assistant suite needs the scripted model; a live LLM is not
+      // reachable from the e2e run. fake is refused outside test/development.
+      env: { LLM_MODE: "fake", NODE_ENV: "test" },
     },
     {
       command: `pnpm --filter @sparkl/frontend dev -- --web --port ${webPort}`,

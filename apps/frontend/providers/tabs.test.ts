@@ -21,7 +21,7 @@ describe("role tabs", () => {
     ]);
     expect(defs.filter((d) => d.prominent).map((d) => d.key)).toEqual(["post"]);
     for (const def of defs) {
-      expect(def.route.startsWith("/(host)/")).toBe(true);
+      expect(def.route.startsWith("/host/")).toBe(true);
     }
   });
 
@@ -68,10 +68,10 @@ describe("tab stacks (03 A2)", () => {
     expect(
       stackHref(
         "host",
-        ["(host)", "(tabs)", "(messages)", "messages"],
+        ["host", "(tabs)", "(messages)", "messages"],
         "chat/j1",
       ),
-    ).toBe("/(host)/(tabs)/(messages)/chat/j1");
+    ).toBe("/host/(tabs)/(messages)/chat/j1");
     expect(
       stackHref(
         "cleaner",
@@ -82,8 +82,8 @@ describe("tab stacks (03 A2)", () => {
   });
 
   it("falls back to the role's first stacked tab outside a stack", () => {
-    expect(stackHref("host", ["(host)", "(tabs)", "post"], "job/j1")).toBe(
-      "/(host)/(tabs)/(my-jobs)/job/j1",
+    expect(stackHref("host", ["host", "(tabs)", "post"], "job/j1")).toBe(
+      "/host/(tabs)/(my-jobs)/job/j1",
     );
     expect(stackHref("cleaner", [], "job/j1")).toBe(
       "/(cleaner)/(tabs)/(board)/job/j1",
@@ -92,17 +92,11 @@ describe("tab stacks (03 A2)", () => {
 
   it("finds the tab root to return to when there is no history", () => {
     expect(
-      tabRootHref("host", [
-        "(host)",
-        "(tabs)",
-        "(messages)",
-        "chat",
-        "[jobId]",
-      ]),
-    ).toBe("/(host)/messages");
+      tabRootHref("host", ["host", "(tabs)", "(messages)", "chat", "[jobId]"]),
+    ).toBe("/host/messages");
     expect(
       tabRootHref("cleaner", ["(cleaner)", "(tabs)", "(board)", "job"]),
     ).toBe("/(cleaner)/board");
-    expect(tabRootHref("host", [])).toBe("/(host)/my-jobs");
+    expect(tabRootHref("host", [])).toBe("/host/my-jobs");
   });
 });

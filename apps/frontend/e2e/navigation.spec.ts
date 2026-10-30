@@ -80,10 +80,12 @@ test("a reload keeps each role on its own screens", async ({
   await expect(page.getByTestId("cleaner-profile-screen")).toHaveCount(0);
   await page.goto("/host/my-jobs");
   await expect(page.getByTestId("host-my-jobs-screen")).toBeVisible();
-  // An old cleaner-side URL sends the host home instead of the cleaner screen.
+  // A cleaner-side URL opens the host's own tab of that name, never the
+  // cleaner screen (routeForRole keeps a tab path the role also has).
   await page.goto("/profile");
-  await expect(page).toHaveURL(/\/host\/my-jobs$/);
-  await expect(page.getByTestId("host-my-jobs-screen")).toBeVisible();
+  await expect(page).toHaveURL(/\/host\/profile$/);
+  await expect(page.getByTestId("host-profile-screen")).toBeVisible();
+  await expect(page.getByTestId("cleaner-profile-screen")).toHaveCount(0);
 
   const fresh = await browser.newContext();
   const cleanerPage = await fresh.newPage();
@@ -142,7 +144,7 @@ async function hostOnJobDetail(
     address: `E2E Nav ${Date.now()}-w${workerIndex}`,
     ...dayWindow(NAV_DAY),
   });
-  await page.goto("/post");
+  await page.goto("/host/post");
   await page.getByRole("tab", { name: "My jobs" }).click();
   await tap(page, `host-job-card-${id}`);
   await expect(page.getByTestId("host-job-detail-screen")).toBeVisible();
@@ -203,8 +205,11 @@ test("reload on a detail screen keeps the role, and Back goes to the tab", async
     await expect(page.getByTestId("host-job-detail-screen")).toBeVisible();
     await expect(page.getByTestId("cleaner-job-detail-screen")).toHaveCount(0);
     await expect(page).toHaveURL(new RegExp(`/job/${jobId}$`));
+    // After a reload the browser history is not reliable, and the job sits
+    // in both host tabs, so Back only has to leave the detail for a tab root.
     await page.getByRole("button", { name: "Back" }).click();
-    await expect(page.getByTestId("host-my-jobs-screen")).toBeVisible();
+    await expect(page.getByTestId("host-job-detail-screen")).toHaveCount(0);
+    await expect(page.getByRole("tab", { name: "My jobs" })).toBeVisible();
   } finally {
     await close();
   }

@@ -35,14 +35,14 @@ export function getTabsForRole(role: AppRole): TabDef[] {
       {
         key: "myJobs",
         title: tabs.myJobs,
-        route: "/(host)/my-jobs",
+        route: "/host/my-jobs",
         screen: "(my-jobs)",
         icon: "briefcase",
       },
       {
         key: "post",
         title: tabs.post,
-        route: "/(host)/post",
+        route: "/host/post",
         screen: "post",
         icon: "plus-circle",
         prominent: true,
@@ -50,14 +50,14 @@ export function getTabsForRole(role: AppRole): TabDef[] {
       {
         key: "messages",
         title: tabs.messages,
-        route: "/(host)/messages",
+        route: "/host/messages",
         screen: "(messages)",
         icon: "message-circle",
       },
       {
         key: "profile",
         title: tabs.profile,
-        route: "/(host)/profile",
+        route: "/host/profile",
         screen: "profile",
         icon: "user",
       },
@@ -95,6 +95,13 @@ export function getTabsForRole(role: AppRole): TabDef[] {
   ];
 }
 
+// The first URL segment for a role's screens. Host screens sit under
+// app/host (/host/...) so they never share a URL with the cleaner's; the
+// cleaner group stays out of the URL as (cleaner).
+export function roleSegment(role: AppRole): string {
+  return role === "host" ? "host" : `(${role})`;
+}
+
 function isStackGroup(screen: string): boolean {
   return screen.startsWith("(");
 }
@@ -114,7 +121,7 @@ export function stackHref(
   );
   const current = stacked.find((tab) => tab.screen === segments[2]);
   const group = current?.screen ?? stacked[0]?.screen ?? "";
-  return `/(${role})/(tabs)/${group}/${path}`;
+  return `/${roleSegment(role)}/(tabs)/${group}/${path}`;
 }
 
 // Where Back goes when a detail screen has no history (a deep link or a

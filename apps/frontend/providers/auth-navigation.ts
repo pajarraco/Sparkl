@@ -1,12 +1,12 @@
 import type { AppRole } from "./auth";
-import { getTabsForRole, stackHref } from "./tabs";
+import { getTabsForRole, roleSegment, stackHref } from "./tabs";
 
 // Auth entry routing. Signed-out users land on welcome; signed-in users
 // land on their role home (host jobs, cleaner board). Session-aware
 // gating of deep links lands with the session provider.
 
 export function getHomeRouteForRole(role: AppRole): string {
-  return role === "host" ? "/(host)/my-jobs" : "/(cleaner)/board";
+  return role === "host" ? "/host/my-jobs" : "/(cleaner)/board";
 }
 
 export function getInitialRoute(role: AppRole | null): string {
@@ -30,7 +30,7 @@ export function routeForRole(role: AppRole, pathname: string): string {
     return stackHref(role, [], parts.join("/"));
   }
   const tab = getTabsForRole(role).find(
-    (candidate) => candidate.route === `/(${role})/${first ?? ""}`,
+    (candidate) => candidate.route === `/${roleSegment(role)}/${first ?? ""}`,
   );
   return tab?.route ?? getHomeRouteForRole(role);
 }

@@ -19,7 +19,7 @@ import {
 // use history refetch (reload), never socket-push timing.
 //
 // Navigation stays inside each role's tab group: /my-jobs, /job/:id,
-// /chat/:jobId and /review/:jobId exist in BOTH the (host) and (cleaner)
+// /chat/:jobId and /review/:jobId exist in BOTH the host and (cleaner)
 // groups. The group layouts now send a user who lands in the other
 // role's group back to their own (03 A2), but these stages still move
 // through tab taps and buttons, like a user would. Detail screens push
@@ -85,6 +85,9 @@ test("claim, chat, history refetch", async ({ browser }, testInfo) => {
     await tap(host.page, `host-job-card-${jobId}`);
     await tap(host.page, "host-job-open-chat");
     await expect(host.page.getByText(message)).toBeVisible();
+    // Leave the chat before opening it from Messages, so only one thread
+    // stays mounted in the tab stacks.
+    await host.page.getByRole("button", { name: "Back" }).click();
 
     // Messages tab (03 B): both sides see the thread. The host opens the
     // chat from it inside the Messages tab, and Back returns to the list.
@@ -93,9 +96,13 @@ test("claim, chat, history refetch", async ({ browser }, testInfo) => {
     await expect(hostThread).toBeVisible();
     await expect(hostThread).toContainText(message);
     await hostThread.click();
+    // The chat opened from My jobs stays mounted in its own stack, so only
+    // the visible thread counts.
     await expect(
-      host.page.getByTestId("host-chat-thread-screen"),
-    ).toBeVisible();
+      host.page
+        .getByTestId("host-chat-thread-screen")
+        .filter({ visible: true }),
+    ).toHaveCount(1);
     await expect(host.page.getByRole("tab", { name: "Post" })).toBeVisible();
     await host.page.getByRole("button", { name: "Back" }).click();
     await expect(host.page.getByTestId("host-messages-screen")).toBeVisible();

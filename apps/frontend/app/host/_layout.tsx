@@ -5,8 +5,9 @@ import { routeForRole } from "../../providers/auth-navigation";
 
 // Host group shell: everything lives in (tabs). Job detail, chat
 // and review are shared routes inside each tab's own Stack (see the
-// tab-stack layout), so they keep the tab bar visible (03 A2). Groups stay
-// out of URLs, so /my-jobs, /job/:id and the rest are unchanged.
+// tab-stack layout), so they keep the tab bar visible (03 A2). Host
+// screens live under /host/..., so they never share a URL with the
+// cleaner's /my-jobs, /job/:id and the rest.
 export default function HostGroupLayout() {
   // Logged-out deep links bounce to welcome (E2E navigation suite);
   // the root index handles the signed-in entry.

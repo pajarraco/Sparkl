@@ -30,7 +30,7 @@ test.describe("assistant learning", () => {
     );
     const page = await context.newPage();
     try {
-      await page.goto("/post");
+      await page.goto("/host/post");
 
       // Session 1: save a clean checklist. It is offered as a candidate.
       await send(page, "[e2e:save] save this checklist");
