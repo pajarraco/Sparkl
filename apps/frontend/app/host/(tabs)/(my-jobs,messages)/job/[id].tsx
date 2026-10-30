@@ -1,6 +1,6 @@
-import type { RankedCleaner } from "@sparkl/shared";
+import type { JobRequestWithCleaner, RankedCleaner } from "@sparkl/shared";
 import { useLocalSearchParams, useRouter, useSegments } from "expo-router";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 import { BodyText } from "../../../../../components/BodyText";
 import { DetailScreen } from "../../../../../components/DetailScreen";
@@ -9,6 +9,7 @@ import { sparklTrpc } from "../../../../../providers/app-providers";
 import { getStrings } from "../../../../../providers/i18n";
 import {
   type HostJobAction,
+  hasPendingOfferTo,
   hostActionsForStatus,
   hostChatAvailableForStatus,
   hostReviewAvailableForStatus,
@@ -136,7 +137,11 @@ function SuggestionRow(props: {
   suggestion: RankedCleaner;
   isBestMatch: boolean;
   bestMatchLabel: string;
+  offered: boolean;
+  offerBusy: boolean;
+  onOffer: () => void;
 }) {
+  const strings = getStrings();
   const { profile } = props.suggestion.cleaner;
   return (
     <View style={styles.suggestion} testID={`job-suggestion-${profile.id}`}>
@@ -150,6 +155,59 @@ function SuggestionRow(props: {
           <Text style={styles.bestMatchText}>{props.bestMatchLabel}</Text>
         </View>
       ) : null}
+      {props.offered ? (
+        <Text
+          style={styles.hint}
+          testID={`job-suggestion-offered-${profile.id}`}
+        >
+          {strings.jobDetail.offerSentSuccess}
+        </Text>
+      ) : (
+        <SparklButton
+          accessibilityLabel={strings.jobDetail.offerJob}
+          loading={props.offerBusy}
+          onPress={props.onOffer}
+          testID={`job-suggestion-offer-${profile.id}`}
+          title={strings.jobDetail.offerJob}
+          variant="secondary"
+        />
+      )}
+    </View>
+  );
+}
+
+function RequestRow(props: {
+  row: JobRequestWithCleaner;
+  busy: boolean;
+  onAccept: () => void;
+  onDecline: () => void;
+}) {
+  const strings = getStrings();
+  const { cleaner } = props.row;
+  return (
+    <View style={styles.suggestion} testID={`job-request-${cleaner.id}`}>
+      <Text style={styles.suggestionName}>{cleaner.name}</Text>
+      <Text style={styles.suggestionTrust}>
+        <Text style={styles.suggestionStars}>{"★ "}</Text>
+        {suggestionTrustLine(cleaner)}
+      </Text>
+      <View style={styles.actions}>
+        <SparklButton
+          accessibilityLabel={strings.jobDetail.acceptRequest}
+          loading={props.busy}
+          onPress={props.onAccept}
+          testID={`job-request-accept-${cleaner.id}`}
+          title={strings.jobDetail.acceptRequest}
+        />
+        <SparklButton
+          accessibilityLabel={strings.jobDetail.declineRequest}
+          loading={props.busy}
+          onPress={props.onDecline}
+          testID={`job-request-decline-${cleaner.id}`}
+          title={strings.jobDetail.declineRequest}
+          variant="secondary"
+        />
+      </View>
     </View>
   );
 }
@@ -172,15 +230,34 @@ export default function HostJobDetailScreen() {
     { jobId: jobId ?? "" },
     { enabled: jobId !== null && job?.status === "open" },
   );
+  // Pending requests/offers on this job (03 D): cleaner-initiated rows
+  // need the host's Accept/Decline; host-initiated rows mark a
+  // suggestion as already offered.
+  const requestsQuery = sparklTrpc.jobRequests.listForJob.useQuery(
+    { jobId: jobId ?? "" },
+    { enabled: jobId !== null && job?.status === "open" },
+  );
+  const pendingRequests = (requestsQuery.data ?? []).filter(
+    (row) => row.request.initiatedBy === "cleaner",
+  );
 
   const cancelJob = sparklTrpc.jobs.cancel.useMutation();
   const transitionJob = sparklTrpc.jobs.transition.useMutation();
+  const offerJob = sparklTrpc.jobRequests.offer.useMutation();
+  const acceptRequest = sparklTrpc.jobRequests.accept.useMutation();
+  const declineRequest = sparklTrpc.jobRequests.decline.useMutation();
   const [formError, setFormError] = useState<string | null>(null);
-  const busy = cancelJob.isPending || transitionJob.isPending;
+  const busy =
+    cancelJob.isPending ||
+    transitionJob.isPending ||
+    offerJob.isPending ||
+    acceptRequest.isPending ||
+    declineRequest.isPending;
 
   async function refresh(): Promise<void> {
     await jobsQuery.refetch();
     await suggestionsQuery.refetch();
+    await requestsQuery.refetch();
   }
 
   async function handleAction(action: HostJobAction): Promise<void> {
@@ -198,16 +275,60 @@ export default function HostJobDetailScreen() {
     }
   }
 
-  const renderSuggestion = useCallback(
-    ({ item, index }: { item: RankedCleaner; index: number }) => (
+  async function handleOffer(cleanerId: string): Promise<void> {
+    if (jobId === null) return;
+    setFormError(null);
+    try {
+      await offerJob.mutateAsync({ jobId, cleanerId });
+      await refresh();
+    } catch {
+      setFormError(strings.errors.generic);
+    }
+  }
+
+  async function handleAcceptRequest(requestId: string): Promise<void> {
+    setFormError(null);
+    try {
+      await acceptRequest.mutateAsync({ requestId });
+      await refresh();
+    } catch {
+      setFormError(strings.errors.generic);
+    }
+  }
+
+  async function handleDeclineRequest(requestId: string): Promise<void> {
+    setFormError(null);
+    try {
+      await declineRequest.mutateAsync({ requestId });
+      await refresh();
+    } catch {
+      setFormError(strings.errors.generic);
+    }
+  }
+
+  function renderSuggestion({
+    item,
+    index,
+  }: {
+    item: RankedCleaner;
+    index: number;
+  }) {
+    return (
       <SuggestionRow
         bestMatchLabel={strings.jobDetail.bestMatch}
         isBestMatch={index === 0}
+        offerBusy={offerJob.isPending}
+        offered={hasPendingOfferTo(
+          requestsQuery.data ?? [],
+          item.cleaner.profile.id,
+        )}
+        onOffer={() => {
+          void handleOffer(item.cleaner.profile.id);
+        }}
         suggestion={item}
       />
-    ),
-    [strings],
-  );
+    );
+  }
 
   if (jobsQuery.isPending) {
     return (
@@ -348,6 +469,29 @@ export default function HostJobDetailScreen() {
                 <Text style={styles.body}>{job.notes}</Text>
               </View>
             )}
+            {job.status === "open" && pendingRequests.length > 0 ? (
+              <View style={styles.section} testID="host-job-requests">
+                <Text style={styles.heading}>
+                  {strings.jobDetail.requestsHeading}
+                </Text>
+                <Text style={styles.hint}>
+                  {strings.jobDetail.requestsHint}
+                </Text>
+                {pendingRequests.map((row) => (
+                  <RequestRow
+                    key={row.request.id}
+                    busy={acceptRequest.isPending || declineRequest.isPending}
+                    onAccept={() => {
+                      void handleAcceptRequest(row.request.id);
+                    }}
+                    onDecline={() => {
+                      void handleDeclineRequest(row.request.id);
+                    }}
+                    row={row}
+                  />
+                ))}
+              </View>
+            ) : null}
             {job.status === "open" ? (
               <View style={styles.section}>
                 <Text style={styles.heading}>

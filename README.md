@@ -8,7 +8,7 @@ Built for the Meta Global AI Developer Hackathon with Expo (iOS, Android, Web), 
 
 - Auth with host/cleaner roles
 - Hosts post cleaning jobs, by chatting with an assistant or with the form; the assistant reuses saved checklists and offers that hosts have accepted
-- Cleaners browse a ranked board and claim jobs
+- Cleaners browse a ranked board and request jobs, or accept a host's offer; a job is claimed only once the other side agrees
 - Ranked suggestions in both directions (hosts see suggested cleaners, cleaners see ranked jobs)
 - Job lifecycle: open → claimed → in progress → completed
 - Per-job realtime chat

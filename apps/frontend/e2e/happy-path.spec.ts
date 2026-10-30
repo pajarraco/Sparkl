@@ -12,8 +12,9 @@ import {
 } from "./fixtures";
 
 // Happy-path suite (context/features/01-e2e-testing-implementation.md
-// step 7): post → claim → chat → in-progress → completed → both reviews,
-// end to end on web. Two staged tests share the lifecycle through
+// step 7): post → request → accept → chat → in-progress → completed →
+// both reviews, end to end on web (03 D: a claim needs both sides to
+// agree). Two staged tests share the lifecycle through
 // API-seeded handoffs so each stays far under the timeout on a cold dev
 // server; every stage itself is driven through the UI. Chat assertions
 // use history refetch (reload), never socket-push timing.
@@ -36,7 +37,9 @@ async function newRolePage(
 
 const HAPPY_DAY_1 = "2036-06-06";
 
-test("claim, chat, history refetch", async ({ browser }, testInfo) => {
+test("request, accept, chat, history refetch", async ({
+  browser,
+}, testInfo) => {
   test.setTimeout(120_000);
   const host = await newRolePage(browser, "host", testInfo.workerIndex);
   const cleaner = await newRolePage(browser, "cleaner", testInfo.workerIndex);
@@ -48,13 +51,25 @@ test("claim, chat, history refetch", async ({ browser }, testInfo) => {
     ...dayWindow(HAPPY_DAY_1),
   });
   try {
-    // Cleaner claims from the board (pinned to our day, failing fast).
+    // Cleaner requests from the board (pinned to our day, failing fast);
+    // the job stays open until the host accepts (03 D).
     await pinBoardToDay(cleaner.page, HAPPY_DAY_1, jobId);
     await tap(cleaner.page, `cleaner-board-card-${jobId}`);
-    await tap(cleaner.page, "cleaner-job-claim");
-    await expect(cleaner.page.getByTestId("cleaner-job-claimed")).toBeVisible();
+    await tap(cleaner.page, "cleaner-job-request");
+    await expect(
+      cleaner.page.getByTestId("cleaner-job-requested"),
+    ).toBeVisible();
 
-    // Cleaner opens chat and sends; reload proves history refetch.
+    // Host accepts the request from Job Detail, claiming the job.
+    await host.page.goto("/host/post");
+    await host.page.getByRole("tab", { name: "My jobs" }).click();
+    await tap(host.page, `host-job-card-${jobId}`);
+    await host.page.getByRole("button", { name: "Accept" }).click();
+    await expect(host.page.getByTestId("host-job-requests")).toHaveCount(0);
+
+    // Cleaner reloads to pick up the now-claimed job, then opens chat;
+    // reload also proves chat history refetch below.
+    await cleaner.page.reload();
     await tap(cleaner.page, "cleaner-job-open-chat");
     await fillInto(cleaner.page, "chat-input", message);
     await tap(cleaner.page, "chat-send");
@@ -130,11 +145,21 @@ test("start, complete, both reviews", async ({ browser }, testInfo) => {
     ...dayWindow(HAPPY_DAY_2),
   });
   try {
-    // Cleaner claims through the UI so the job belongs to this session.
+    // Cleaner requests, host accepts, through the UI so the job belongs
+    // to this session (03 D: a claim needs both sides).
     await pinBoardToDay(cleaner.page, HAPPY_DAY_2, jobId);
     await tap(cleaner.page, `cleaner-board-card-${jobId}`);
-    await tap(cleaner.page, "cleaner-job-claim");
-    await expect(cleaner.page.getByTestId("cleaner-job-claimed")).toBeVisible();
+    await tap(cleaner.page, "cleaner-job-request");
+    await expect(
+      cleaner.page.getByTestId("cleaner-job-requested"),
+    ).toBeVisible();
+    await host.page.goto("/host/post");
+    await host.page.getByRole("tab", { name: "My jobs" }).click();
+    await tap(host.page, `host-job-card-${jobId}`);
+    await host.page.getByRole("button", { name: "Accept" }).click();
+    await expect(host.page.getByTestId("host-job-requests")).toHaveCount(0);
+    await cleaner.page.reload();
+    await expect(cleaner.page.getByTestId("cleaner-job-start")).toBeVisible();
 
     // Cleaner starts; host completes. Back to the board first, then
     // switch tabs.

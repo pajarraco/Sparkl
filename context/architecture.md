@@ -51,6 +51,7 @@ PostgreSQL via Docker locally; Drizzle ORM with versioned migrations in the repo
 | `jobs` | id, host id, address + lat/lng, date/time window, size and notes, price, status, claimed-by cleaner id, timestamps |
 | `messages` | id, job id, sender id, body, created at |
 | `reviews` | id, job id, author id, subject id, stars (1–5), comment; unique per (job, author) |
+| `job_requests` | id, job id, cleaner id, initiated by (`host` / `cleaner`), status (`pending`/`accepted`/`declined`/`withdrawn`/`closed`), created/responded at; partial unique on (job id, cleaner id) where pending |
 | `assistant_sessions` | id (client uuid), host id, job id, outcome, counts (turns, tool calls, tokens, latency), fields the model filled and the host changed, solution saves (cap 3); never message text |
 | `assistant_solutions` | id, scope (`host` / `global`), host id, kind, tags (closed list), JSON payload checked against its kind's schema, fingerprint, source, status, counters, score; partial unique indexes on (host, fingerprint) and (global fingerprint) |
 | `assistant_solution_events` | solution id, session id, host id, event (`proposed` / `accepted` / `rejected`), at; unique per (solution, session, event) |
@@ -64,7 +65,8 @@ PostgreSQL via Docker locally; Drizzle ORM with versioned migrations in the repo
 | Router | Procedures |
 | ------ | ---------- |
 | `users` | profile get/update, availability set, cleaner public profile |
-| `jobs` | create, ranked list (cleaner board), my jobs (host), claim, status transitions, cancel |
+| `jobs` | create, ranked list (cleaner board), my jobs (host), status transitions, cancel |
+| `jobRequests` | request (cleaner), offer (host), accept, decline, withdraw, `listForJob` (host), `listMine` (cleaner) — the only path to `claimed` |
 | `suggestions` | ranked cleaners for a job (host view); a cleaner pinned by the assistant (`jobs.preferred_cleaner_id`, the host's usual cleaner) sorts first, as an order only, never an assignment |
 | `chat` | message list, send, `onMessage` subscription per job, `listThreads` (the caller's conversations for the Messages tab) |
 | `reviews` | create (after completion), list by user |
@@ -106,7 +108,7 @@ Every input and output is validated with the shared Zod schemas. No public REST 
 
 **Ranked board:** Cleaner app → `jobs.listRanked` → matching service scores open jobs → ordered list.
 
-**Claim:** `jobs.claim` → service re-checks `status = open` in a transaction → sets `claimed`, records cleaner → chat unlocks.
+**Request / offer / accept (two-way assignment):** a cleaner's `jobRequests.request` or a host's `jobRequests.offer` inserts a pending row (at most one per job+cleaner pair; requesting a job you were already offered, or offering a job you were already requested for, accepts the existing row instead of adding a second one). `jobRequests.accept` re-checks `status = open` and the request is still `pending` in one transaction → sets the job `claimed`, records the cleaner, marks the row `accepted`, and closes every other pending row on the job → chat unlocks. `decline` and `withdraw` close one row without touching the job. Cancelling a job closes every pending row on it. `jobs.claim` still exists (the same atomic re-check `acceptRequest` builds on) but no client calls it; every UI path to `claimed` goes through an accepted request or offer.
 
 **Chat:** `chat.send` → service checks sender is a party to the job → inserts message → publishes to the job channel → subscribers receive it.
 

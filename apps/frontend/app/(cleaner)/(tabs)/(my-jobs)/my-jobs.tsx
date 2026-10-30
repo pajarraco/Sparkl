@@ -95,6 +95,13 @@ export default function CleanerMyJobsScreen() {
   const segments = useSegments();
   const [segment, setSegment] = useState<CleanerMyJobsSegment>("claimed");
   const query = sparklTrpc.jobs.myClaimed.useQuery({});
+  // Jobs a host offered the caller, pending their Accept / Decline on Job
+  // Detail (03 D). listMine also carries the caller's own requests; only
+  // host-initiated rows belong in this section.
+  const offersQuery = sparklTrpc.jobRequests.listMine.useQuery();
+  const offers = (offersQuery.data ?? []).filter(
+    (row) => row.request.initiatedBy === "host",
+  );
 
   const segmentLabel = useCallback(
     (value: CleanerMyJobsSegment): string => {
@@ -146,6 +153,30 @@ export default function CleanerMyJobsScreen() {
       testID="cleaner-my-jobs-screen"
       title={strings.myJobs.title}
     >
+      {offers.length === 0 ? null : (
+        <View style={styles.spotlight} testID="cleaner-offers-section">
+          <Text style={styles.spotlightEyebrow}>
+            {strings.myJobs.offersHeading}
+          </Text>
+          <BodyText>{strings.myJobs.offersHint}</BodyText>
+          <View style={styles.list}>
+            {offers.map((row) => (
+              <JobCard
+                key={row.request.id}
+                address={row.job.address}
+                metaLine={cleanerMetaLine(row.job)}
+                onPress={() => {
+                  openJob(row.job.id);
+                }}
+                status={row.job.status}
+                statusLabel={strings.jobDetail.offeredToYou}
+                testID={`cleaner-offer-card-${row.job.id}`}
+                title={strings.jobCard.title}
+              />
+            ))}
+          </View>
+        </View>
+      )}
       <View style={styles.segments}>
         {SEGMENTS.map((value) => (
           <Pressable

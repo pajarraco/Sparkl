@@ -1,4 +1,4 @@
-import type { JobStatus, RankedCleaner } from "@sparkl/shared";
+import type { JobRequest, JobStatus, RankedCleaner } from "@sparkl/shared";
 import { getStrings } from "./i18n";
 
 // Pure helpers for the host Job Detail screen (rules.md: no logic in
@@ -46,4 +46,17 @@ export function suggestionTrustLine(profile: CleanerTrustProfile): string {
   const jobs = `${profile.completedJobCount} ${getStrings().jobCard.jobsDone}`;
   if (profile.avgRating === null) return jobs;
   return `${profile.avgRating.toFixed(1)} · ${jobs}`;
+}
+
+// The host can offer an open job to a suggested cleaner, once per cleaner
+// (03 D) — the service also re-checks this, this only decides whether
+// the suggestion row shows "Offer job" or "Offer sent".
+export function hasPendingOfferTo(
+  requests: Array<{ request: JobRequest }>,
+  cleanerId: string,
+): boolean {
+  return requests.some(
+    (r) =>
+      r.request.cleanerId === cleanerId && r.request.initiatedBy === "host",
+  );
 }

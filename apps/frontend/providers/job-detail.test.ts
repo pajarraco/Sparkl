@@ -1,10 +1,25 @@
+import type { JobRequest } from "@sparkl/shared";
 import { describe, expect, it } from "vitest";
 import {
+  hasPendingOfferTo,
   hostActionsForStatus,
   hostChatAvailableForStatus,
   hostReviewAvailableForStatus,
   suggestionTrustLine,
 } from "./job-detail";
+
+function makeRequest(overrides: Partial<JobRequest> = {}): JobRequest {
+  return {
+    id: "11111111-1111-4111-8111-111111111111",
+    jobId: "22222222-2222-4222-8222-222222222222",
+    cleanerId: "cleaner-1",
+    initiatedBy: "host",
+    status: "pending",
+    createdAt: "2026-01-01T00:00:00.000Z",
+    respondedAt: null,
+    ...overrides,
+  };
+}
 
 describe("hostActionsForStatus", () => {
   it("offers cancel on pre-terminal states", () => {
@@ -56,5 +71,27 @@ describe("suggestionTrustLine", () => {
     expect(suggestionTrustLine({ avgRating: null, completedJobCount: 0 })).toBe(
       "0 jobs completed",
     );
+  });
+});
+
+describe("hasPendingOfferTo", () => {
+  it("is true only for a pending host-initiated offer to that cleaner", () => {
+    const rows = [{ request: makeRequest({ cleanerId: "cleaner-1" }) }];
+    expect(hasPendingOfferTo(rows, "cleaner-1")).toBe(true);
+    expect(hasPendingOfferTo(rows, "cleaner-2")).toBe(false);
+    expect(
+      hasPendingOfferTo(
+        [
+          {
+            request: makeRequest({
+              cleanerId: "cleaner-1",
+              initiatedBy: "cleaner",
+            }),
+          },
+        ],
+        "cleaner-1",
+      ),
+    ).toBe(false);
+    expect(hasPendingOfferTo([], "cleaner-1")).toBe(false);
   });
 });

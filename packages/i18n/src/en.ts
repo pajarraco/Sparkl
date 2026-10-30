@@ -105,6 +105,19 @@ export const en = {
     complete: "Mark completed",
     cancel: "Cancel job",
     claimedSuccess: "Job claimed. Say hello in chat.",
+    request: "Request job",
+    requested: "Requested — waiting for the host to accept.",
+    requestSentSuccess: "Request sent. We'll let you know if the host accepts.",
+    withdrawRequest: "Withdraw request",
+    offeredToYou: "Offered to you",
+    acceptOffer: "Accept offer",
+    declineOffer: "Decline offer",
+    requestsHeading: "Requests",
+    requestsHint: "Cleaners who want this job.",
+    acceptRequest: "Accept",
+    declineRequest: "Decline",
+    offerJob: "Offer job",
+    offerSentSuccess: "Offer sent.",
   },
   myJobs: {
     title: "My jobs",
@@ -113,6 +126,8 @@ export const en = {
     segmentActive: "Active",
     segmentHistory: "History",
     spotlightNextUp: "Next up",
+    offersHeading: "Offers",
+    offersHint: "Jobs hosts have offered you.",
   },
   messages: {
     title: "Messages",
@@ -200,6 +215,12 @@ export const en = {
     invalidWindow: "End must be after start.",
     claimTaken: "This job was just claimed by someone else.",
     reviewExists: "You already reviewed this job.",
+    requestExists: "You already requested this job.",
+    offerCapReached:
+      "This job already has the maximum number of pending offers.",
+    requestCapReached:
+      "You have too many pending requests. Withdraw one first.",
+    requestGone: "This request is no longer available.",
   },
   emptyStates: {
     noOpenJobs: "No open jobs near you yet.",

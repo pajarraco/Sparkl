@@ -302,7 +302,7 @@ test("board distance filter needs a service area first", async ({
 
 const CLAIM_DAY = "2035-05-05";
 
-test("claim CTA claims the job from its detail", async ({
+test("request CTA requests the job from its detail", async ({
   browser,
 }, testInfo) => {
   const { api: hostApi } = await newApiSession("host", testInfo.workerIndex);
@@ -320,9 +320,11 @@ test("claim CTA claims the job from its detail", async ({
     const page = await context.newPage();
     await pinBoardToDay(page, CLAIM_DAY, id);
     await page.getByTestId(`cleaner-board-card-${id}`).click();
-    await expect(page.getByRole("button", { name: "Claim job" })).toBeVisible();
-    await page.getByTestId("cleaner-job-claim").click();
-    await expect(page.getByTestId("cleaner-job-claimed")).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Request job" }),
+    ).toBeVisible();
+    await page.getByTestId("cleaner-job-request").click();
+    await expect(page.getByTestId("cleaner-job-requested")).toBeVisible();
   } finally {
     await hostApi.dispose();
     await context.close();

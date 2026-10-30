@@ -28,7 +28,9 @@ Built for the Meta Global AI Developer Hackathon.
 1. **Auth with roles** — sign up / sign in as host or cleaner (Better Auth).
 2. **Post a job (host)** — property address, date and time window, size/notes, offered price. The host can post through a chat assistant (price hint, saved answers that improve with use) or the form; the form is always there.
 3. **Open job board (cleaner)** — browse and filter open jobs, view details.
-4. **Claim flow** — cleaner claims an open job; host sees who claimed it.
+4. **Request / offer flow** — a cleaner requests an open job, or a host
+   offers it to a suggested cleaner; the job is claimed once the other
+   side accepts. Nobody is assigned without both sides agreeing.
 5. **Ranked suggestions (both directions)** — hosts see suggested cleaners per job; cleaners see jobs ranked by best match instead of newest-first only.
 6. **Job lifecycle** — `open → claimed → in_progress → completed`, plus `cancelled`.
 7. **Per-job chat** — host and cleaner coordinate within the job.
@@ -52,10 +54,11 @@ average rating, distance, availability overlap, completed-job count, claim accep
 ## Demo Script (Happy Path)
 
 1. Host signs up, posts a turnover cleaning for Friday, and sees ranked cleaner suggestions.
-2. Cleaner signs up, sees the job ranked on the board, claims it.
-3. Host and cleaner exchange a few chat messages to confirm details.
-4. Cleaner marks the job in progress, then completed.
-5. Host sees the completed job in their history, and both sides leave each other a review.
+2. Cleaner signs up, sees the job ranked on the board, and requests it.
+3. Host accepts the request from Job Detail, claiming the job.
+4. Host and cleaner exchange a few chat messages to confirm details.
+5. Cleaner marks the job in progress, then completed.
+6. Host sees the completed job in their history, and both sides leave each other a review.
 
 ## Non-Goals
 

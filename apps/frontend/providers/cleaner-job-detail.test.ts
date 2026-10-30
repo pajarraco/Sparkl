@@ -1,11 +1,26 @@
+import type { JobRequest } from "@sparkl/shared";
 import { describe, expect, it } from "vitest";
 import {
-  claimSubmitErrorMessage,
   cleanerChatAvailableForStatus,
   cleanerClaimAvailableForStatus,
   cleanerReviewAvailableForStatus,
   cleanerStartAvailableForStatus,
+  myPendingRequestForJob,
+  requestSubmitErrorMessage,
 } from "./cleaner-job-detail";
+
+function makeRequest(overrides: Partial<JobRequest> = {}): JobRequest {
+  return {
+    id: "11111111-1111-4111-8111-111111111111",
+    jobId: "22222222-2222-4222-8222-222222222222",
+    cleanerId: "cleaner-1",
+    initiatedBy: "cleaner",
+    status: "pending",
+    createdAt: "2026-01-01T00:00:00.000Z",
+    respondedAt: null,
+    ...overrides,
+  };
+}
 
 describe("cleanerClaimAvailableForStatus", () => {
   it("offers the claim only while the job is open", () => {
@@ -47,19 +62,53 @@ describe("cleanerStartAvailableForStatus", () => {
   });
 });
 
-describe("claimSubmitErrorMessage", () => {
-  it("names the just-claimed race", () => {
-    expect(claimSubmitErrorMessage({ data: { code: "CONFLICT" } })).toBe(
-      "This job was just claimed by someone else.",
-    );
+describe("requestSubmitErrorMessage", () => {
+  it("maps each conflict message to its own copy", () => {
+    expect(
+      requestSubmitErrorMessage({
+        data: { code: "CONFLICT" },
+        message: "You already requested this job.",
+      }),
+    ).toBe("You already requested this job.");
+    expect(
+      requestSubmitErrorMessage({
+        data: { code: "CONFLICT" },
+        message: "This job already has the maximum number of pending offers.",
+      }),
+    ).toBe("This job already has the maximum number of pending offers.");
+    expect(
+      requestSubmitErrorMessage({
+        data: { code: "CONFLICT" },
+        message: "You have too many pending requests. Withdraw one first.",
+      }),
+    ).toBe("You have too many pending requests. Withdraw one first.");
+    expect(
+      requestSubmitErrorMessage({
+        data: { code: "CONFLICT" },
+        message: "Request is no longer pending.",
+      }),
+    ).toBe("This request is no longer available.");
+    expect(
+      requestSubmitErrorMessage({
+        data: { code: "CONFLICT" },
+        message: "Job is claimed, not open.",
+      }),
+    ).toBe("This job was just claimed by someone else.");
   });
 
-  it("falls back to generic", () => {
-    expect(claimSubmitErrorMessage({})).toBe(
+  it("falls back to generic outside a conflict", () => {
+    expect(requestSubmitErrorMessage({})).toBe(
       "Something went wrong. Try again.",
     );
-    expect(claimSubmitErrorMessage(null)).toBe(
-      "Something went wrong. Try again.",
-    );
+  });
+});
+
+describe("myPendingRequestForJob", () => {
+  it("finds the caller's own row for a job, or null when there is none", () => {
+    const request = makeRequest();
+    const rows = [{ request, job: { id: request.jobId } }];
+    expect(myPendingRequestForJob(rows, request.jobId)).toEqual(request);
+    expect(myPendingRequestForJob(rows, "other-job")).toBeNull();
+    expect(myPendingRequestForJob([], request.jobId)).toBeNull();
   });
 });

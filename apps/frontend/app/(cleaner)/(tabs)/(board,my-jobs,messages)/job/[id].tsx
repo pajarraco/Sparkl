@@ -5,11 +5,12 @@ import { DetailScreen } from "../../../../../components/DetailScreen";
 import { SparklButton } from "../../../../../components/SparklButton";
 import { sparklTrpc } from "../../../../../providers/app-providers";
 import {
-  claimSubmitErrorMessage,
   cleanerChatAvailableForStatus,
   cleanerClaimAvailableForStatus,
   cleanerReviewAvailableForStatus,
   cleanerStartAvailableForStatus,
+  myPendingRequestForJob,
+  requestSubmitErrorMessage,
 } from "../../../../../providers/cleaner-job-detail";
 import { getStrings } from "../../../../../providers/i18n";
 import {
@@ -28,10 +29,12 @@ import {
 } from "../../../../../providers/theme";
 
 // Cleaner Job Detail (design.md Screen Inventory): full info plus the
-// claim CTA while the job is open. The job itself comes from the
-// cleaner's own jobs.listRanked list — no extra backend route — so the
-// match percent rides along. Chat entry arrives with the cleaner chat
-// slice; after claiming, the success message points there.
+// two-way assignment CTA while the job is open — Request job, or Accept
+// / Decline when the host already offered it (03 D). The job itself
+// comes from the cleaner's own jobs.listRanked list — no extra backend
+// route — so the match percent rides along. Chat entry arrives with the
+// cleaner chat slice; after the job is claimed, the success message
+// points there.
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -124,22 +127,70 @@ export default function CleanerJobDetailScreen() {
       : claimedQuery.data.find((candidate) => candidate.id === jobId);
   const job = ranked?.job ?? claimedJob;
 
-  const claimJob = sparklTrpc.jobs.claim.useMutation();
+  // The caller's own pending request/offer, across all jobs — used to
+  // decide between "Request job" and the offer-response actions below.
+  const myRequestsQuery = sparklTrpc.jobRequests.listMine.useQuery();
+
   const transitionJob = sparklTrpc.jobs.transition.useMutation();
+  const requestJob = sparklTrpc.jobRequests.request.useMutation();
+  const acceptRequest = sparklTrpc.jobRequests.accept.useMutation();
+  const declineRequest = sparklTrpc.jobRequests.decline.useMutation();
+  const withdrawRequest = sparklTrpc.jobRequests.withdraw.useMutation();
   const [claimed, setClaimed] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const busy = claimJob.isPending || transitionJob.isPending;
+  const busy =
+    transitionJob.isPending ||
+    requestJob.isPending ||
+    acceptRequest.isPending ||
+    declineRequest.isPending ||
+    withdrawRequest.isPending;
 
-  async function handleClaim(): Promise<void> {
+  async function refresh(): Promise<void> {
+    await boardQuery.refetch();
+    await claimedQuery.refetch();
+    await myRequestsQuery.refetch();
+  }
+
+  async function handleRequest(): Promise<void> {
     if (jobId === null) return;
     setFormError(null);
     try {
-      await claimJob.mutateAsync({ jobId });
-      setClaimed(true);
-      await boardQuery.refetch();
-      await claimedQuery.refetch();
+      const result = await requestJob.mutateAsync({ jobId });
+      if (result.status === "accepted") setClaimed(true);
+      await refresh();
     } catch (err) {
-      setFormError(claimSubmitErrorMessage(err));
+      setFormError(requestSubmitErrorMessage(err));
+    }
+  }
+
+  async function handleWithdraw(requestId: string): Promise<void> {
+    setFormError(null);
+    try {
+      await withdrawRequest.mutateAsync({ requestId });
+      await refresh();
+    } catch (err) {
+      setFormError(requestSubmitErrorMessage(err));
+    }
+  }
+
+  async function handleAcceptOffer(requestId: string): Promise<void> {
+    setFormError(null);
+    try {
+      await acceptRequest.mutateAsync({ requestId });
+      setClaimed(true);
+      await refresh();
+    } catch (err) {
+      setFormError(requestSubmitErrorMessage(err));
+    }
+  }
+
+  async function handleDeclineOffer(requestId: string): Promise<void> {
+    setFormError(null);
+    try {
+      await declineRequest.mutateAsync({ requestId });
+      await refresh();
+    } catch (err) {
+      setFormError(requestSubmitErrorMessage(err));
     }
   }
 
@@ -193,6 +244,7 @@ export default function CleanerJobDetailScreen() {
 
   const pill =
     STATUS_PILL[job.status === "in_progress" ? "inProgress" : job.status];
+  const myRequest = myPendingRequestForJob(myRequestsQuery.data ?? [], job.id);
 
   return (
     <DetailScreen
@@ -254,15 +306,55 @@ export default function CleanerJobDetailScreen() {
           />
         ) : null}
         {cleanerClaimAvailableForStatus(job.status) && !claimed ? (
-          <SparklButton
-            accessibilityLabel={strings.jobDetail.claim}
-            loading={claimJob.isPending}
-            onPress={() => {
-              void handleClaim();
-            }}
-            testID="cleaner-job-claim"
-            title={strings.jobDetail.claim}
-          />
+          myRequest === null ? (
+            <SparklButton
+              accessibilityLabel={strings.jobDetail.request}
+              loading={requestJob.isPending}
+              onPress={() => {
+                void handleRequest();
+              }}
+              testID="cleaner-job-request"
+              title={strings.jobDetail.request}
+            />
+          ) : myRequest.initiatedBy === "host" ? (
+            <>
+              <SparklButton
+                accessibilityLabel={strings.jobDetail.acceptOffer}
+                loading={acceptRequest.isPending}
+                onPress={() => {
+                  void handleAcceptOffer(myRequest.id);
+                }}
+                testID="cleaner-job-accept-offer"
+                title={strings.jobDetail.acceptOffer}
+              />
+              <SparklButton
+                accessibilityLabel={strings.jobDetail.declineOffer}
+                loading={declineRequest.isPending}
+                onPress={() => {
+                  void handleDeclineOffer(myRequest.id);
+                }}
+                testID="cleaner-job-decline-offer"
+                title={strings.jobDetail.declineOffer}
+                variant="secondary"
+              />
+            </>
+          ) : (
+            <>
+              <Text style={styles.hint} testID="cleaner-job-requested">
+                {strings.jobDetail.requested}
+              </Text>
+              <SparklButton
+                accessibilityLabel={strings.jobDetail.withdrawRequest}
+                loading={withdrawRequest.isPending}
+                onPress={() => {
+                  void handleWithdraw(myRequest.id);
+                }}
+                testID="cleaner-job-withdraw-request"
+                title={strings.jobDetail.withdrawRequest}
+                variant="secondary"
+              />
+            </>
+          )
         ) : null}
         {cleanerStartAvailableForStatus(job.status) ? (
           <SparklButton

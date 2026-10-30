@@ -62,16 +62,13 @@ Status: approved by the owner on 2026-10-29. Tasks are in `context/tasks.md`
 
 Status as of 2026-10-30 (checked against the code and the e2e suite):
 
-- **A0 Review submit:** partly done. Reviews are now visible: the Leave
-  Review screen shows the review already sent (`reviews.mineForJob`), and
-  both profiles list the reviews received. The original "Something went
-  wrong" error is not reproduced. The review flow passes e2e, and real
-  saved reviews pass the response schema. Open until someone reproduces
-  it with the network response.
-- **A1 Role switch:** not reproduced. The cache is already cleared on owner
-  change (`trackSessionOwner` in `app/_layout.tsx`), and the role-switch e2e
-  tests pass. Open until a web repro (URL used, reload or fresh profile)
-  is available.
+- **A0 Review submit:** done. Reviews are visible: the Leave Review
+  screen shows the review already sent (`reviews.mineForJob`), and both
+  profiles list the reviews received. The original "Something went
+  wrong" error was not reproduced after this landed; the review flow
+  passes e2e, and real saved reviews pass the response schema.
+- **A1 Role switch:** done. Fixed (see the Fixed entry in
+  `CHANGELOG.md`); the role-switch e2e tests pass.
 - **A2 Navigation:** host screens are back under `app/host` (`/host/...`),
   with the tab bar on detail screens. Covered by the navigation e2e suite,
   which passes. Reload-then-Back lands on a host tab root, not a fixed tab,
@@ -80,7 +77,19 @@ Status as of 2026-10-30 (checked against the code and the e2e suite):
   caller's conversations.
 - **C Board filters:** done (2026-10-29 19:05). Filters are a chip row with
   a one-field bottom sheet.
-- **D Two-way assignment:** not started. Depends on 02 P2, which is done.
+- **D Two-way assignment:** done (2026-10-30). `job_requests` table,
+  `services/job-requests.ts` and the `jobRequests` router (request,
+  offer, accept, decline, withdraw, `listForJob`, `listMine`) replace
+  `jobs.claim` as the only client-facing path to `claimed`. Cleaner Job
+  Detail shows Request / Requested / Accept-or-Decline-an-offer; host
+  Job Detail shows a Requests section (Accept/Decline) plus Offer job on
+  each suggestion; cleaner My Jobs shows an Offers section. `jobs.claim`
+  itself stays in the API (the race-safe primitive `acceptRequest`
+  builds on) but is unreachable from the UI. `happy-path` and `forms`
+  e2e updated to request+accept; the offer path has unit coverage
+  (mutual interest, caps, authorization, the accept race) but no
+  dedicated e2e yet. Demo script, `project.md`, `README.md` and
+  `architecture.md` updated in the same step.
 - **E Properties:** not started. Depends on 02 P1, which is done.
 
 ### Decisions (owner, 2026-10-29)
