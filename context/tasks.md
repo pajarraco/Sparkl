@@ -97,7 +97,7 @@ Spec: `context/features/02-integrate-baseten.md` (approved 2026-10-29). Phases a
 
 #### P3 — Voice
 
-- [ ] Voice service + `voice.transcribe` router (base64, ~30s / 1.5 MB cap, never stored), mic button (`expo-audio` on native / `MediaRecorder` on web), transcript lands in the composer
+- [x] Voice service + `voice.transcribe` router (base64, ~30s / 1.5 MB cap, never stored), mic button (`expo-audio` on native / `MediaRecorder` on web), transcript lands in the composer. iOS + web only: Android has no WAV recording path yet (02 Verified Facts, "Voice format gap"), so the mic button is hidden there, matching the plan's own fallback. No real Muse Voice Transcribe call made yet (paid, owner approval pending — tracked under 02 Close-out item 16). `pnpm verify` green: shared 95, api 354 (+22 voice), frontend 205 (+17 voice/wav-encode), lint clean, typecheck clean across all 5 projects.
 
 #### P4 — Stretch (cut first; §12 learning L1 goes before it)
 

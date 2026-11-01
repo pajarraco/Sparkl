@@ -7,6 +7,7 @@ import { reviewsRouter } from "./routers/reviews.js";
 import { storageRouter } from "./routers/storage.js";
 import { suggestionsRouter } from "./routers/suggestions.js";
 import { usersRouter } from "./routers/users.js";
+import { voiceRouter } from "./routers/voice.js";
 import { router } from "./trpc.js";
 
 export const appRouter = router({
@@ -19,6 +20,7 @@ export const appRouter = router({
   storage: storageRouter,
   geo: geoRouter,
   jobAssistant: jobAssistantRouter,
+  voice: voiceRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -1,5 +1,5 @@
 import type { GeoPlace, SolutionProposal, SolutionVote } from "@sparkl/shared";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { getStrings } from "../providers/i18n";
 import {
@@ -15,7 +15,9 @@ import {
   THEME_RADII,
   THEME_SPACING,
 } from "../providers/theme";
+import type { VoiceSampleRate } from "../providers/voice";
 import { BodyText } from "./BodyText";
+import { MicButton } from "./MicButton";
 import { SparklButton } from "./SparklButton";
 
 // Post-tab assistant chat (02 plan): bubbles reuse the chat-thread look
@@ -175,6 +177,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
+  composerRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: THEME_SPACING.rowMin,
+  },
+  composerInput: {
+    flex: 1,
+  },
 });
 
 function Bubble(props: { own: boolean; text: string; testID: string }) {
@@ -209,12 +219,37 @@ export interface AssistantChatProps {
   onReview: () => void;
   onStartOver: () => void;
   onVote: (proposal: SolutionProposal, vote: SolutionVote) => void;
+  // Voice (02 P3): the recorded clip and any mic/transcription error. The
+  // transcript lands in the composer text, never auto-sent.
+  onRecorded: (
+    wavBytes: Uint8Array,
+    sampleRate: VoiceSampleRate,
+    durationMs: number,
+  ) => void;
+  onMicError: (message: string) => void;
+  voicePending: boolean;
+  voiceError: string | null;
+  // A fresh transcript to land in the composer, and the ack that clears
+  // it so the same transcript is never applied twice.
+  transcript: string | null;
+  onTranscriptApplied: () => void;
 }
 
 export function AssistantChat(props: AssistantChatProps) {
   const strings = getStrings();
   const [text, setText] = useState("");
   const [inputError, setInputError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (props.transcript === null) return;
+    setText((current) =>
+      current.trim() === ""
+        ? (props.transcript ?? "")
+        : `${current} ${props.transcript}`,
+    );
+    props.onTranscriptApplied();
+  }, [props.transcript, props.onTranscriptApplied]);
+
   const rows = draftSummary(props.state.draft);
   const priceLine = priceHintLine(props.state.priceHint);
   const started = props.state.messages.length > 0;
@@ -367,19 +402,41 @@ export function AssistantChat(props: AssistantChatProps) {
       </View>
 
       <View style={styles.section}>
-        <TextInput
-          accessibilityLabel={strings.assistant.inputPlaceholder}
-          multiline
-          onChangeText={(value) => {
-            setText(value);
-            if (inputError !== null) setInputError(null);
-          }}
-          placeholder={strings.assistant.inputPlaceholder}
-          placeholderTextColor={THEME_COLORS.inkMute}
-          style={styles.input}
-          testID="assistant-input"
-          value={text}
-        />
+        <View style={styles.composerRow}>
+          <TextInput
+            accessibilityLabel={strings.assistant.inputPlaceholder}
+            multiline
+            onChangeText={(value) => {
+              setText(value);
+              if (inputError !== null) setInputError(null);
+            }}
+            placeholder={strings.assistant.inputPlaceholder}
+            placeholderTextColor={THEME_COLORS.inkMute}
+            style={[styles.input, styles.composerInput]}
+            testID="assistant-input"
+            value={text}
+          />
+          <MicButton
+            disabled={props.pending || props.voicePending}
+            onError={props.onMicError}
+            onRecorded={props.onRecorded}
+            testID="assistant-mic"
+          />
+        </View>
+        {props.voicePending ? (
+          <Text accessibilityLiveRegion="polite" style={styles.thinking}>
+            {strings.assistant.micTranscribing}
+          </Text>
+        ) : null}
+        {props.voiceError === null ? null : (
+          <Text
+            accessibilityLiveRegion="polite"
+            style={styles.error}
+            testID="assistant-mic-error"
+          >
+            {props.voiceError}
+          </Text>
+        )}
         {inputError === null ? null : (
           <Text accessibilityLiveRegion="polite" style={styles.error}>
             {inputError}

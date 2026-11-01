@@ -29,7 +29,7 @@ Expo app ──HTTP + WebSocket──▶ Fastify + tRPC ──▶ Service layer 
 | Folder | Responsibility |
 | ------ | -------------- |
 | `trpc/` | Routers, procedures, auth middleware. Validate → authorize → call service. |
-| `services/` | Business logic: jobs, matching, chat, reviews, users, storage, the job-post assistant and its solutions store. Framework-free. |
+| `services/` | Business logic: jobs, matching, chat, reviews, users, storage, the job-post assistant and its solutions store, geo (OSM) and voice (Muse Voice Transcribe). Framework-free. |
 | `db/` | Drizzle schema, migrations, client. |
 | `plugins/` | Fastify plugins: auth, CORS, WebSocket, error handling. |
 | `jobs/` | BullMQ workers (stat recomputation, cleanup). Minimal in MVP. |
@@ -117,6 +117,8 @@ Every input and output is validated with the shared Zod schemas. No public REST 
 **Assistant feedback:** chip tap → `jobAssistant.feedback` → service checks the session is the caller's and open and the proposal was shown in it → one vote, with the status rules above.
 
 **Assistant finish:** posting → `jobs.create`, then `jobAssistant.finish` (posted, job id, changed fields, price-hint response) → review-form votes and offer votes. Discarding a conversation sends "abandoned", which takes no votes.
+
+**Voice:** mic button records locally (WAV on web and iOS; hidden on Android, which records AAC/3GP) → `voice.transcribe` sends base64 audio (capped ~30s / 1.5 MB) → Muse Voice Transcribe via the Meta Model API → transcript lands in the assistant composer for the host to edit before sending. Audio is decoded, forwarded and discarded; never written to disk or logged.
 
 **Review:** `reviews.create` → service checks job is `completed`, author is a party, and no review exists yet for (job, author) → inserts → recomputes subject's average rating.
 

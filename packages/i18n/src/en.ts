@@ -78,6 +78,12 @@ export const en = {
       "Your usual cleaner is pinned to the top of this job's suggestions.",
     useThis: "Use this",
     notThis: "Not this",
+    micLabel: "Speak your answer",
+    micRecording: "Recording… tap to stop",
+    micTranscribing: "Transcribing…",
+    micError: "Voice didn't come through. You can type instead.",
+    micUnsupported: "Voice isn't available on this device yet. Type instead.",
+    micTooLong: "That recording was too long. Try a shorter answer.",
   },
   board: {
     title: "Open jobs",

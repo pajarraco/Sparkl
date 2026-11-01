@@ -110,6 +110,7 @@ The one memorable component, used on the Board, My Jobs, and suggestions:
 - **Badges/tags:** `orange-tint` background with `orange-deep` text, or `paper-2` with `ink-soft`.
 - **Stars:** ★ glyphs in `orange-deep`, 5-step, tappable in the review form, read-only elsewhere.
 - **Avatars:** photo or initials on `paper-2`, full-round, `stone` ring.
+- **Mic button (Post assistant composer):** a round 44pt icon button beside the composer input, Feather `mic` (20, `indigo`). Idle: `paper` fill, 1px `stone` border. Recording: `danger`-tint fill, `danger` border, icon swaps to `mic-off`, with a live "Recording… tap to stop" caption (Small, `ink-soft`) next to it — tap again to stop, no separate stop button. Transcribing: same idle look plus a small inline spinner in place of the icon; the button is disabled while transcribing. The transcript lands in the composer text, never auto-sent, so the host can edit it. On Android (no WAV recording path yet) or unsupported web browsers, the button is hidden rather than shown disabled, so the composer looks the same as it does today. Error: the composer's existing error-line style (danger text, `accessibilityLiveRegion="polite"`) shows the mic error string; the input still works.
 
 ## States
 

@@ -22,6 +22,12 @@ import {
   recordVote,
   withUserMessage,
 } from "../../../providers/job-assistant";
+import {
+  type VoiceSampleRate,
+  buildTranscribeInput,
+  validateRecording,
+  voiceErrorMessage,
+} from "../../../providers/voice";
 
 // Post tab (02 plan): the assistant chat by default, the Post Job form on
 // "Review" / "Use the form instead". The assistant state lives here so the
@@ -36,12 +42,38 @@ export default function HostPostScreen() {
   const turn = sparklTrpc.jobAssistant.turn.useMutation();
   const feedback = sparklTrpc.jobAssistant.feedback.useMutation();
   const finish = sparklTrpc.jobAssistant.finish.useMutation();
+  const transcribe = sparklTrpc.voice.transcribe.useMutation();
   const [mode, setMode] = useState<Mode>("assistant");
   const [assistant, setAssistant] = useState<AssistantState>(() =>
     createAssistantState(newSessionId()),
   );
   const [error, setError] = useState<string | null>(null);
   const [formKey, setFormKey] = useState(0);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const [transcript, setTranscript] = useState<string | null>(null);
+
+  // The mic button hands over WAV bytes; this screen owns the
+  // voice.transcribe call so AssistantChat stays free of tRPC (rules.md).
+  async function handleRecorded(
+    wavBytes: Uint8Array,
+    sampleRate: VoiceSampleRate,
+    durationMs: number,
+  ): Promise<void> {
+    setVoiceError(null);
+    const invalid = validateRecording(wavBytes.byteLength, durationMs);
+    if (invalid !== null) {
+      setVoiceError(invalid);
+      return;
+    }
+    try {
+      const output = await transcribe.mutateAsync(
+        buildTranscribeInput(wavBytes, sampleRate, durationMs),
+      );
+      setTranscript(output.transcript);
+    } catch (err) {
+      setVoiceError(voiceErrorMessage(err));
+    }
+  }
 
   async function handleSend(text: string): Promise<void> {
     const next = withUserMessage(assistant, text);
@@ -136,16 +168,24 @@ export default function HostPostScreen() {
         onChoosePlace={(place) =>
           setAssistant((current) => choosePlace(current, place))
         }
+        onMicError={setVoiceError}
+        onRecorded={(wavBytes, sampleRate, durationMs) => {
+          void handleRecorded(wavBytes, sampleRate, durationMs);
+        }}
         onReview={openForm}
         onSend={(text) => {
           void handleSend(text);
         }}
         onStartOver={() => startOver({ abandon: true })}
+        onTranscriptApplied={() => setTranscript(null)}
         onVote={(proposal, vote) => {
           void handleVote(proposal, vote);
         }}
         pending={turn.isPending}
         state={assistant}
+        transcript={transcript}
+        voiceError={voiceError}
+        voicePending={transcribe.isPending}
       />
     </Screen>
   );

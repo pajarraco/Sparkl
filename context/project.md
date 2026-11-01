@@ -26,7 +26,7 @@ Built for the Meta Global AI Developer Hackathon.
 ### In scope
 
 1. **Auth with roles** — sign up / sign in as host or cleaner (Better Auth).
-2. **Post a job (host)** — property address, date and time window, size/notes, offered price. The host can post through a chat assistant (price hint, saved answers that improve with use) or the form; the form is always there.
+2. **Post a job (host)** — property address, date and time window, size/notes, offered price. The host can post through a chat assistant (price hint, saved answers that improve with use, voice input on web and iOS) or the form; the form is always there.
 3. **Open job board (cleaner)** — browse and filter open jobs, view details.
 4. **Request / offer flow** — a cleaner requests an open job, or a host
    offers it to a suggested cleaner; the job is claimed once the other
