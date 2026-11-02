@@ -17,6 +17,11 @@ import { BackButton } from "./BackButton";
 // a virtualized list inside a ScrollView loses windowing and its own
 // scroll on native. keyboardShouldPersistTaps keeps form buttons
 // tappable while the keyboard is open.
+//
+// Desktop/web (05 item 8): content caps at THEME_SPACING.screenMax and
+// centers above it. maxWidth only ever constrains, so this is unconditional
+// rather than Platform-gated — a native or narrow-web screen is always
+// well under the cap and never notices it.
 
 export interface ScreenProps {
   title: string;
@@ -40,6 +45,14 @@ const styles = StyleSheet.create({
     paddingBottom: THEME_SPACING.edge,
     paddingHorizontal: THEME_SPACING.edge,
     gap: THEME_SPACING.rowMax,
+  },
+  containerCenter: {
+    width: "100%",
+    maxWidth: THEME_SPACING.screenMax,
+    alignSelf: "center",
+  },
+  containerFlex: {
+    flex: 1,
   },
   centeredContent: {
     flexGrow: 1,
@@ -92,15 +105,17 @@ export function Screen(props: ScreenProps) {
   );
   if (props.scroll === false) {
     return (
-      <View
-        style={[
-          styles.frame,
-          styles.container,
-          centered ? styles.centeredContent : null,
-        ]}
-        testID={props.testID}
-      >
-        {body}
+      <View style={styles.frame} testID={props.testID}>
+        <View
+          style={[
+            styles.container,
+            styles.containerCenter,
+            styles.containerFlex,
+            centered ? styles.centeredContent : null,
+          ]}
+        >
+          {body}
+        </View>
       </View>
     );
   }
@@ -108,6 +123,7 @@ export function Screen(props: ScreenProps) {
     <ScrollView
       contentContainerStyle={[
         styles.container,
+        styles.containerCenter,
         centered ? styles.centeredContent : null,
       ]}
       keyboardShouldPersistTaps="handled"

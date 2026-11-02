@@ -40,6 +40,15 @@ export const THEME_SPACING = {
   rowMin: 8,
   rowMax: 12,
   touchTarget: 48,
+  screenMax: 990,
+} as const;
+
+// Desktop/web breakpoint (05 item 8): screens cap at screenMax and center
+// above it; CTA rows switch from a stacked, full-width column (native
+// touch targets stay generous) to a fit-content row aligned right once
+// the viewport is at least this wide.
+export const THEME_BREAKPOINTS = {
+  desktop: 768,
 } as const;
 
 export const THEME_FONT = {

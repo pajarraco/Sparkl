@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter, useSegments } from "expo-router";
 import { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { DetailScreen } from "../../../../../components/DetailScreen";
 import { SparklButton } from "../../../../../components/SparklButton";
 import { sparklTrpc } from "../../../../../providers/app-providers";
@@ -22,6 +22,7 @@ import { formatMatchPercent } from "../../../../../providers/ranked-board";
 import { stackHref } from "../../../../../providers/tabs";
 import {
   STATUS_PILL,
+  THEME_BREAKPOINTS,
   THEME_COLORS,
   THEME_FONT_FAMILY,
   THEME_RADII,
@@ -86,6 +87,10 @@ const styles = StyleSheet.create({
     gap: THEME_SPACING.rowMax,
     marginTop: THEME_SPACING.section,
   },
+  actionsDesktop: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+  },
   success: {
     fontFamily: THEME_FONT_FAMILY.medium,
     fontSize: 16,
@@ -104,6 +109,8 @@ export default function CleanerJobDetailScreen() {
   const strings = getStrings();
   const router = useRouter();
   const segments = useSegments();
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= THEME_BREAKPOINTS.desktop;
   const params = useLocalSearchParams<{ id: string }>();
   const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
   const jobId = rawId !== undefined && UUID_RE.test(rawId) ? rawId : null;
@@ -282,7 +289,7 @@ export default function CleanerJobDetailScreen() {
           <Text style={styles.body}>{job.notes}</Text>
         </View>
       )}
-      <View style={styles.actions}>
+      <View style={[styles.actions, isDesktop ? styles.actionsDesktop : null]}>
         {cleanerChatAvailableForStatus(job.status) ? (
           <SparklButton
             accessibilityLabel={strings.jobDetail.openChat}

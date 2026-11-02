@@ -80,7 +80,7 @@ test.describe("properties", () => {
       await page.getByTestId("post-job-window-end").fill("13:00");
       await page.getByTestId("post-job-price").fill("85");
       await page.getByTestId("post-job-submit").click();
-      await expect(page.getByTestId("post-job-success")).toBeVisible();
+      await expect(page).toHaveURL(/\/host\/my-jobs$/);
 
       // Archive the property; it drops off the active list and picker.
       await page.goto("/host/properties");

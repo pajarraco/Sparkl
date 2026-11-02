@@ -43,7 +43,7 @@ async function signInFromWelcome(
 test("host sign-up lands on the host tabs", async ({ page }, testInfo) => {
   const account = uniqueAccount("host", testInfo.workerIndex);
   await fillSignUp(page, account, "Host");
-  await expect(page.getByRole("tab", { name: "Post" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "New Job" })).toBeVisible();
 });
 
 test("cleaner sign-up lands on the ranked board", async ({
@@ -59,13 +59,13 @@ test("sign-in returns an existing account to its home", async ({
 }, testInfo) => {
   const account = uniqueAccount("host", testInfo.workerIndex);
   await fillSignUp(page, account, "Host");
-  await expect(page.getByRole("tab", { name: "Post" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "New Job" })).toBeVisible();
   await signOut(page);
   await page.goto("/sign-in");
   await page.getByTestId("sign-in-email").fill(account.email);
   await page.getByTestId("sign-in-password").fill(account.password);
   await page.getByTestId("sign-in-submit").click();
-  await expect(page.getByRole("tab", { name: "Post" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "New Job" })).toBeVisible();
 });
 
 test("sign-out returns to welcome", async ({ page }, testInfo) => {
@@ -89,7 +89,7 @@ test("invalid login shows an error and stays put", async ({ page }) => {
 test("duplicate registration shows an error", async ({ page }, testInfo) => {
   const account = uniqueAccount("host", testInfo.workerIndex);
   await fillSignUp(page, account, "Host");
-  await expect(page.getByRole("tab", { name: "Post" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "New Job" })).toBeVisible();
   await signOut(page);
   await fillSignUp(page, account, "Host");
   await expect(
@@ -128,7 +128,7 @@ test("host → cleaner switch lands on the board first time", async ({
   const cleaner = cleanerSession.account;
   await page.goto("/welcome");
   await signInFromWelcome(page, host);
-  await expect(page.getByRole("tab", { name: "Post" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "New Job" })).toBeVisible();
   await signOut(page);
   await signInFromWelcome(page, cleaner);
   await expect(page.getByRole("heading", { name: "Open jobs" })).toBeVisible();
@@ -149,7 +149,7 @@ test("cleaner → host switch lands on the host tabs first time", async ({
   await expect(page.getByRole("heading", { name: "Open jobs" })).toBeVisible();
   await signOut(page);
   await signInFromWelcome(page, host);
-  await expect(page.getByRole("tab", { name: "Post" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "New Job" })).toBeVisible();
 });
 
 test("restored host session → cleaner switch lands on the board", async ({
@@ -162,7 +162,7 @@ test("restored host session → cleaner switch lands on the board", async ({
   const cleanerSession = await newApiSession("cleaner", testInfo.workerIndex);
   await cleanerSession.api.dispose();
   await page.goto("/");
-  await expect(page.getByRole("tab", { name: "Post" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "New Job" })).toBeVisible();
   await signOut(page);
   await signInFromWelcome(page, cleanerSession.account);
   await expect(page.getByRole("heading", { name: "Open jobs" })).toBeVisible();

@@ -8,6 +8,7 @@ import { Screen } from "../../../../components/Screen";
 import { SparklButton } from "../../../../components/SparklButton";
 import { sparklTrpc } from "../../../../providers/app-providers";
 import { getStrings } from "../../../../providers/i18n";
+import { suggestionTrustLine } from "../../../../providers/job-detail";
 import {
   type CleanerMyJobsSegment,
   cleanerMetaLine,
@@ -102,6 +103,26 @@ export default function CleanerMyJobsScreen() {
   const offers = (offersQuery.data ?? []).filter(
     (row) => row.request.initiatedBy === "host",
   );
+  // Trust row (design.md Signature Element): the host's ★ rating, one
+  // batched query for every card on this screen rather than one per card.
+  const hostIds = Array.from(
+    new Set([
+      ...(query.data ?? []).map((job) => job.hostId),
+      ...offers.map((row) => row.job.hostId),
+    ]),
+  );
+  const ratingsQuery = sparklTrpc.users.ratingsFor.useQuery(
+    { userIds: hostIds },
+    { enabled: hostIds.length > 0 },
+  );
+  const ratings = ratingsQuery.data ?? {};
+  const trustLineFor = useCallback(
+    (hostId: string): string | undefined => {
+      const summary = ratings[hostId];
+      return summary === undefined ? undefined : suggestionTrustLine(summary);
+    },
+    [ratings],
+  );
 
   const segmentLabel = useCallback(
     (value: CleanerMyJobsSegment): string => {
@@ -131,9 +152,10 @@ export default function CleanerMyJobsScreen() {
         statusLabel={statusLabelFor(item.status)}
         testID={`cleaner-job-card-${item.id}`}
         title={strings.jobCard.title}
+        trustLine={trustLineFor(item.hostId)}
       />
     ),
-    [strings, openJob],
+    [strings, openJob, trustLineFor],
   );
 
   const jobs =
@@ -172,6 +194,7 @@ export default function CleanerMyJobsScreen() {
                 statusLabel={strings.jobDetail.offeredToYou}
                 testID={`cleaner-offer-card-${row.job.id}`}
                 title={strings.jobCard.title}
+                trustLine={trustLineFor(row.job.hostId)}
               />
             ))}
           </View>
@@ -246,6 +269,7 @@ export default function CleanerMyJobsScreen() {
                   statusLabel={statusLabelFor(spotlight.status)}
                   testID={`cleaner-job-card-${spotlight.id}`}
                   title={strings.jobCard.title}
+                  trustLine={trustLineFor(spotlight.hostId)}
                 />
               </View>
             )

@@ -50,14 +50,15 @@ One family. **Elms Sans** (Google Fonts, variable 100–900, OFL) for display an
 - **4pt grid.** Screen edge padding 16 (20 on wide/web), section gaps 24, related rows 8–12.
 - **Radii:** controls and inputs 6, cards 6–14, bottom sheets 14. Avatars are the only full-round elements.
 - **Containment via borders**, not shadows: cards get a 1px `stone` border on `paper`. No drop shadows, no gradients.
-- **Single column.** Lists full-width; detail screens cap content at ~640pt on web/tablet.
+- **Single column.** Lists full-width; detail screens cap content at ~640pt on web/tablet. Every screen's outer content caps at 990px and centers above that width (`Screen`); below 990px it's full-width as usual.
+- **Desktop CTA rows (≥768px):** a bottom row of multiple primary actions (Job Detail's Open Chat / Leave a Review / Complete / Cancel) switches from a stacked full-width column to a fit-content row aligned right, instead of stretching the full 990px column width. Below 768px, or for a single lone CTA anywhere, buttons stay full-width and stacked.
 - Generous vertical rhythm between sections; hairline dividers over background banding.
 
 ## Navigation
 
 Role-based bottom tabs. The tab bar changes with the signed-in role:
 
-- **Host (five tabs, 03 E):** My Jobs · Properties · Post (center, prominent `+`) · Messages · Profile.
+- **Host (five tabs, 03 E):** My Jobs · Properties · New Job (center, prominent `+`) · Messages · Profile.
 - **Cleaner (four tabs):** Board · My Jobs · Messages · Profile.
 
 - Active tab: `indigo` icon + label. Inactive: `ink-mute`. Unread counts badge on Messages.
@@ -75,7 +76,7 @@ Role-based bottom tabs. The tab bar changes with the signed-in role:
 
 ## Key Flows
 
-**Post → fill → complete (host):** Post tab → assistant (or the form directly) → review form → Job Detail shows ranked cleaner suggestions → cleaner claims → coordinate in Chat Thread → mark completed → Leave Review.
+**Post → fill → complete (host):** New Job tab → assistant (or the form directly) → review form → Job Detail shows ranked cleaner suggestions → cleaner claims → coordinate in Chat Thread → mark completed → Leave Review.
 
 **Find → claim → complete (cleaner):** Board (ranked) → Job Detail → Claim → appears in My Jobs → Chat Thread to confirm → mark in progress → mark completed → Leave Review.
 
@@ -89,7 +90,7 @@ The one memorable component, used on the Board, My Jobs, and suggestions:
 - Top: address in uppercase caption, `ink-soft`.
 - Title: H3, `ink`.
 - Meta row: date/time · price · distance (or cleaner name · rating for suggestions) — small, tabular numerals.
-- Trust row: host ★ rating and completed-job count on board cards; cleaner ★ and completed count on suggestion rows. Both come from the matching service, never hardcoded. No verified badge until a real verification backend exists.
+- Trust row: the other party's ★ rating and completed-job count — host on Board and cleaner My Jobs cards, cleaner on host My Jobs cards and suggestion rows — from a batched `users.ratingsFor` lookup (one query per screen, never one per card), never hardcoded. Omitted when the job's counterpart has no rating data yet. No verified badge until a real verification backend exists.
 - Status pill where relevant, tinted background with dark text, never orange-on-white text: open = green tint + dark green text; claimed / in progress = indigo tint + `indigo-deep` text; completed = `paper-2` + `ink-soft`; cancelled = red tint + dark red text.
 - `stone` border, radius up to 14, no shadow, no lift on press — a meta line shifts to `indigo` instead.
 
@@ -97,16 +98,17 @@ The one memorable component, used on the Board, My Jobs, and suggestions:
 
 - **Buttons:** primary = `indigo` fill, white uppercase label (600, +0.03em), radius 6. Secondary = white fill, 2px `indigo` border + text. Destructive = danger text, no fill. Loading state inside the button, never a bare spinner.
 - **Inputs:** white fill, `stone` border, radius 6, label above in eyebrow style. Focus: 2px `indigo` outline. Never strip the focus ring.
-- **Tab bar:** as in Navigation; 44pt minimum touch targets throughout.
+- **Tab bar:** as in Navigation; 44pt minimum touch targets throughout. Bar height is 88pt (iOS) / 64pt (Android), taller than the platform default, so the icon + label never overflow the bar — most noticeable on the prominent New Job tab's larger icon.
 - **Filter chips (Board):** a row above the list (it wraps to a second line rather than scrolling sideways, so no chip is ever hidden), one chip per filter (date `calendar`, distance `navigation`, price `dollar-sign`, Feather 16). Inactive: white fill, 1px `stone` border, `ink-soft` icon and label. Active: `paper-2` fill, `indigo` border, icon and label, and the label shows the value ("Fri, Jun 6", "≤ 10 km", "≥ $80"). Radius 6, 44pt touch target, Small 500 label. A "Clear all" chip (no icon) appears at the end while any filter is active.
 - **Proposal chips (Post assistant):** under the assistant reply that offered a saved answer, one row per proposal: the proposal's label (Small 500, `ink`), then two chips. "Use this" uses the active filter-chip look (`paper-2` fill, `indigo` border and label); "Not this" uses the inactive look (`paper` fill, 1px `stone` border, `ink-soft` label). Radius 6, 44pt touch targets, wrapping rather than scrolling sideways. A tapped row is removed at once, with no confirmation, so the chat stays quiet; a failed vote keeps the chips and shows the assistant error line.
-- **Bottom sheet:** a `paper` panel anchored to the bottom over a `ink` scrim at 40% opacity, radius 14 on the top corners only, 1px `stone` top border, no shadow. Holds one field, titled with the filter's short name, and its actions (primary Apply, secondary Clear). Tapping the scrim or Escape closes it without applying.
+- **Bottom sheet:** a `paper` panel anchored to the bottom over a `ink` scrim at 40% opacity, radius 14 on the top corners only, 1px `stone` top border, no shadow. Holds one field, titled with the filter's short name, and its actions (primary Apply, secondary Clear). Tapping the scrim or Escape closes it without applying. The Board's filter sheet is the one exception: it anchors to the top instead (radius and border flip to the bottom edge), so the open panel doesn't sit over the tab bar.
 - **Property row (Properties tab):** one per property, newest first. Name (H3, `ink`), address as an uppercase caption in `ink-soft`, size if set (Small, tabular, `ink-soft`). `stone` border, radius up to 14, no rail, no shadow; on press the name shifts to `indigo` and opens the edit form. An "Add property" primary button sits above the list; with none saved the list shows "Add your first property" instead of an empty-state line.
 - **Thread row (Messages tab):** one per conversation, newest first. 40pt initials avatar (as Avatars), the other party's name (Body 500, `ink`), the job address as an uppercase caption in `ink-soft`, a one-line preview of the last message (Small, `ink-soft`, "You: " when the viewer wrote it), and the time or day at the right (Caption, tabular). Stone border, radius up to 14, no rail, no shadow; on press the name shifts to `indigo`.
 - **Back button:** Feather `chevron-left` (24) in `ink`, icon only, no fill or border, 44pt touch target, accessibility label "Back". Sits at the top-left, above the screen title; the pressed state shifts the icon to `indigo`.
 - **Badges/tags:** `orange-tint` background with `orange-deep` text, or `paper-2` with `ink-soft`.
 - **Request badge (host My Jobs card, open jobs only):** a small pill beside the status pill, `orange-tint` fill and `orange-deep` text, showing the pending cleaner-request count ("2 requests" / "1 request"). Hidden when the count is zero. Tapping the card still opens Job Detail, where the Requests section lists them individually.
 - **Stars:** ★ glyphs in `orange-deep`, 5-step, tappable in the review form, read-only elsewhere.
+- **Review card (an already-sent review):** the star rating and the written comment, each under its own small-caps eyebrow label ("Rating" / "Comment", same style as the form's own labels) so the two never read as one undifferentiated block of text. Used on the Leave Review screen once a review exists, and in a profile's Reviews section.
 - **Avatars:** photo or initials on `paper-2`, full-round, `stone` ring.
 - **Mic button (Post assistant composer):** a round 44pt icon button beside the composer input, Feather `mic` (20, `indigo`). Idle: `paper` fill, 1px `stone` border. Recording: `danger`-tint fill, `danger` border, icon swaps to `mic-off`, with a live "Recording… tap to stop" caption (Small, `ink-soft`) next to it — tap again to stop, no separate stop button. Transcribing: same idle look plus a small inline spinner in place of the icon; the button is disabled while transcribing. The transcript lands in the composer text, never auto-sent, so the host can edit it. On Android (no WAV recording path yet) or unsupported web browsers, the button is hidden rather than shown disabled, so the composer looks the same as it does today. Error: the composer's existing error-line style (danger text, `accessibilityLiveRegion="polite"`) shows the mic error string; the input still works.
 

@@ -326,6 +326,15 @@ export function drizzleUsersStore(db: Db): UsersStore {
       return row ? toUser(row) : null;
     },
 
+    async findByIds(userIds) {
+      if (userIds.length === 0) return [];
+      const rows = await db
+        .select()
+        .from(user)
+        .where(inArray(user.id, userIds));
+      return rows.map(toUser);
+    },
+
     async update(userId, patch: ProfilePatch) {
       const set: Partial<typeof user.$inferInsert> = {};
       if (patch.name !== undefined) set.name = patch.name;

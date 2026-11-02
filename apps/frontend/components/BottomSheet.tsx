@@ -20,6 +20,16 @@ import {
 // border, no shadow. Built on React Native Modal (no new dependency).
 // Tapping the scrim, Android back or Escape on web closes without
 // applying anything.
+//
+// position="top" anchors the same panel to the top instead (radius and
+// border flip to the bottom edge). Still uses Modal's "slide" animation
+// for both: react-native-web's Escape-to-close only works once its
+// animationend fires, and "fade"/"none" didn't reliably fire it in this
+// RN Web version (confirmed by e2e flakes), so the overlay still slides
+// up from the screen's bottom edge even though the content it reveals
+// sits pinned to the top.
+
+export type BottomSheetPosition = "bottom" | "top";
 
 export interface BottomSheetProps {
   visible: boolean;
@@ -27,13 +37,18 @@ export interface BottomSheetProps {
   closeLabel: string;
   onClose: () => void;
   children: ReactNode;
+  position?: BottomSheetPosition | undefined;
   testID?: string | undefined;
 }
 
 const styles = StyleSheet.create({
-  root: {
+  rootBottom: {
     flex: 1,
     justifyContent: "flex-end",
+  },
+  rootTop: {
+    flex: 1,
+    justifyContent: "flex-start",
   },
   scrim: {
     position: "absolute",
@@ -44,14 +59,22 @@ const styles = StyleSheet.create({
     backgroundColor: THEME_COLORS.ink,
     opacity: 0.4,
   },
-  sheet: {
-    backgroundColor: THEME_COLORS.paper,
+  sheetBottom: {
     borderTopLeftRadius: THEME_RADII.sheet,
     borderTopRightRadius: THEME_RADII.sheet,
     borderTopWidth: 1,
+    paddingBottom: THEME_SPACING.section,
+  },
+  sheetTop: {
+    borderBottomLeftRadius: THEME_RADII.sheet,
+    borderBottomRightRadius: THEME_RADII.sheet,
+    borderBottomWidth: 1,
+    paddingTop: THEME_SPACING.section,
+  },
+  sheet: {
+    backgroundColor: THEME_COLORS.paper,
     borderColor: THEME_COLORS.stone,
     padding: THEME_SPACING.edge,
-    paddingBottom: THEME_SPACING.section,
     gap: THEME_SPACING.rowMax,
     width: "100%",
     maxWidth: 640,
@@ -66,6 +89,7 @@ const styles = StyleSheet.create({
 });
 
 export function BottomSheet(props: BottomSheetProps) {
+  const position = props.position ?? "bottom";
   return (
     <Modal
       animationType="slide"
@@ -75,7 +99,7 @@ export function BottomSheet(props: BottomSheetProps) {
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={styles.root}
+        style={position === "bottom" ? styles.rootBottom : styles.rootTop}
       >
         <Pressable
           accessibilityLabel={props.closeLabel}
@@ -86,7 +110,13 @@ export function BottomSheet(props: BottomSheetProps) {
             props.testID === undefined ? undefined : `${props.testID}-scrim`
           }
         />
-        <View style={styles.sheet} testID={props.testID}>
+        <View
+          style={[
+            styles.sheet,
+            position === "bottom" ? styles.sheetBottom : styles.sheetTop,
+          ]}
+          testID={props.testID}
+        >
           <Text accessibilityRole="header" style={styles.title}>
             {props.title}
           </Text>

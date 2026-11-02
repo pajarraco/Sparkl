@@ -116,8 +116,8 @@ Spec: `context/features/03-improvements-issues.md` (approved 2026-10-29). Built 
 
 #### A — Bugs
 
-- [ ] A1 Role switch on web: failing e2e repro (host → sign out → cleaner and reverse), diagnose, shared `signOutAndReset()` that also clears the React Query cache; confirm on one Expo Go target
-- [ ] A2 Navigation: nested stacks per tab via shared routes (detail screens keep the tab bar), `BackButton` in `Screen` with a deep-link fallback (`design.md` first), Post redirect into the My Jobs stack, `navigation.spec.ts` updated
+- [x] A1 Role switch on web: failing e2e repro (host → sign out → cleaner and reverse), diagnose, shared `signOutAndReset()` that also clears the React Query cache; confirmed on Expo Go (host→cleaner and reverse both clean, 2026-11-02)
+- [x] A2 Navigation: nested stacks per tab via shared routes (detail screens keep the tab bar), `BackButton` in `Screen` with a deep-link fallback (`design.md` first), Post redirect into the My Jobs stack, `navigation.spec.ts` updated — confirmed on Expo Go (tab bar persists, back button, Post redirect all clean, 2026-11-02)
 
 #### B — Messages
 
@@ -159,6 +159,19 @@ Resume here (2026-10-30): §12 steps 1–10 are done on `feat/04-assistant-learn
 - [x] UI: "Use this" / "Not this" chips under proposals (i18n; `design.md` first if a style is new)
 - [x] Seed: 3 obviously-fake global checklists + 3 FAQ entries
 - [x] Gates: `pnpm verify` green + e2e (saved checklist proposed first in session 2; a checklist with a phone number refused), output quoted; `CHANGELOG.md` and docs updated. **Status (2026-11-02):** 03 (A1/A2) confirmed on Expo Go and merged into `main`. `pnpm verify` green: frontend 205 tests passed (23 files), biome clean, typecheck clean across all 5 workspace projects. Full `pnpm e2e` green: 70/70 passed, including `assistant.spec.ts` on both viewports. The two earlier assistant-spec failures (stuck on `assistant-thinking`) were a stale leftover API process reused via Playwright's `reuseExistingServer` on port 3000, not a code defect — killed it, reran against a fresh server, and it passed in ~9s. Docs and changelog for 04 are updated.
+
+### 13. Issues & redesign pass
+
+Spec: `context/features/05-issues-redesign.md` (plan added 2026-11-02). One item at a time, confirm with Ernesto before moving to the next; see the spec for file-level detail per item.
+
+- [x] 1. Post-job redirect to My Jobs instead of the post details screen. **2026-11-02:** `handlePosted` in `app/host/(tabs)/post.tsx` calls `router.replace("/host/my-jobs")`; `PostJobForm`'s dead-end success screen and `onPostAgain` prop removed. `pnpm verify` green, full `e2e` 72/72.
+- [x] 2. Rename "Post" tab to "New Job". **2026-11-02:** `tabs.post` string in `packages/i18n/src/en.ts`; e2e tab-name assertions updated. `pnpm verify` green, full `e2e` 72/72.
+- [x] 3. Loading indicator on CTAs (Offer job and other primary actions) to stop double-taps. **2026-11-02:** audit found every mutation-backed CTA already wired to `SparklButton`'s `loading` prop; only gap was Sign Out on both profile screens (no tRPC mutation to read `isPending` from) — added a local `signingOut` state. `pnpm verify` green, full `e2e` 72/72.
+- [x] 4. Mobile tab bar: bigger icon touch area so icons aren't cut off. **2026-11-02:** shared `TAB_BAR_SCREEN_OPTIONS` (`components/TabBarIcon.tsx`) taller bar (88pt iOS / 64pt Android) + item padding; not yet confirmed on a physical device. `pnpm verify` green, full `e2e` 72/72.
+- [x] 5. Cleaner board filter sheet opens from the top instead of the bottom. **2026-11-02:** `BottomSheet` gains a `position` prop (`"top"`/`"bottom"`), wired on the board's filter sheet. `pnpm verify` green, full `e2e` 72/72.
+- [x] 6. Review star count shown on the job card. **2026-11-02:** wired `JobCard`'s existing (unused) `trustLine` prop on Board + both My Jobs screens via a new batched `users.ratingsFor` query (one call per screen, not per card). `pnpm verify` green (api 369, frontend 213), full `e2e` 72/72.
+- [x] 7. Review details page: visually separate the review from the message. **2026-11-02:** `ReviewCard` now labels the star rating and comment under their own eyebrow headings. `pnpm verify` green, full `e2e` 72/72.
+- [x] 8. Desktop layout: max-width 990px centered screens; CTAs fit-content and right-aligned. **2026-11-02:** `Screen` caps content at 990px centered (unconditional, so native/narrow-web are unaffected); Job Detail (host + cleaner) CTA row switches to a fit-content right-aligned row at ≥768px via new `THEME_BREAKPOINTS.desktop`. `pnpm verify` green, full `e2e` 72/72.
 
 ### Stretch (only if time allows)
 

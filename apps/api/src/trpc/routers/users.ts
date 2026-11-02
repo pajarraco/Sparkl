@@ -5,12 +5,15 @@ import {
   serviceAreaInputSchema,
   setAvailabilityInputSchema,
   updateProfileInputSchema,
+  userRatingsInputSchema,
+  userRatingsOutputSchema,
   userSchema,
 } from "@sparkl/shared";
 import { drizzleUsersStore } from "../../db/stores.js";
 import {
   getProfile,
   getPublicCleanerProfile,
+  getRatingsForUsers,
   setAvailability,
   updateProfile,
   updateServiceArea,
@@ -61,5 +64,14 @@ export const usersRouter = router({
         drizzleUsersStore(ctx.db),
         input.cleanerId,
       );
+    }),
+
+  // Job card trust row (design.md Signature Element): one batched call per
+  // screen for the other party's rating, never one per card.
+  ratingsFor: authedProcedure
+    .input(userRatingsInputSchema)
+    .output(userRatingsOutputSchema)
+    .query(async ({ ctx, input }) => {
+      return getRatingsForUsers(drizzleUsersStore(ctx.db), input.userIds);
     }),
 });

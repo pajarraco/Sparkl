@@ -78,7 +78,7 @@ async function fillPostForm(page: Page, address: string): Promise<void> {
   await page.getByTestId("post-job-price").fill("85");
 }
 
-test("host posts a job through the UI and sees success", async ({
+test("host posts a job through the UI and lands on My Jobs", async ({
   browser,
 }, testInfo) => {
   const { page, close } = await newHostPage(browser, testInfo.workerIndex);
@@ -86,15 +86,14 @@ test("host posts a job through the UI and sees success", async ({
     const address = `E2E Post ${Date.now()}-w${testInfo.workerIndex}`;
     await fillPostForm(page, address);
     await page.getByTestId("post-job-submit").click();
-    await expect(page.getByTestId("post-job-success")).toBeVisible();
+    await expect(page).toHaveURL(/\/host\/my-jobs$/);
     const id = await jobIdByAddress(
       page.context().request,
       "jobs.myJobs",
       address,
     );
     expect(id).toMatch(/^[0-9a-f-]{36}$/i);
-    await page.getByTestId("post-job-again").click();
-    await expect(page.getByTestId("post-job-address")).toHaveValue("");
+    await expect(page.getByTestId(`host-job-card-${id}`)).toBeVisible();
   } finally {
     await close();
   }
@@ -230,8 +229,10 @@ test("board shows validation for bad filter values", async ({
     await page.getByTestId("cleaner-board-apply").click();
     await expect(page.getByText("Use YYYY-MM-DD.")).toBeVisible();
     // A bad value keeps the sheet open; the scrim closes it unapplied.
+    // The sheet is anchored to the top (05 item 5), so the free scrim area
+    // is below it rather than above.
     await page.getByTestId("cleaner-board-sheet-scrim").click({
-      position: { x: 10, y: 10 },
+      position: { x: 10, y: 600 },
     });
     await expect(page.getByTestId("cleaner-board-sheet")).toHaveCount(0);
     await expect(page.getByTestId("cleaner-board-chip-date")).toContainText(

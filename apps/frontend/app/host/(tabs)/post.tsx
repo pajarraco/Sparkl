@@ -1,4 +1,5 @@
 import type { SolutionProposal, SolutionVote } from "@sparkl/shared";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import { AssistantChat } from "../../../components/AssistantChat";
 import { PostJobForm } from "../../../components/PostJobForm";
@@ -39,6 +40,7 @@ type Mode = "assistant" | "form";
 
 export default function HostPostScreen() {
   const strings = getStrings();
+  const router = useRouter();
   const turn = sparklTrpc.jobAssistant.turn.useMutation();
   const feedback = sparklTrpc.jobAssistant.feedback.useMutation();
   const finish = sparklTrpc.jobAssistant.finish.useMutation();
@@ -117,13 +119,15 @@ export default function HostPostScreen() {
   }
 
   // Closes the session with the posted job. Best effort: the job is saved
-  // whatever happens to the learning record.
+  // whatever happens to the learning record. The host lands on My Jobs
+  // rather than the form's own success screen.
   function handlePosted(jobId: string, values: PostJobFormValues): void {
     finish
       .mutateAsync(postedFinishInput(assistant, jobId, values))
       .catch(() => undefined);
     // The session is closed now, so its chips can no longer be answered.
     setAssistant((current) => ({ ...current, proposals: [] }));
+    router.replace("/host/my-jobs");
   }
 
   // A discarded session closes as abandoned, which takes no votes. After a
@@ -152,10 +156,6 @@ export default function HostPostScreen() {
           initialValues={draftToFormValues(assistant.draft)}
           key={formKey}
           onPosted={handlePosted}
-          onPostAgain={() => {
-            startOver({ abandon: false });
-            openForm();
-          }}
         />
       </Screen>
     );

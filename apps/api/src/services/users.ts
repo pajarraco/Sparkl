@@ -7,6 +7,7 @@ import {
   type SparklErrorCode,
   type UpdateProfileInput,
   type User,
+  type UserRatingsOutput,
 } from "@sparkl/shared";
 
 export class UsersError extends Error {
@@ -33,6 +34,7 @@ export interface ProfilePatch {
 // `replaceAvailability` deletes all of the cleaner's slots, then inserts.
 export interface UsersStore {
   findById(userId: string): Promise<User | null>;
+  findByIds(userIds: string[]): Promise<User[]>;
   update(userId: string, patch: ProfilePatch): Promise<User | null>;
   /**
    * Atomically bump completedJobCount by one; returns null when the user
@@ -117,6 +119,26 @@ export async function setAvailability(
     endTime: slot.endTime,
   }));
   return store.replaceAvailability(userId, slots);
+}
+
+// Batched trust-row lookup (design.md Signature Element): one query per
+// screen instead of one per job card. Unknown ids are simply omitted, so a
+// stale or just-deleted user id never throws for the whole card list.
+export async function getRatingsForUsers(
+  store: UsersStore,
+  userIds: string[],
+): Promise<UserRatingsOutput> {
+  const unique = Array.from(new Set(userIds));
+  if (unique.length === 0) return {};
+  const users = await store.findByIds(unique);
+  const result: UserRatingsOutput = {};
+  for (const user of users) {
+    result[user.id] = {
+      avgRating: user.avgRating,
+      completedJobCount: user.completedJobCount,
+    };
+  }
+  return result;
 }
 
 export async function getPublicCleanerProfile(

@@ -1,7 +1,13 @@
 import type { JobRequestWithCleaner, RankedCleaner } from "@sparkl/shared";
 import { useLocalSearchParams, useRouter, useSegments } from "expo-router";
 import { useState } from "react";
-import { FlatList, StyleSheet, Text, View } from "react-native";
+import {
+  FlatList,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import { BodyText } from "../../../../../components/BodyText";
 import { DetailScreen } from "../../../../../components/DetailScreen";
 import { SparklButton } from "../../../../../components/SparklButton";
@@ -23,6 +29,7 @@ import {
 import { stackHref } from "../../../../../providers/tabs";
 import { STATUS_PILL } from "../../../../../providers/theme";
 import {
+  THEME_BREAKPOINTS,
   THEME_COLORS,
   THEME_FONT_FAMILY,
   THEME_RADII,
@@ -122,6 +129,10 @@ const styles = StyleSheet.create({
     gap: THEME_SPACING.rowMax,
     marginTop: THEME_SPACING.section,
   },
+  actionsDesktop: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+  },
   flatList: {
     flex: 1,
   },
@@ -216,6 +227,8 @@ export default function HostJobDetailScreen() {
   const strings = getStrings();
   const router = useRouter();
   const segments = useSegments();
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= THEME_BREAKPOINTS.desktop;
   const params = useLocalSearchParams<{ id: string }>();
   const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
   const jobId = rawId !== undefined && UUID_RE.test(rawId) ? rawId : null;
@@ -380,7 +393,9 @@ export default function HostJobDetailScreen() {
     >
       <FlatList
         ListFooterComponent={
-          <View style={styles.actions}>
+          <View
+            style={[styles.actions, isDesktop ? styles.actionsDesktop : null]}
+          >
             {hostChatAvailableForStatus(job.status) ? (
               <SparklButton
                 accessibilityLabel={strings.jobDetail.openChat}

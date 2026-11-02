@@ -77,3 +77,30 @@ export const publicCleanerProfileSchema = z
   .strict();
 
 export type PublicCleanerProfile = z.infer<typeof publicCleanerProfileSchema>;
+
+// users.ratingsFor input/output: a batched lookup of the review-based trust
+// row (design.md Signature Element) for a set of users — the host on a
+// board/My Jobs card, or the claimed cleaner on a host's My Jobs card.
+// Public, like reviews.listBySubject: the same two fields are already
+// public on getPublicCleanerProfile. One call per screen, never per card.
+export const userRatingsInputSchema = z
+  .object({ userIds: z.array(userIdSchema).min(1).max(100) })
+  .strict();
+
+export type UserRatingsInput = z.infer<typeof userRatingsInputSchema>;
+
+export const userRatingSummarySchema = z
+  .object({
+    avgRating: z.number().min(0).max(5).nullable(),
+    completedJobCount: z.number().int().min(0),
+  })
+  .strict();
+
+export type UserRatingSummary = z.infer<typeof userRatingSummarySchema>;
+
+export const userRatingsOutputSchema = z.record(
+  userIdSchema,
+  userRatingSummarySchema,
+);
+
+export type UserRatingsOutput = z.infer<typeof userRatingsOutputSchema>;

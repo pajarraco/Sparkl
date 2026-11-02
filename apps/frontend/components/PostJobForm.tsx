@@ -36,10 +36,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: THEME_COLORS.danger,
   },
-  success: {
-    gap: THEME_SPACING.rowMax,
-    marginTop: THEME_SPACING.section,
-  },
   propertyPicker: {
     gap: THEME_SPACING.rowMin,
   },
@@ -77,8 +73,8 @@ const styles = StyleSheet.create({
 
 export interface PostJobFormProps {
   initialValues: PostJobFormValues;
-  onPostAgain: () => void;
   // Called once the job exists, with the values the host posted (04 step 8).
+  // The caller is responsible for navigating away (redirect to My Jobs).
   onPosted?: (jobId: string, values: PostJobFormValues) => void;
 }
 
@@ -108,7 +104,6 @@ export function PostJobForm(props: PostJobFormProps) {
   const [price, setPrice] = useState(initial.price);
   const [errors, setErrors] = useState<PostJobFieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
-  const [posted, setPosted] = useState(false);
 
   function selectProperty(property: Property): void {
     setSelectedPropertyId(property.id);
@@ -150,7 +145,6 @@ export function PostJobForm(props: PostJobFormProps) {
           ? result.data
           : { ...result.data, preferredCleanerId: initial.preferredCleanerId },
       );
-      setPosted(true);
       props.onPosted?.(job.id, {
         address: place.address,
         latitude: place.latitude,
@@ -166,21 +160,6 @@ export function PostJobForm(props: PostJobFormProps) {
     } catch {
       setFormError(strings.errors.generic);
     }
-  }
-
-  if (posted) {
-    return (
-      <View style={styles.success}>
-        <BodyText testID="post-job-success">{strings.postJob.success}</BodyText>
-        <SparklButton
-          accessibilityLabel={strings.postJob.title}
-          onPress={props.onPostAgain}
-          testID="post-job-again"
-          title={strings.postJob.title}
-          variant="secondary"
-        />
-      </View>
-    );
   }
 
   const properties = propertiesQuery.data ?? [];

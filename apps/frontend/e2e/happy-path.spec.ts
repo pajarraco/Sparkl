@@ -118,7 +118,7 @@ test("request, accept, chat, history refetch", async ({
         .getByTestId("host-chat-thread-screen")
         .filter({ visible: true }),
     ).toHaveCount(1);
-    await expect(host.page.getByRole("tab", { name: "Post" })).toBeVisible();
+    await expect(host.page.getByRole("tab", { name: "New Job" })).toBeVisible();
     await host.page.getByRole("button", { name: "Back" }).click();
     await expect(host.page.getByTestId("host-messages-screen")).toBeVisible();
 

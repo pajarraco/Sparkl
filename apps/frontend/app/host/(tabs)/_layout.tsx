@@ -1,6 +1,9 @@
 import { Tabs, router } from "expo-router";
 import { Platform } from "react-native";
-import { TabBarIcon } from "../../../components/TabBarIcon";
+import {
+  TAB_BAR_SCREEN_OPTIONS,
+  TabBarIcon,
+} from "../../../components/TabBarIcon";
 import { getTabsForRole } from "../../../providers/tabs";
 import { THEME_COLORS } from "../../../providers/theme";
 
@@ -14,6 +17,7 @@ export default function HostTabsLayout() {
     <Tabs
       backBehavior="history"
       screenOptions={{
+        ...TAB_BAR_SCREEN_OPTIONS,
         headerShown: false,
         tabBarActiveTintColor: THEME_COLORS.indigo,
         tabBarInactiveTintColor: THEME_COLORS.inkMute,

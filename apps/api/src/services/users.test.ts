@@ -5,6 +5,7 @@ import {
   type UsersStore,
   getProfile,
   getPublicCleanerProfile,
+  getRatingsForUsers,
   setAvailability,
   updateProfile,
   updateServiceArea,
@@ -36,6 +37,12 @@ class InMemoryUsersStore implements UsersStore {
 
   async findById(userId: string): Promise<User | null> {
     return this.users.get(userId) ?? null;
+  }
+
+  async findByIds(userIds: string[]): Promise<User[]> {
+    return userIds
+      .map((id) => this.users.get(id))
+      .filter((u): u is User => u !== undefined);
   }
 
   async update(
@@ -204,5 +211,32 @@ describe("getPublicCleanerProfile", () => {
     await expect(
       getPublicCleanerProfile(store, "99999999-9999-4999-8999-999999999999"),
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+});
+
+describe("getRatingsForUsers", () => {
+  it("returns a rating summary keyed by user id", async () => {
+    const store = storeWithCleaner();
+    const result = await getRatingsForUsers(store, [CLEANER_ID, HOST_ID]);
+    expect(result).toEqual({
+      [CLEANER_ID]: { avgRating: 4.8, completedJobCount: 12 },
+      [HOST_ID]: { avgRating: 4.8, completedJobCount: 12 },
+    });
+  });
+
+  it("omits unknown ids instead of throwing", async () => {
+    const store = storeWithCleaner();
+    const result = await getRatingsForUsers(store, [
+      CLEANER_ID,
+      "99999999-9999-4999-8999-999999999999",
+    ]);
+    expect(Object.keys(result)).toEqual([CLEANER_ID]);
+  });
+
+  it("de-duplicates ids and returns {} for an empty list", async () => {
+    const store = storeWithCleaner();
+    const result = await getRatingsForUsers(store, [CLEANER_ID, CLEANER_ID]);
+    expect(Object.keys(result)).toEqual([CLEANER_ID]);
+    expect(await getRatingsForUsers(store, [])).toEqual({});
   });
 });

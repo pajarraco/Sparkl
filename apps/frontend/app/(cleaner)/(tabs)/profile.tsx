@@ -192,10 +192,15 @@ export default function CleanerProfileScreen() {
   const [radiusKm, setRadiusKm] = useState<number | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
 
   // No explicit navigation here: the tab layout redirects to welcome once
   // the session clears. Navigating too caused a visible double reload.
+  // signingOut only guards against a double tap mid-request; the tab
+  // layout's redirect unmounts this screen once the session actually
+  // clears, so there is no "stuck" state to reset it from.
   async function handleSignOut(): Promise<void> {
+    setSigningOut(true);
     await authClient.signOut();
   }
 
@@ -385,6 +390,7 @@ export default function CleanerProfileScreen() {
         <Text style={styles.heading}>{strings.profile.settingsHeading}</Text>
         <SparklButton
           accessibilityLabel={strings.profile.signOut}
+          loading={signingOut}
           onPress={() => {
             void handleSignOut();
           }}

@@ -14,6 +14,7 @@ import { SparklButton } from "../../../../components/SparklButton";
 import { SparklTextField } from "../../../../components/SparklTextField";
 import { sparklTrpc } from "../../../../providers/app-providers";
 import { getStrings } from "../../../../providers/i18n";
+import { suggestionTrustLine } from "../../../../providers/job-detail";
 import { statusLabelFor } from "../../../../providers/my-jobs";
 import {
   type BoardFilterField,
@@ -37,7 +38,9 @@ import {
 
 // Cleaner Board (design.md Screen Inventory): ranked open jobs over one
 // jobs.listRanked query, filters for date / minimum price / distance as a
-// row of chips; each chip opens a bottom sheet with its one field (03 C).
+// row of chips; each chip opens a filter sheet with its one field (03 C),
+// anchored to the top instead of BottomSheet's default bottom (05 item 5)
+// so it doesn't compete with the tab bar for thumb reach.
 // Rows are memoized JobCards with stable keyExtractor pushing to the
 // cleaner Job Detail route. Loading shows card-shaped skeletons, never
 // a full-screen spinner; errors stay inline with a retry. Every
@@ -165,6 +168,16 @@ export default function CleanerBoardScreen() {
       : { latitude: serviceLat, longitude: serviceLng };
 
   const boardQuery = sparklTrpc.jobs.listRanked.useQuery(applied);
+  // Trust row (design.md Signature Element): the host's ★ rating, one
+  // batched query per page of results rather than one per card.
+  const hostIds = Array.from(
+    new Set((boardQuery.data?.jobs ?? []).map((item) => item.job.hostId)),
+  );
+  const ratingsQuery = sparklTrpc.users.ratingsFor.useQuery(
+    { userIds: hostIds },
+    { enabled: hostIds.length > 0 },
+  );
+  const ratings = ratingsQuery.data ?? {};
 
   function openSheet(field: BoardFilterField): void {
     setEditing(field);
@@ -206,22 +219,30 @@ export default function CleanerBoardScreen() {
   }
 
   const renderItem = useCallback(
-    ({ item }: { item: RankedJob }) => (
-      <JobCard
-        address={item.job.address}
-        metaLine={boardMetaLine(item.job, item.score)}
-        onPress={() => {
-          // push (not navigate): the detail is a stack screen, and push
-          // unconditionally pushes it. navigate stayed on /board in E2E.
-          router.push(stackHref("cleaner", segments, `job/${item.job.id}`));
-        }}
-        status={item.job.status}
-        statusLabel={statusLabelFor(item.job.status)}
-        testID={`cleaner-board-card-${item.job.id}`}
-        title={strings.jobCard.title}
-      />
-    ),
-    [strings, router, segments],
+    ({ item }: { item: RankedJob }) => {
+      const ratingSummary = ratings[item.job.hostId];
+      return (
+        <JobCard
+          address={item.job.address}
+          metaLine={boardMetaLine(item.job, item.score)}
+          onPress={() => {
+            // push (not navigate): the detail is a stack screen, and push
+            // unconditionally pushes it. navigate stayed on /board in E2E.
+            router.push(stackHref("cleaner", segments, `job/${item.job.id}`));
+          }}
+          status={item.job.status}
+          statusLabel={statusLabelFor(item.job.status)}
+          testID={`cleaner-board-card-${item.job.id}`}
+          title={strings.jobCard.title}
+          trustLine={
+            ratingSummary === undefined
+              ? undefined
+              : suggestionTrustLine(ratingSummary)
+          }
+        />
+      );
+    },
+    [strings, router, segments, ratings],
   );
 
   const jobs = boardQuery.data?.jobs;
@@ -261,6 +282,7 @@ export default function CleanerBoardScreen() {
       <BottomSheet
         closeLabel={strings.filters.close}
         onClose={closeSheet}
+        position="top"
         testID="cleaner-board-sheet"
         title={
           FILTER_CHIPS.find((chip) => chip.field === editing)?.name() ??

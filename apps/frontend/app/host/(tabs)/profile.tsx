@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { ReviewsReceived } from "../../../components/ReviewsReceived";
 import { Screen } from "../../../components/Screen";
@@ -19,10 +20,15 @@ const styles = StyleSheet.create({
 export default function HostProfileScreen() {
   const strings = getStrings();
   const profileQuery = sparklTrpc.users.getProfile.useQuery();
+  const [signingOut, setSigningOut] = useState(false);
 
   // No explicit navigation here: the tab layout redirects to welcome once
   // the session clears. Navigating too caused a visible double reload.
+  // signingOut only guards against a double tap mid-request; the tab
+  // layout's redirect unmounts this screen once the session actually
+  // clears, so there is no "stuck" state to reset it from.
   async function handleSignOut(): Promise<void> {
+    setSigningOut(true);
     await authClient.signOut();
   }
 
@@ -34,6 +40,7 @@ export default function HostProfileScreen() {
       <View style={styles.actions}>
         <SparklButton
           accessibilityLabel={strings.profile.signOut}
+          loading={signingOut}
           onPress={() => {
             void handleSignOut();
           }}

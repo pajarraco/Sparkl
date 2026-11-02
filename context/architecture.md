@@ -65,7 +65,7 @@ PostgreSQL via Docker locally; Drizzle ORM with versioned migrations in the repo
 
 | Router | Procedures |
 | ------ | ---------- |
-| `users` | profile get/update, availability set, cleaner public profile |
+| `users` | profile get/update, availability set, cleaner public profile, `ratingsFor` (batched ★ rating + completed-job count lookup for job-card trust rows) |
 | `properties` | create, list (active or all), update, archive (host-owned only) |
 | `jobs` | create (by propertyId snapshot or a direct address), ranked list (cleaner board), my jobs (host), status transitions, cancel |
 | `jobRequests` | request (cleaner), offer (host), accept, decline, withdraw, `listForJob` (host), `listMine` (cleaner) — the only path to `claimed` |

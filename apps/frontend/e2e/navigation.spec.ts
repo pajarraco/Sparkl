@@ -33,7 +33,7 @@ test("host sees host tabs, cleaner sees cleaner tabs", async ({
   browser,
 }, testInfo) => {
   await signUpAs(page, "host", testInfo.workerIndex);
-  for (const tab of ["My jobs", "Post", "Messages", "Profile"]) {
+  for (const tab of ["My jobs", "New Job", "Messages", "Profile"]) {
     await expect(page.getByRole("tab", { name: tab })).toBeVisible();
   }
   await expect(page.getByRole("tab", { name: "Board" })).toHaveCount(0);
@@ -44,13 +44,15 @@ test("host sees host tabs, cleaner sees cleaner tabs", async ({
   for (const tab of ["Board", "My jobs", "Messages", "Profile"]) {
     await expect(cleanerPage.getByRole("tab", { name: tab })).toBeVisible();
   }
-  await expect(cleanerPage.getByRole("tab", { name: "Post" })).toHaveCount(0);
+  await expect(cleanerPage.getByRole("tab", { name: "New Job" })).toHaveCount(
+    0,
+  );
   await fresh.close();
 });
 
 test("each tab changes the URL to its route", async ({ page }, testInfo) => {
   await signUpAs(page, "host", testInfo.workerIndex);
-  await page.getByRole("tab", { name: "Post" }).click();
+  await page.getByRole("tab", { name: "New Job" }).click();
   await expect(page).toHaveURL(/\/post$/);
   await page.getByRole("tab", { name: "My jobs" }).click();
   await expect(page).toHaveURL(/\/my-jobs$/);
@@ -58,7 +60,7 @@ test("each tab changes the URL to its route", async ({ page }, testInfo) => {
 
 test("history back returns to the previous tab", async ({ page }, testInfo) => {
   await signUpAs(page, "host", testInfo.workerIndex);
-  await page.getByRole("tab", { name: "Post" }).click();
+  await page.getByRole("tab", { name: "New Job" }).click();
   await expect(page).toHaveURL(/\/post$/);
   await page.getByRole("tab", { name: "My jobs" }).click();
   await expect(page).toHaveURL(/\/my-jobs$/);
@@ -156,7 +158,7 @@ test("job detail keeps the tab bar and Back returns to My Jobs", async ({
 }, testInfo) => {
   const { page, close } = await hostOnJobDetail(browser, testInfo.workerIndex);
   try {
-    await expect(page.getByRole("tab", { name: "Post" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "New Job" })).toBeVisible();
     await page.getByRole("button", { name: "Back" }).click();
     await expect(page.getByTestId("host-my-jobs-screen")).toBeVisible();
     await expect(page).toHaveURL(/\/my-jobs$/);

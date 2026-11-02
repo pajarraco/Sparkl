@@ -8,6 +8,7 @@ import { Screen } from "../../../../components/Screen";
 import { SparklButton } from "../../../../components/SparklButton";
 import { sparklTrpc } from "../../../../providers/app-providers";
 import { getStrings } from "../../../../providers/i18n";
+import { suggestionTrustLine } from "../../../../providers/job-detail";
 import {
   type MyJobsSegment,
   filterJobsBySegment,
@@ -81,6 +82,20 @@ export default function HostMyJobsScreen() {
   // Request badge (03 D): one grouped query for every open job's card,
   // never one per card.
   const pendingCountsQuery = sparklTrpc.jobRequests.pendingCounts.useQuery();
+  // Trust row (design.md Signature Element): the claimed cleaner's ★
+  // rating, one batched query per screen rather than one per card.
+  const cleanerIds = Array.from(
+    new Set(
+      (query.data ?? [])
+        .map((job) => job.claimedByCleanerId)
+        .filter((id): id is string => id !== null),
+    ),
+  );
+  const ratingsQuery = sparklTrpc.users.ratingsFor.useQuery(
+    { userIds: cleanerIds },
+    { enabled: cleanerIds.length > 0 },
+  );
+  const ratings = ratingsQuery.data ?? {};
 
   const segmentLabel = useCallback(
     (value: MyJobsSegment): string => {
@@ -95,6 +110,10 @@ export default function HostMyJobsScreen() {
   const renderItem = useCallback(
     ({ item }: { item: Job }) => {
       const count = pendingCounts[item.id];
+      const ratingSummary =
+        item.claimedByCleanerId === null
+          ? undefined
+          : ratings[item.claimedByCleanerId];
       return (
         <JobCard
           address={item.address}
@@ -109,10 +128,15 @@ export default function HostMyJobsScreen() {
           statusLabel={statusLabelFor(item.status)}
           testID={`host-job-card-${item.id}`}
           title={strings.jobCard.title}
+          trustLine={
+            ratingSummary === undefined
+              ? undefined
+              : suggestionTrustLine(ratingSummary)
+          }
         />
       );
     },
-    [strings, router, segments, pendingCounts],
+    [strings, router, segments, pendingCounts, ratings],
   );
 
   const jobs =
