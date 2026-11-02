@@ -16,3 +16,4 @@ export * from "./job-assistant";
 export * from "./solutions";
 export * from "./job-requests";
 export * from "./job-request-inputs";
+export * from "./properties";

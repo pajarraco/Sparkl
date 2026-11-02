@@ -175,6 +175,32 @@ async function main() {
   );
   console.log("cleaner availability: set");
 
+  // 03 E: the demo job is posted for a demo property, not a raw address,
+  // so the seeded host has something to see on the Properties tab too.
+  const myProperties = await trpcGet(
+    "properties.list",
+    { includeArchived: false },
+    host.jar,
+  );
+  let property = myProperties.find((p) => p.address === JOB_ADDRESS);
+  if (property) {
+    console.log(`property ${JOB_ADDRESS}: reused ${property.id}`);
+  } else {
+    property = await trpcPost(
+      "properties.create",
+      {
+        name: "Demo Lane",
+        address: JOB_ADDRESS,
+        latitude: 25.7617,
+        longitude: -80.1918,
+        sizeSqm: 80,
+        defaultNotes: "Demo turnover clean — obviously fake seed data",
+      },
+      host.jar,
+    );
+    console.log(`property ${JOB_ADDRESS}: created ${property.id}`);
+  }
+
   const myJobs = await trpcGet("jobs.myJobs", {}, host.jar);
   const existing = myJobs.find((job) => job.address === JOB_ADDRESS);
   if (existing) {
@@ -184,12 +210,9 @@ async function main() {
   const created = await trpcPost(
     "jobs.create",
     {
-      address: JOB_ADDRESS,
-      latitude: 25.7617,
-      longitude: -80.1918,
+      propertyId: property.id,
       windowStart,
       windowEnd,
-      sizeSqm: 80,
       notes: "Demo turnover clean — obviously fake seed data",
       priceMinorUnits: 8500,
     },

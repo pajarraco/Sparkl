@@ -12,6 +12,7 @@ import {
   drizzleJobRequestsStore,
   drizzleJobsStore,
   drizzleMessagesRead,
+  drizzlePropertiesStore,
   drizzleUsersStore,
   systemClock,
 } from "../../db/stores.js";
@@ -30,11 +31,41 @@ export const jobsRouter = router({
           code: "FORBIDDEN",
           message: "Role missing from session.",
         });
-      return jobsService.createJob(drizzleJobsStore(ctx.db), systemClock, {
-        hostId: ctx.sessionUserId,
-        hostRole: ctx.role,
-        input,
-      });
+      const job = await jobsService.createJob(
+        drizzleJobsStore(ctx.db),
+        systemClock,
+        {
+          hostId: ctx.sessionUserId,
+          hostRole: ctx.role,
+          input,
+          properties: drizzlePropertiesStore(ctx.db),
+        },
+      );
+      // 02 "go with {cleaner}" is a real offer now that 03 D exists: the
+      // pin already proved the cleaner has worked for this host
+      // (createJob's own check), so the offer's own re-checks cannot fail
+      // it — best effort, never blocks the post itself.
+      if (input.preferredCleanerId !== undefined) {
+        try {
+          await jobRequestsService.offerJob(
+            {
+              jobs: drizzleJobsStore(ctx.db),
+              users: drizzleUsersStore(ctx.db),
+              requests: drizzleJobRequestsStore(ctx.db),
+            },
+            systemClock,
+            {
+              jobId: job.id,
+              cleanerId: input.preferredCleanerId,
+              hostId: ctx.sessionUserId,
+              hostRole: ctx.role,
+            },
+          );
+        } catch {
+          // Best effort: the job is already posted either way.
+        }
+      }
+      return job;
     }),
 
   listOpen: authedProcedure

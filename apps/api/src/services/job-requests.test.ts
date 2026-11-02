@@ -6,6 +6,7 @@ import {
   type JobRequestsStores,
   acceptJobRequest,
   closePendingForCancelledJob,
+  countPendingRequestsByHost,
   declineJobRequest,
   listMyJobRequests,
   listRequestsForJob,
@@ -134,6 +135,16 @@ function makeFakes(
           r.initiatedBy === "cleaner" &&
           r.status === "pending",
       ).length;
+    },
+    async countPendingCleanerRequestsByHost(hostId) {
+      const counts: Record<string, number> = {};
+      for (const r of requestsById.values()) {
+        if (r.initiatedBy !== "cleaner" || r.status !== "pending") continue;
+        const job = jobsById.get(r.jobId);
+        if (!job || job.hostId !== hostId) continue;
+        counts[r.jobId] = (counts[r.jobId] ?? 0) + 1;
+      }
+      return counts;
     },
     async acceptRequest({ requestId, jobId, cleanerId, nowIso }) {
       const job = jobsById.get(jobId);
@@ -655,5 +666,39 @@ describe("job-requests service", () => {
     });
     await closePendingForCancelledJob(stores, job.id);
     expect(requests.get(request.id)?.status).toBe("closed");
+  });
+
+  it("countPendingRequestsByHost: only this host's jobs, only pending cleaner requests", async () => {
+    const mine = makeJob({ hostId: HOST });
+    const minePaid = makeJob({ hostId: HOST });
+    const someoneElses = makeJob({ hostId: STRANGER });
+    const { stores } = makeFakes(
+      [mine, minePaid, someoneElses],
+      [makeUser({ id: CLEANER }), makeUser({ id: OTHER_CLEANER })],
+    );
+    await requestJob(stores, clock, {
+      jobId: mine.id,
+      cleanerId: CLEANER,
+      cleanerRole: "cleaner",
+    });
+    await requestJob(stores, clock, {
+      jobId: mine.id,
+      cleanerId: OTHER_CLEANER,
+      cleanerRole: "cleaner",
+    });
+    await requestJob(stores, clock, {
+      jobId: someoneElses.id,
+      cleanerId: CLEANER,
+      cleanerRole: "cleaner",
+    });
+    // A host-initiated offer never counts as a cleaner request.
+    await offerJob(stores, clock, {
+      jobId: minePaid.id,
+      cleanerId: CLEANER,
+      hostId: HOST,
+      hostRole: "host",
+    });
+    const counts = await countPendingRequestsByHost(stores, HOST);
+    expect(counts).toEqual({ [mine.id]: 2 });
   });
 });

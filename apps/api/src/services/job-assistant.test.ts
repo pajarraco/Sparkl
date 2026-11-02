@@ -820,6 +820,60 @@ describe("createJobAssistant", () => {
       expect(result.reply).toBe("Same as last time?");
     });
 
+    it("offers list_properties when a properties store is given, and answers from it", async () => {
+      const { llm, requests } = scripted([
+        { toolCalls: [call("c1", "list_properties", {})] },
+        { content: "Which property is this for?" },
+      ]);
+      const { sessions } = sessionsStub();
+      const assistant = createJobAssistant({
+        llm,
+        geo: geoStub(),
+        now: fixedNow,
+      });
+
+      const stores = memoryStores({ jobs: [] });
+      const result = await assistant.turn("host-1", input("post a job"), {
+        sessions,
+        memory: {
+          ...stores,
+          properties: {
+            listByHost: async () => [
+              {
+                id: "prop-1",
+                hostId: "host-1",
+                name: "Beach Studio",
+                address: "99 Property Lane",
+                latitude: -33.9,
+                longitude: 151.3,
+                sizeSqm: 70,
+                defaultNotes: "Mop the hall",
+                archivedAt: null,
+                createdAt: "2026-10-20T00:00:00.000Z",
+                updatedAt: "2026-10-20T00:00:00.000Z",
+              },
+            ],
+          },
+        },
+      });
+
+      expect(requests[0]?.tools?.map((t) => t.name)).toContain(
+        "list_properties",
+      );
+      expect(toolOutput(requests[1], "c1")).toEqual({
+        properties: [
+          {
+            id: "prop-1",
+            name: "Beach Studio",
+            address: "99 Property Lane",
+            sizeSqm: 70,
+            defaultNotes: "Mop the hall",
+          },
+        ],
+      });
+      expect(result.reply).toBe("Which property is this for?");
+    });
+
     it("pre-fills a single property and tells the model to confirm it", async () => {
       const { llm, requests } = scripted([
         { content: "At 12 Ocean St as usual?" },

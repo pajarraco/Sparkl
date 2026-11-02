@@ -8,6 +8,7 @@ import {
 import {
   drizzleAssistantSessionsStore,
   drizzleJobsStore,
+  drizzlePropertiesStore,
   drizzleReviewsStore,
   drizzleSolutionsStore,
   drizzleUsersStore,
@@ -39,6 +40,7 @@ export const jobAssistantRouter = router({
           users,
           reviews: drizzleReviewsStore(ctx.db),
           sessions,
+          properties: drizzlePropertiesStore(ctx.db),
         },
         pricing: drizzleJobsStore(ctx.db),
         solutions: {

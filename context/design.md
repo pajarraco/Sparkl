@@ -1,6 +1,6 @@
 # Sparkl — Design
 
-> Status: planned — no implementation exists yet. This page is the visual spec. Scope lives in [project.md](project.md), system structure in [architecture.md](architecture.md).
+> Status: implemented (MVP build). This page is the visual spec and the record of the UI as shipped. Scope lives in [project.md](project.md), system structure in [architecture.md](architecture.md).
 
 ## Design Thesis
 
@@ -57,12 +57,8 @@ One family. **Elms Sans** (Google Fonts, variable 100–900, OFL) for display an
 
 Role-based bottom tabs. The tab bar changes with the signed-in role:
 
-| Host | Cleaner |
-| ---- | ------- |
-| My Jobs | Board |
-| Post (center, prominent `+`) | My Jobs |
-| Messages | Messages |
-| Profile | Profile |
+- **Host (five tabs, 03 E):** My Jobs · Properties · Post (center, prominent `+`) · Messages · Profile.
+- **Cleaner (four tabs):** Board · My Jobs · Messages · Profile.
 
 - Active tab: `indigo` icon + label. Inactive: `ink-mute`. Unread counts badge on Messages.
 - Detail screens (job detail, chat thread, review) push inside the tab they were opened from, and the tab bar stays visible, so the user can jump to another tab from a job or a chat. Each tab keeps its own history; tapping the active tab again returns to its root.
@@ -71,7 +67,7 @@ Role-based bottom tabs. The tab bar changes with the signed-in role:
 
 ## Screen Inventory
 
-**Host:** My Jobs (open / active / history) · Post Job (assistant chat with a live draft card, a price-hint line and a "usual cleaner pinned" line; "Review" / "Use the form instead" opens the form: address map picker, window, size/notes, price) · Job Detail (status, ranked cleaner suggestions, chat entry, lifecycle actions) · Chat Thread · Leave Review · Profile.
+**Host:** My Jobs (open / active / history) · Properties (list, add/edit with the address map picker, archive instead of delete) · Post Job (assistant chat with a live draft card, a price-hint line and a "usual cleaner pinned" line; "Review" / "Use the form instead" opens the form: a property picker — or "Add your first property" with none saved — window, size/notes, price) · Job Detail (status, ranked cleaner suggestions, chat entry, lifecycle actions) · Chat Thread · Leave Review · Profile.
 
 **Cleaner:** Board (ranked jobs + filters: date, distance, price) · Job Detail (full info, claim CTA) · My Jobs (claimed / active / history) · Chat Thread · Leave Review · Profile (photo, service area, availability editor).
 
@@ -105,9 +101,11 @@ The one memorable component, used on the Board, My Jobs, and suggestions:
 - **Filter chips (Board):** a row above the list (it wraps to a second line rather than scrolling sideways, so no chip is ever hidden), one chip per filter (date `calendar`, distance `navigation`, price `dollar-sign`, Feather 16). Inactive: white fill, 1px `stone` border, `ink-soft` icon and label. Active: `paper-2` fill, `indigo` border, icon and label, and the label shows the value ("Fri, Jun 6", "≤ 10 km", "≥ $80"). Radius 6, 44pt touch target, Small 500 label. A "Clear all" chip (no icon) appears at the end while any filter is active.
 - **Proposal chips (Post assistant):** under the assistant reply that offered a saved answer, one row per proposal: the proposal's label (Small 500, `ink`), then two chips. "Use this" uses the active filter-chip look (`paper-2` fill, `indigo` border and label); "Not this" uses the inactive look (`paper` fill, 1px `stone` border, `ink-soft` label). Radius 6, 44pt touch targets, wrapping rather than scrolling sideways. A tapped row is removed at once, with no confirmation, so the chat stays quiet; a failed vote keeps the chips and shows the assistant error line.
 - **Bottom sheet:** a `paper` panel anchored to the bottom over a `ink` scrim at 40% opacity, radius 14 on the top corners only, 1px `stone` top border, no shadow. Holds one field, titled with the filter's short name, and its actions (primary Apply, secondary Clear). Tapping the scrim or Escape closes it without applying.
+- **Property row (Properties tab):** one per property, newest first. Name (H3, `ink`), address as an uppercase caption in `ink-soft`, size if set (Small, tabular, `ink-soft`). `stone` border, radius up to 14, no rail, no shadow; on press the name shifts to `indigo` and opens the edit form. An "Add property" primary button sits above the list; with none saved the list shows "Add your first property" instead of an empty-state line.
 - **Thread row (Messages tab):** one per conversation, newest first. 40pt initials avatar (as Avatars), the other party's name (Body 500, `ink`), the job address as an uppercase caption in `ink-soft`, a one-line preview of the last message (Small, `ink-soft`, "You: " when the viewer wrote it), and the time or day at the right (Caption, tabular). Stone border, radius up to 14, no rail, no shadow; on press the name shifts to `indigo`.
 - **Back button:** Feather `chevron-left` (24) in `ink`, icon only, no fill or border, 44pt touch target, accessibility label "Back". Sits at the top-left, above the screen title; the pressed state shifts the icon to `indigo`.
 - **Badges/tags:** `orange-tint` background with `orange-deep` text, or `paper-2` with `ink-soft`.
+- **Request badge (host My Jobs card, open jobs only):** a small pill beside the status pill, `orange-tint` fill and `orange-deep` text, showing the pending cleaner-request count ("2 requests" / "1 request"). Hidden when the count is zero. Tapping the card still opens Job Detail, where the Requests section lists them individually.
 - **Stars:** ★ glyphs in `orange-deep`, 5-step, tappable in the review form, read-only elsewhere.
 - **Avatars:** photo or initials on `paper-2`, full-round, `stone` ring.
 - **Mic button (Post assistant composer):** a round 44pt icon button beside the composer input, Feather `mic` (20, `indigo`). Idle: `paper` fill, 1px `stone` border. Recording: `danger`-tint fill, `danger` border, icon swaps to `mic-off`, with a live "Recording… tap to stop" caption (Small, `ink-soft`) next to it — tap again to stop, no separate stop button. Transcribing: same idle look plus a small inline spinner in place of the icon; the button is disabled while transcribing. The transcript lands in the composer text, never auto-sent, so the host can edit it. On Android (no WAV recording path yet) or unsupported web browsers, the button is hidden rather than shown disabled, so the composer looks the same as it does today. Error: the composer's existing error-line style (danger text, `accessibilityLiveRegion="polite"`) shows the mic error string; the input still works.

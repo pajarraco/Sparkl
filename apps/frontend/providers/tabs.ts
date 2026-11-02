@@ -5,11 +5,18 @@ import { getStrings } from "./i18n";
 // i18n package; routes match the expo-router group layouts in app/.
 // Icons are Feather names rendered by components/TabBarIcon.tsx.
 
-export type TabKey = "board" | "myJobs" | "post" | "messages" | "profile";
+export type TabKey =
+  | "board"
+  | "myJobs"
+  | "properties"
+  | "post"
+  | "messages"
+  | "profile";
 
 export type TabIconName =
   | "list"
   | "briefcase"
+  | "home"
   | "plus-circle"
   | "message-circle"
   | "user";
@@ -38,6 +45,13 @@ export function getTabsForRole(role: AppRole): TabDef[] {
         route: "/host/my-jobs",
         screen: "(my-jobs)",
         icon: "briefcase",
+      },
+      {
+        key: "properties",
+        title: tabs.properties,
+        route: "/host/properties",
+        screen: "(properties)",
+        icon: "home",
       },
       {
         key: "post",

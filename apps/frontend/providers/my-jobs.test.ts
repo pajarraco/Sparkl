@@ -9,6 +9,7 @@ import {
   formatPriceMinorUnits,
   hostMetaLine,
   pillKeyForStatus,
+  requestBadgeLabel,
   segmentForStatus,
   spotlightCleanerJob,
   statusLabelFor,
@@ -145,5 +146,11 @@ describe("cleaner my-jobs segments", () => {
     expect(cleanerMetaLine(jobWithStatus("claimed"))).toBe(
       hostMetaLine(jobWithStatus("claimed")),
     );
+  });
+
+  it("singularizes the request badge label", () => {
+    expect(requestBadgeLabel(1)).toBe("1 request");
+    expect(requestBadgeLabel(2)).toBe("2 requests");
+    expect(requestBadgeLabel(0)).toBe("0 requests");
   });
 });

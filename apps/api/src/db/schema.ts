@@ -116,6 +116,34 @@ export const cleanerAvailability = pgTable(
   (t) => [primaryKey({ columns: [t.cleanerId, t.weekday, t.startTime] })],
 );
 
+// A host's cleaning property (03 E): address, coordinates and a default
+// checklist, added once and reused across many jobs. Archived rather than
+// deleted once a job references it, so job history never dangles.
+export const properties = pgTable(
+  "properties",
+  {
+    id: text("id").primaryKey(),
+    hostId: text("host_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    address: text("address").notNull(),
+    latitude: doublePrecision("latitude").notNull(),
+    longitude: doublePrecision("longitude").notNull(),
+    sizeSqm: doublePrecision("size_sqm"),
+    defaultNotes: text("default_notes"),
+    archivedAt: timestamp("archived_at", { withTimezone: true, mode: "date" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [index("properties_host_idx").on(t.hostId, t.archivedAt)],
+);
+
 export const jobs = pgTable(
   "jobs",
   {
@@ -123,6 +151,13 @@ export const jobs = pgTable(
     hostId: text("host_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
+    // Nullable: a job posted before 03 E, or through the assistant with a
+    // one-off address, has no property. Address/lat/lng/size are always a
+    // snapshot on the job itself — copied from the property at create time
+    // when one is picked — so history and ranking never re-read properties.
+    propertyId: text("property_id").references(() => properties.id, {
+      onDelete: "set null",
+    }),
     address: text("address").notNull(),
     latitude: doublePrecision("latitude").notNull(),
     longitude: doublePrecision("longitude").notNull(),

@@ -11,6 +11,7 @@ import type {
   SessionCorrections,
 } from "./assistant-sessions.js";
 import type { JobsStore } from "./jobs.js";
+import type { PropertiesStore } from "./properties.js";
 import type { ReviewsStore } from "./reviews.js";
 import type { UsersStore } from "./users.js";
 
@@ -19,6 +20,10 @@ export interface HostMemoryStores {
   users: Pick<UsersStore, "findById">;
   reviews: Pick<ReviewsStore, "findReviewByJobAndAuthor">;
   sessions: Pick<AssistantSessionsStore, "listFinishedByHost">;
+  // 03 E: when present, an exactly-one-active-property host overrides the
+  // job-address heuristic below. Optional so hosts from before 03 E (and
+  // every pre-existing test) keep working off their job history alone.
+  properties?: Pick<PropertiesStore, "listByHost">;
 }
 
 export interface HostJobSummary {
@@ -203,9 +208,27 @@ export async function buildHostMemory(
     }
   }
   const finished = await stores.sessions.listFinishedByHost(hostId);
+  let singleProperty = findSingleProperty(all);
+  if (stores.properties) {
+    const active = await stores.properties.listByHost(hostId, false);
+    if (active.length === 1) {
+      const only = active[0];
+      if (only) {
+        singleProperty = {
+          address: only.address,
+          latitude: only.latitude,
+          longitude: only.longitude,
+        };
+      }
+    } else if (active.length > 1) {
+      // More than one property: "single property" no longer holds, even
+      // if every job so far happens to share one address.
+      singleProperty = null;
+    }
+  }
   return {
     recentJobs: recentJobSummaries(all),
-    singleProperty: findSingleProperty(all),
+    singleProperty,
     usualCleaner,
     correctionHints: correctionHints(finished),
   };

@@ -152,6 +152,22 @@ export const PIN_USUAL_CLEANER_TOOL: LlmTool = {
 
 const emptyArgsSchema = z.object({}).strict();
 
+// Offered only when the router passes a properties store (03 E). Lets the
+// model offer the host's saved properties instead of asking for a raw
+// address every time, once there is more than one to choose between.
+export const LIST_PROPERTIES_TOOL: LlmTool = {
+  name: "list_properties",
+  description:
+    "The host's saved properties (name, address, size, checklist). Call it before asking for an address, so the host can pick one instead of retyping it.",
+  parameters: {
+    type: "object",
+    additionalProperties: false,
+    properties: {},
+  },
+};
+
+const PROPERTIES_LIST_CAP = 10;
+
 // The draft's address and size as a price query, or null until both are set.
 export function priceQueryOf(draft: JobDraft): PriceQuery | null {
   const sizeSqm = Number(draft.sizeSqm);
@@ -246,12 +262,17 @@ export function buildSystemPrompt(args: {
   memory?: HostMemory | null;
   canSuggestPrice?: boolean;
   canFindSolutions?: boolean;
+  canListProperties?: boolean;
 }): string {
   const memory = args.memory ?? null;
   const facts: string[] = [];
   if (memory?.singleProperty) {
     facts.push(
       `The host has a single property at ${memory.singleProperty.address}, already in the draft. Confirm it in passing ("At ${memory.singleProperty.address} as usual?"), never ask for the address.`,
+    );
+  } else if (args.canListProperties) {
+    facts.push(
+      "For the address, call list_properties first. If the host has saved properties, ask which one instead of a raw address; use its address and, if it has one, its checklist for the notes. With none saved, ask for the address as usual.",
     );
   } else if (memory) {
     facts.push(
@@ -445,6 +466,7 @@ export function createJobAssistant(deps: JobAssistantDeps): JobAssistant {
       if (memory) tools.push(HOST_HISTORY_TOOL);
       if (pricing) tools.push(SUGGEST_PRICE_TOOL);
       if (usualOffer) tools.push(PIN_USUAL_CLEANER_TOOL);
+      if (options?.memory?.properties) tools.push(LIST_PROPERTIES_TOOL);
       const solutionTools = options?.solutions
         ? createSolutionTools({
             store: options.solutions.store,
@@ -520,6 +542,9 @@ export function createJobAssistant(deps: JobAssistantDeps): JobAssistant {
             memory: offerMemory,
             canSuggestPrice: pricing !== undefined,
             canFindSolutions: solutionTools !== null,
+            canListProperties:
+              !memory?.singleProperty &&
+              options?.memory?.properties !== undefined,
           }),
         },
         ...input.messages.map(
@@ -553,6 +578,31 @@ export function createJobAssistant(deps: JobAssistantDeps): JobAssistant {
           const parsed = hostHistoryArgsSchema.safeParse(args);
           if (!parsed.success) return { error: "invalid arguments" };
           return { jobs: memory.recentJobs };
+        }
+        if (call.name === "list_properties") {
+          if (!options?.memory?.properties) {
+            return { error: "no properties available" };
+          }
+          if (!emptyArgsSchema.safeParse(args).success) {
+            return { error: "invalid arguments" };
+          }
+          try {
+            const active = await options.memory.properties.listByHost(
+              userId,
+              false,
+            );
+            return {
+              properties: active.slice(0, PROPERTIES_LIST_CAP).map((p) => ({
+                id: p.id,
+                name: p.name,
+                address: p.address,
+                sizeSqm: p.sizeSqm,
+                defaultNotes: p.defaultNotes,
+              })),
+            };
+          } catch {
+            return { error: "properties unavailable" };
+          }
         }
         if (call.name === "geocode_address") {
           const parsed = geocodeArgsSchema.safeParse(args);

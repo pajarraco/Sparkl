@@ -19,6 +19,7 @@ export const en = {
   tabs: {
     board: "Board",
     myJobs: "My jobs",
+    properties: "Properties",
     post: "Post",
     messages: "Messages",
     profile: "Profile",
@@ -49,6 +50,31 @@ export const en = {
     pickAddress: "Pick the address from the list or drop the pin on the map.",
     mapHint: "Drag the pin to the exact entrance.",
     osmAttribution: "© OpenStreetMap contributors",
+  },
+  properties: {
+    title: "Properties",
+    addProperty: "Add property",
+    emptyTitle: "No properties yet",
+    emptyHint: "Add your first property to post jobs for it.",
+    nameLabel: "Property name",
+    namePlaceholder: "Beach Studio",
+    addressLabel: "Address",
+    sizeLabel: "Size",
+    sizePlaceholder: "2 bed, 2 bath",
+    notesLabel: "Default checklist for this property",
+    notesPlaceholder: "Mop the hall, dust the shelves",
+    save: "Save property",
+    saved: "Property saved.",
+    archive: "Archive property",
+    archived: "Property archived.",
+    archiveConfirm:
+      "Archiving removes it from the picker on new jobs. Past jobs keep their own copy.",
+  },
+  postJobProperty: {
+    label: "Property",
+    placeholder: "Choose a property",
+    addFirst: "Add your first property",
+    noneSaved: "You have no saved properties yet.",
   },
   assistant: {
     intro:

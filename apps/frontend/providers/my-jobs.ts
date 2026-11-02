@@ -148,3 +148,9 @@ export function hostMetaLine(job: Job): string {
   if (job.sizeSqm !== null) parts.push(`${job.sizeSqm} m²`);
   return parts.join(" · ");
 }
+
+// Request badge (design.md, host My Jobs card): "N request(s)", hidden by
+// the caller when the count is zero or undefined.
+export function requestBadgeLabel(count: number): string {
+  return count === 1 ? "1 request" : `${count} requests`;
+}

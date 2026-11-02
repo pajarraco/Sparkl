@@ -22,6 +22,7 @@ export interface JobCardProps {
   trustLine?: string | undefined;
   status: JobStatus;
   statusLabel: string;
+  requestBadgeLabel?: string | undefined;
   onPress?: (() => void) | undefined;
   testID?: string | undefined;
 }
@@ -89,6 +90,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
   },
+  pillRow: {
+    flexDirection: "row",
+    gap: THEME_SPACING.rowMin,
+  },
+  requestBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: THEME_COLORS.orangeTint,
+    borderRadius: THEME_RADII.control,
+    paddingHorizontal: THEME_SPACING.rowMin,
+    paddingVertical: 2,
+  },
+  requestBadgeText: {
+    fontFamily: THEME_FONT_FAMILY.medium,
+    fontSize: 12,
+    lineHeight: 16,
+    color: THEME_COLORS.orangeDeep,
+  },
 });
 
 function JobCardInner(props: JobCardProps) {
@@ -122,10 +140,22 @@ function JobCardInner(props: JobCardProps) {
                 {props.trustLine}
               </Text>
             )}
-            <View style={[styles.pill, { backgroundColor: pill.background }]}>
-              <Text style={[styles.pillText, { color: pill.text }]}>
-                {props.statusLabel}
-              </Text>
+            <View style={styles.pillRow}>
+              <View style={[styles.pill, { backgroundColor: pill.background }]}>
+                <Text style={[styles.pillText, { color: pill.text }]}>
+                  {props.statusLabel}
+                </Text>
+              </View>
+              {props.requestBadgeLabel === undefined ? null : (
+                <View
+                  style={styles.requestBadge}
+                  testID="job-card-request-badge"
+                >
+                  <Text style={styles.requestBadgeText}>
+                    {props.requestBadgeLabel}
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
         </View>

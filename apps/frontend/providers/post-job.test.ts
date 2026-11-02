@@ -105,4 +105,26 @@ describe("validatePostJob", () => {
     expect(result.data).toBeNull();
     expect(result.errors.latitude).toBe("Enter a valid number.");
   });
+
+  it("a propertyId skips the address and coordinate checks (03 E)", () => {
+    const result = validatePostJob({
+      date: "2026-11-07",
+      windowStart: "09:00",
+      windowEnd: "13:00",
+      price: "75",
+      propertyId: "11111111-1111-4111-8111-111111111111",
+    });
+    expect(result.errors.address).toBeUndefined();
+    expect(result.errors.latitude).toBeUndefined();
+    expect(result.errors.longitude).toBeUndefined();
+    expect(result.data).toMatchObject({
+      propertyId: "11111111-1111-4111-8111-111111111111",
+      windowStart: "2026-11-07T09:00:00Z",
+      windowEnd: "2026-11-07T13:00:00Z",
+      priceMinorUnits: 7500,
+    });
+    expect(result.data?.address).toBeUndefined();
+    expect(result.data?.latitude).toBeUndefined();
+    expect(result.data?.longitude).toBeUndefined();
+  });
 });

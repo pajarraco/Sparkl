@@ -7,11 +7,11 @@ Instructions for AI agents and human contributors working in this repo.
 Read these before doing anything:
 
 - `context/project.md` — product scope, goals, MVP features, demo script
-- `context/architecture.md` — planned system design, data flows, trust boundaries
-- `context/design.md` — UI design, look and feel (when created)
-- `context/code-standard.md` — code style, testing, validation, libraries (when created)
-- `context/rules.md` — dos and don'ts (when created)
-- `context/tasks.md` — pending and completed work (when created)
+- `context/architecture.md` — system design, data flows, trust boundaries
+- `context/design.md` — UI design, look and feel
+- `context/code-standard.md` — code style, testing, validation, libraries
+- `context/rules.md` — dos and don'ts
+- `context/tasks.md` — pending and completed work
 
 The implementation exists. The `context/` files are the build spec and the record of decisions; where code and a spec differ, say so in `context/tasks.md` rather than editing history.
 

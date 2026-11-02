@@ -5,6 +5,7 @@ import type {
   JobRequest,
   JobStatus,
   Message,
+  Property,
   Review,
   SolutionTag,
   User,
@@ -17,7 +18,16 @@ import {
   solutionStatusSchema,
   solutionTagSchema,
 } from "@sparkl/shared";
-import { and, count, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
+import {
+  and,
+  count,
+  desc,
+  eq,
+  inArray,
+  isNotNull,
+  isNull,
+  sql,
+} from "drizzle-orm";
 import type { AssistantSessionsStore } from "../services/assistant-sessions.js";
 import { ChatError, type ChatStore } from "../services/chat.js";
 import {
@@ -30,6 +40,7 @@ import {
   type JobsStore,
 } from "../services/jobs.js";
 import type { MessagesRead } from "../services/matching.js";
+import type { PropertiesStore } from "../services/properties.js";
 import { ReviewsError, type ReviewsStore } from "../services/reviews.js";
 import type {
   NewSolution,
@@ -47,6 +58,7 @@ import {
   jobRequests,
   jobs,
   messages,
+  properties,
   reviews,
   user,
 } from "./schema.js";
@@ -57,6 +69,7 @@ function toJob(row: typeof jobs.$inferSelect): Job {
   return {
     id: row.id,
     hostId: row.hostId,
+    propertyId: row.propertyId,
     address: row.address,
     latitude: row.latitude,
     longitude: row.longitude,
@@ -97,6 +110,7 @@ export function drizzleJobsStore(db: Db): JobsStore {
         .values({
           id: job.id,
           hostId: job.hostId,
+          propertyId: job.propertyId ?? null,
           address: job.address,
           latitude: job.latitude,
           longitude: job.longitude,
@@ -202,6 +216,101 @@ export function drizzleJobsStore(db: Db): JobsStore {
         .returning();
       if (!row) throw new JobsServiceError("NOT_FOUND", "Job not found.");
       return toJob(row);
+    },
+  };
+}
+
+function toProperty(row: typeof properties.$inferSelect): Property {
+  return {
+    id: row.id,
+    hostId: row.hostId,
+    name: row.name,
+    address: row.address,
+    latitude: row.latitude,
+    longitude: row.longitude,
+    sizeSqm: row.sizeSqm,
+    defaultNotes: row.defaultNotes,
+    archivedAt: row.archivedAt?.toISOString() ?? null,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+export function drizzlePropertiesStore(db: Db): PropertiesStore {
+  return {
+    async insert(property) {
+      const [row] = await db
+        .insert(properties)
+        .values({
+          id: property.id,
+          hostId: property.hostId,
+          name: property.name,
+          address: property.address,
+          latitude: property.latitude,
+          longitude: property.longitude,
+          sizeSqm: property.sizeSqm,
+          defaultNotes: property.defaultNotes,
+          archivedAt: property.archivedAt
+            ? new Date(property.archivedAt)
+            : null,
+          createdAt: new Date(property.createdAt),
+          updatedAt: new Date(property.updatedAt),
+        })
+        .returning();
+      if (!row) {
+        throw new JobsServiceError("NOT_FOUND", "Property insert failed.");
+      }
+      return toProperty(row);
+    },
+
+    async findById(id) {
+      const [row] = await db
+        .select()
+        .from(properties)
+        .where(eq(properties.id, id))
+        .limit(1);
+      return row ? toProperty(row) : null;
+    },
+
+    async listByHost(hostId, includeArchived) {
+      const rows = await db
+        .select()
+        .from(properties)
+        .where(
+          includeArchived
+            ? eq(properties.hostId, hostId)
+            : and(eq(properties.hostId, hostId), isNull(properties.archivedAt)),
+        );
+      return rows.map(toProperty);
+    },
+
+    async save(property) {
+      const [row] = await db
+        .update(properties)
+        .set({
+          name: property.name,
+          address: property.address,
+          latitude: property.latitude,
+          longitude: property.longitude,
+          sizeSqm: property.sizeSqm,
+          defaultNotes: property.defaultNotes,
+          archivedAt: property.archivedAt
+            ? new Date(property.archivedAt)
+            : null,
+          updatedAt: new Date(property.updatedAt),
+        })
+        .where(eq(properties.id, property.id))
+        .returning();
+      if (!row) throw new JobsServiceError("NOT_FOUND", "Property not found.");
+      return toProperty(row);
+    },
+
+    async isReferencedByAJob(propertyId) {
+      const [row] = await db
+        .select({ value: count() })
+        .from(jobs)
+        .where(eq(jobs.propertyId, propertyId));
+      return (row?.value ?? 0) > 0;
     },
   };
 }
@@ -844,6 +953,24 @@ export function drizzleJobRequestsStore(db: Db): JobRequestsStore {
           ),
         );
       return row?.value ?? 0;
+    },
+
+    // Host My Jobs request badge (03 D): one grouped query over the host's
+    // own jobs, never one query per card.
+    async countPendingCleanerRequestsByHost(hostId) {
+      const rows = await db
+        .select({ jobId: jobRequests.jobId, value: count() })
+        .from(jobRequests)
+        .innerJoin(jobs, eq(jobs.id, jobRequests.jobId))
+        .where(
+          and(
+            eq(jobs.hostId, hostId),
+            eq(jobRequests.initiatedBy, "cleaner"),
+            eq(jobRequests.status, "pending"),
+          ),
+        )
+        .groupBy(jobRequests.jobId);
+      return Object.fromEntries(rows.map((row) => [row.jobId, row.value]));
     },
 
     // One transaction: re-check job open + request pending, claim the job,

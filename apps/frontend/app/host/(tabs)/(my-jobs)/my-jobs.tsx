@@ -12,6 +12,7 @@ import {
   type MyJobsSegment,
   filterJobsBySegment,
   hostMetaLine,
+  requestBadgeLabel,
   statusLabelFor,
 } from "../../../../providers/my-jobs";
 import { stackHref } from "../../../../providers/tabs";
@@ -77,6 +78,9 @@ export default function HostMyJobsScreen() {
   const segments = useSegments();
   const [segment, setSegment] = useState<MyJobsSegment>("open");
   const query = sparklTrpc.jobs.myJobs.useQuery({});
+  // Request badge (03 D): one grouped query for every open job's card,
+  // never one per card.
+  const pendingCountsQuery = sparklTrpc.jobRequests.pendingCounts.useQuery();
 
   const segmentLabel = useCallback(
     (value: MyJobsSegment): string => {
@@ -87,21 +91,28 @@ export default function HostMyJobsScreen() {
     [strings],
   );
 
+  const pendingCounts = pendingCountsQuery.data ?? {};
   const renderItem = useCallback(
-    ({ item }: { item: Job }) => (
-      <JobCard
-        address={item.address}
-        metaLine={hostMetaLine(item)}
-        onPress={() => {
-          router.push(stackHref("host", segments, `job/${item.id}`));
-        }}
-        status={item.status}
-        statusLabel={statusLabelFor(item.status)}
-        testID={`host-job-card-${item.id}`}
-        title={strings.jobCard.title}
-      />
-    ),
-    [strings, router, segments],
+    ({ item }: { item: Job }) => {
+      const count = pendingCounts[item.id];
+      return (
+        <JobCard
+          address={item.address}
+          metaLine={hostMetaLine(item)}
+          onPress={() => {
+            router.push(stackHref("host", segments, `job/${item.id}`));
+          }}
+          requestBadgeLabel={
+            count === undefined ? undefined : requestBadgeLabel(count)
+          }
+          status={item.status}
+          statusLabel={statusLabelFor(item.status)}
+          testID={`host-job-card-${item.id}`}
+          title={strings.jobCard.title}
+        />
+      );
+    },
+    [strings, router, segments, pendingCounts],
   );
 
   const jobs =

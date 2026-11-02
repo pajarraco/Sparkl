@@ -1,4 +1,4 @@
-import type { Job, Review, User } from "@sparkl/shared";
+import type { Job, Property, Review, User } from "@sparkl/shared";
 import { describe, expect, it, vi } from "vitest";
 import type { SessionCorrections } from "./assistant-sessions.js";
 import {
@@ -243,6 +243,7 @@ describe("buildHostMemory", () => {
     user: User | null;
     reviews: Record<string, Review | null>;
     sessions: SessionCorrections[];
+    properties?: Property[];
   }) {
     return {
       jobs: { listJobsByHost: vi.fn(async () => args.jobs) },
@@ -253,6 +254,30 @@ describe("buildHostMemory", () => {
         ),
       },
       sessions: { listFinishedByHost: vi.fn(async () => args.sessions) },
+      ...(args.properties
+        ? {
+            properties: {
+              listByHost: vi.fn(async () => args.properties as Property[]),
+            },
+          }
+        : {}),
+    };
+  }
+
+  function property(overrides: Partial<Property> = {}): Property {
+    return {
+      id: `prop-${Math.random().toString(36).slice(2)}`,
+      hostId: HOST,
+      name: "Beach Studio",
+      address: "99 Property Lane",
+      latitude: -33.9,
+      longitude: 151.3,
+      sizeSqm: 70,
+      defaultNotes: null,
+      archivedAt: null,
+      createdAt: NOW,
+      updatedAt: NOW,
+      ...overrides,
     };
   }
 
@@ -315,5 +340,49 @@ describe("buildHostMemory", () => {
       HOST,
     );
     expect(badlyRated.usualCleaner).toBeNull();
+  });
+
+  it("an exactly-one active property overrides the job-address heuristic", async () => {
+    const jobs = [job({ id: "job-1" })]; // job heuristic would also say "12 Ocean St, Bondi"
+    const only = property();
+    const memory = await buildHostMemory(
+      stores({
+        jobs,
+        user: null,
+        reviews: {},
+        sessions: [],
+        properties: [only],
+      }),
+      HOST,
+    );
+    expect(memory.singleProperty).toEqual({
+      address: only.address,
+      latitude: only.latitude,
+      longitude: only.longitude,
+    });
+  });
+
+  it("more than one property clears singleProperty even with uniform job addresses", async () => {
+    const jobs = [job({ id: "job-1" }), job({ id: "job-2" })];
+    const memory = await buildHostMemory(
+      stores({
+        jobs,
+        user: null,
+        reviews: {},
+        sessions: [],
+        properties: [property(), property()],
+      }),
+      HOST,
+    );
+    expect(memory.singleProperty).toBeNull();
+  });
+
+  it("falls back to the job-address heuristic when no properties store is given", async () => {
+    const jobs = [job({ id: "job-1" })];
+    const memory = await buildHostMemory(
+      stores({ jobs, user: null, reviews: {}, sessions: [] }),
+      HOST,
+    );
+    expect(memory.singleProperty?.address).toBe("12 Ocean St, Bondi");
   });
 });

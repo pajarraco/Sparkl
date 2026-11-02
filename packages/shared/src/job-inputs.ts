@@ -4,12 +4,17 @@ import { userIdSchema } from "./users";
 
 const isoDatetime = z.string().datetime();
 
-// hostId comes from the session, never from the client.
+// hostId comes from the session, never from the client. Either a
+// propertyId (03 E: the service copies its address/lat/lng/size onto the
+// job as a snapshot) or address + latitude + longitude directly — the
+// Post form's property picker sends the first, the assistant's geocoder
+// flow still sends the second for a one-off address.
 export const createJobInput = z
   .object({
-    address: z.string().min(1).max(500),
-    latitude: z.number().min(-90).max(90),
-    longitude: z.number().min(-180).max(180),
+    propertyId: z.string().uuid().optional(),
+    address: z.string().min(1).max(500).optional(),
+    latitude: z.number().min(-90).max(90).optional(),
+    longitude: z.number().min(-180).max(180).optional(),
     windowStart: isoDatetime,
     windowEnd: isoDatetime,
     sizeSqm: z.number().positive().max(100000).optional(),
@@ -22,7 +27,18 @@ export const createJobInput = z
   .refine((v) => v.windowEnd > v.windowStart, {
     message: "windowEnd must be after windowStart",
     path: ["windowEnd"],
-  });
+  })
+  .refine(
+    (v) =>
+      v.propertyId !== undefined ||
+      (v.address !== undefined &&
+        v.latitude !== undefined &&
+        v.longitude !== undefined),
+    {
+      message: "address and coordinates are required without a propertyId",
+      path: ["propertyId"],
+    },
+  );
 
 export type CreateJobInput = z.infer<typeof createJobInput>;
 

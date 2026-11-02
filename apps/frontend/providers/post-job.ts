@@ -36,6 +36,9 @@ export interface PostJobFormInput {
   price?: unknown;
   latitude?: unknown;
   longitude?: unknown;
+  // 03 E: a chosen property skips the address/coordinate checks below —
+  // the service snapshots them from the property instead.
+  propertyId?: unknown;
 }
 
 const DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -67,9 +70,15 @@ function isRealCalendarDate(date: string): boolean {
 export function validatePostJob(input: PostJobFormInput): PostJobFormResult {
   const strings = getStrings();
   const errors: PostJobFieldErrors = {};
+  const propertyId =
+    typeof input.propertyId === "string" && input.propertyId !== ""
+      ? input.propertyId
+      : undefined;
 
   const address = typeof input.address === "string" ? input.address.trim() : "";
-  if (address === "") errors.address = strings.errors.requiredField;
+  if (propertyId === undefined && address === "") {
+    errors.address = strings.errors.requiredField;
+  }
 
   const date = typeof input.date === "string" ? input.date.trim() : "";
   const dateOk = isRealCalendarDate(date);
@@ -108,10 +117,14 @@ export function validatePostJob(input: PostJobFormInput): PostJobFormResult {
   if (priceMinorUnits === null) errors.price = strings.errors.invalidPrice;
 
   const latitude = toNumber(input.latitude ?? "");
-  if (latitude === null) errors.latitude = strings.errors.invalidNumber;
+  if (propertyId === undefined && latitude === null) {
+    errors.latitude = strings.errors.invalidNumber;
+  }
 
   const longitude = toNumber(input.longitude ?? "");
-  if (longitude === null) errors.longitude = strings.errors.invalidNumber;
+  if (propertyId === undefined && longitude === null) {
+    errors.longitude = strings.errors.invalidNumber;
+  }
 
   if (
     errors.address !== undefined ||
@@ -130,9 +143,13 @@ export function validatePostJob(input: PostJobFormInput): PostJobFormResult {
   // All pre-checks passed; the shared schema is the final authority on
   // ranges (lat/lng bounds, size cap, notes length).
   const parsed = createJobInput.safeParse({
-    address,
-    latitude: latitude as number,
-    longitude: longitude as number,
+    ...(propertyId === undefined
+      ? {
+          address,
+          latitude: latitude as number,
+          longitude: longitude as number,
+        }
+      : { propertyId }),
     windowStart: `${date}T${windowStart}:00Z`,
     windowEnd: `${date}T${windowEnd}:00Z`,
     sizeSqm: sizeSqm ?? undefined,

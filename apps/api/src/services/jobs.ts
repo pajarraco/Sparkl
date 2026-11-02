@@ -15,6 +15,10 @@ import type {
   TransitionJobInput,
   UserRole,
 } from "@sparkl/shared";
+import {
+  type PropertiesStore,
+  requireActivePropertyForJob,
+} from "./properties.js";
 import type { UsersStore } from "./users.js";
 
 export class JobsServiceError extends Error {
@@ -59,7 +63,12 @@ async function requireJob(store: JobsStore, jobId: string): Promise<Job> {
 export async function createJob(
   store: JobsStore,
   clock: Clock,
-  args: { hostId: string; hostRole: UserRole; input: CreateJobInput },
+  args: {
+    hostId: string;
+    hostRole: UserRole;
+    input: CreateJobInput;
+    properties?: PropertiesStore;
+  },
 ): Promise<Job> {
   if (args.hostRole !== "host") {
     throw new JobsServiceError("FORBIDDEN", "Only hosts can post jobs.");
@@ -82,16 +91,47 @@ export async function createJob(
       );
     }
   }
+  // 03 E: a propertyId snapshots the property's own address/lat/lng/size
+  // onto the job, never trusting whatever the client also sent for them.
+  let address = args.input.address;
+  let latitude = args.input.latitude;
+  let longitude = args.input.longitude;
+  let sizeSqm = args.input.sizeSqm;
+  const propertyId = args.input.propertyId;
+  if (propertyId !== undefined) {
+    if (!args.properties) {
+      throw new JobsServiceError("VALIDATION_ERROR", "Properties unavailable.");
+    }
+    const property = await requireActivePropertyForJob(args.properties, {
+      hostId: args.hostId,
+      propertyId,
+    });
+    address = property.address;
+    latitude = property.latitude;
+    longitude = property.longitude;
+    sizeSqm = sizeSqm ?? property.sizeSqm ?? undefined;
+  }
+  if (
+    address === undefined ||
+    latitude === undefined ||
+    longitude === undefined
+  ) {
+    throw new JobsServiceError(
+      "VALIDATION_ERROR",
+      "address and coordinates are required without a propertyId.",
+    );
+  }
   const now = clock.nowIso();
   return store.insertJob({
     id: randomUUID(),
     hostId: args.hostId,
-    address: args.input.address,
-    latitude: args.input.latitude,
-    longitude: args.input.longitude,
+    propertyId: propertyId ?? null,
+    address,
+    latitude,
+    longitude,
     windowStart: args.input.windowStart,
     windowEnd: args.input.windowEnd,
-    sizeSqm: args.input.sizeSqm ?? null,
+    sizeSqm: sizeSqm ?? null,
     notes: args.input.notes ?? null,
     priceMinorUnits: args.input.priceMinorUnits,
     status: "open",

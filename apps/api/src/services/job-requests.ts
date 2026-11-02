@@ -39,6 +39,10 @@ export interface JobRequestsStore {
   listByCleaner(cleanerId: string): Promise<JobRequest[]>;
   countPendingOffersForJob(jobId: string): Promise<number>;
   countPendingRequestsForCleaner(cleanerId: string): Promise<number>;
+  /** Pending cleaner-initiated request count per job, for one host's jobs. */
+  countPendingCleanerRequestsByHost(
+    hostId: string,
+  ): Promise<Record<string, number>>;
   /**
    * Accept a pending request/offer atomically: re-check the job is open
    * and the request is pending inside one transaction, set the job to
@@ -420,6 +424,15 @@ export async function listMyJobRequests(
         : 0,
   );
   return withJobs;
+}
+
+// Host My Jobs request badge (03 D): how many cleaners are waiting on each
+// of the host's open jobs, keyed by job id (jobs with none are omitted).
+export async function countPendingRequestsByHost(
+  stores: Pick<JobRequestsStores, "requests">,
+  hostId: string,
+): Promise<Record<string, number>> {
+  return stores.requests.countPendingCleanerRequestsByHost(hostId);
 }
 
 // Called by the jobs router after a job is cancelled, so no pending

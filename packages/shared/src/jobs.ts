@@ -6,6 +6,10 @@ export const jobSchema = z
   .object({
     id: z.string().uuid(),
     hostId: userIdSchema,
+    // Nullable: jobs from before 03 E, or posted with a one-off address
+    // through the assistant, have no property. Optional until every
+    // fixture carries it; the database always does.
+    propertyId: z.string().uuid().nullish(),
     address: z.string().min(1).max(500),
     latitude: z.number().min(-90).max(90),
     longitude: z.number().min(-180).max(180),

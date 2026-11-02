@@ -1,6 +1,6 @@
 # Sparkl — Architecture
 
-> Status: planned — no implementation exists yet. This page is the build spec; paths below are targets. Product scope lives in [project.md](project.md).
+> Status: implemented (MVP build). This page is the build spec and the record of the system as shipped. Product scope lives in [project.md](project.md).
 
 ## Overview
 
@@ -19,7 +19,7 @@ Expo app ──HTTP + WebSocket──▶ Fastify + tRPC ──▶ Service layer 
 ## Frontend (`apps/frontend`)
 
 - **Expo + Expo Router:** one codebase for iOS, Android and Web. Screens in `app/`, UI in `components/` (atomic design), cross-cutting setup in `providers/`.
-- **API client:** tRPC client over two links — HTTP batch link for queries/mutations, WebSocket link for subscriptions (chat). React Query handles caching.
+- **API client:** tRPC client over two links — HTTP batch link for queries/mutations, SSE (`httpSubscriptionLink`) for subscriptions (chat). React Query handles caching.
 - **Auth:** Better Auth Expo integration; session persisted on native, cookie on web.
 - **Styling:** NativeWind v4.
 - **Strings:** all user-facing text via `packages/i18n` (English now, Spanish later).
@@ -48,7 +48,8 @@ PostgreSQL via Docker locally; Drizzle ORM with versioned migrations in the repo
 | ----- | ----------- |
 | `users` | id, role, name, photo URL, service-area lat/lng + radius, avg rating, completed-job count, timestamps |
 | `cleaner_availability` | cleaner id, weekday, start/end time (feeds availability-overlap ranking) |
-| `jobs` | id, host id, address + lat/lng, date/time window, size and notes, price, status, claimed-by cleaner id, timestamps |
+| `properties` | id, host id, name, address + lat/lng, size, default checklist, archived-at, timestamps |
+| `jobs` | id, host id, property id (nullable FK), address + lat/lng, date/time window, size and notes, price, status, claimed-by cleaner id, timestamps |
 | `messages` | id, job id, sender id, body, created at |
 | `reviews` | id, job id, author id, subject id, stars (1–5), comment; unique per (job, author) |
 | `job_requests` | id, job id, cleaner id, initiated by (`host` / `cleaner`), status (`pending`/`accepted`/`declined`/`withdrawn`/`closed`), created/responded at; partial unique on (job id, cleaner id) where pending |
@@ -65,9 +66,10 @@ PostgreSQL via Docker locally; Drizzle ORM with versioned migrations in the repo
 | Router | Procedures |
 | ------ | ---------- |
 | `users` | profile get/update, availability set, cleaner public profile |
-| `jobs` | create, ranked list (cleaner board), my jobs (host), status transitions, cancel |
+| `properties` | create, list (active or all), update, archive (host-owned only) |
+| `jobs` | create (by propertyId snapshot or a direct address), ranked list (cleaner board), my jobs (host), status transitions, cancel |
 | `jobRequests` | request (cleaner), offer (host), accept, decline, withdraw, `listForJob` (host), `listMine` (cleaner) — the only path to `claimed` |
-| `suggestions` | ranked cleaners for a job (host view); a cleaner pinned by the assistant (`jobs.preferred_cleaner_id`, the host's usual cleaner) sorts first, as an order only, never an assignment |
+| `suggestions` | ranked cleaners for a job (host view); a cleaner pinned by the assistant (`jobs.preferred_cleaner_id`, the host's usual cleaner) sorts first and, since 03 D, `jobs.create` also sends them a real offer (best effort — it never blocks the post) |
 | `chat` | message list, send, `onMessage` subscription per job, `listThreads` (the caller's conversations for the Messages tab) |
 | `reviews` | create (after completion), list by user |
 | `storage` | presigned upload URL |
@@ -104,7 +106,9 @@ Every input and output is validated with the shared Zod schemas. No public REST 
 
 ## Data Flows
 
-**Post a job:** Host app → `jobs.create` → service validates and inserts → returns the job.
+**Add a property:** Host app → `properties.create` → service inserts (host id from the session) → returns the property, reused across jobs until archived.
+
+**Post a job:** Host app → `jobs.create` with either a `propertyId` (service re-checks ownership and that it is not archived, then snapshots its address/lat/lng/size onto the job) or a direct address/lat/lng (the assistant's one-off flow) → service validates and inserts → returns the job.
 
 **Ranked board:** Cleaner app → `jobs.listRanked` → matching service scores open jobs → ordered list.
 
@@ -135,7 +139,7 @@ Every input and output is validated with the shared Zod schemas. No public REST 
 
 ## Key Decisions
 
-- Realtime chat via tRPC subscriptions over WebSocket (not polling).
+- Realtime chat via tRPC subscriptions over SSE, not polling and not a WebSocket adapter (one fewer moving part; see Backend).
 - Uploads via S3-compatible presigned URLs (MinIO local, R2/S3 prod).
 - Distance via lat/lng + haversine; PostGIS deferred.
 - Mutual reviews in MVP; average rating is the lead ranking signal.

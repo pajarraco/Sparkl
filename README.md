@@ -7,7 +7,7 @@ Built for the Meta Global AI Developer Hackathon with Expo (iOS, Android, Web), 
 ## MVP Scope
 
 - Auth with host/cleaner roles
-- Hosts post cleaning jobs, by chatting with an assistant or with the form; the assistant reuses saved checklists and offers that hosts have accepted
+- Hosts add properties once (address, size, a default checklist) and post jobs for them by picking one — by chatting with an assistant or with the form; the assistant reuses saved checklists and offers that hosts have accepted
 - Cleaners browse a ranked board and request jobs, or accept a host's offer; a job is claimed only once the other side agrees
 - Ranked suggestions in both directions (hosts see suggested cleaners, cleaners see ranked jobs)
 - Job lifecycle: open → claimed → in progress → completed
@@ -51,7 +51,7 @@ Phone and PC must be on the same WiFi. Three gotchas from real debugging:
 1. Get the PC's LAN IP (`ipconfig`, e.g. `192.168.1.20`). Root `.env`: copy from `.env.example`, set a real `BETTER_AUTH_SECRET` and `TRUSTED_ORIGINS=http://localhost:8081,exp://<PC-LAN-IP>:8081`. Restart the API after changing it.
 2. `pnpm install`, then `pnpm dev` (API on :3000, Expo on :8081). Scan the QR with the Expo Go app.
 3. Seed with `pnpm --filter @sparkl/api seed:demo` (see Demo Logins below).
-4. Walk the demo script in `context/project.md`: host posts a Friday turnover and sees ranked cleaners → cleaner sees the ranked job and claims it → chat to confirm → cleaner marks in progress, then completed → both leave 1–5 star reviews → the completed job shows in the host's history.
+4. Walk the demo script in `context/project.md`: host posts a Friday turnover and sees ranked cleaners → cleaner sees the ranked job and requests it → host accepts from Job Detail, claiming the job → chat to confirm → cleaner marks in progress, then completed → both leave 1–5 star reviews → the completed job shows in the host's history.
 
 ## Demo Logins (Testing)
 
@@ -61,9 +61,9 @@ Seed with `pnpm --filter @sparkl/api seed:demo`, then sign in with:
 - Cleaner: `demo-cleaner@example.com`
 - Password for both: `demo-password-123` (or `$DEMO_PASSWORD` when set)
 
-The seed also sets the cleaner service area + Friday availability and creates one open Friday turnover job at `1 Demo Lane Apt 4 (demo)`. Reruns reuse existing accounts and never duplicate.
+The seed also sets the cleaner service area + Friday availability, adds a demo property at `1 Demo Lane Apt 4 (demo)`, and creates one open Friday turnover job for it. Reruns reuse existing accounts and never duplicate.
 
-## Project Structure (Planned)
+## Project Structure
 
 ```
 Sparkl/
@@ -116,7 +116,7 @@ Clean & airy, role-based tabs. Brand tokens adapted from alehosts.com: indigo `#
 | `context/rules.md` | Dos and don'ts |
 | `context/tasks.md` | Pending tasks and completed work |
 | `context/features/` | Feature plans, named `<number>-<name>.md` (e.g. `01-setup-pnpm.md`) |
-| `context/archive/` | Finished features in production |
+| `context/archive/` | Finished features in production (created on first archive) |
 | `context/hackathon.md` | Hackathon rules, dates and compliance |
 
 ## Contributing

@@ -55,3 +55,11 @@ export type JobRequestWithJob = z.infer<typeof jobRequestWithJobSchema>;
 
 export const listJobRequestsForJobOutput = z.array(jobRequestWithCleanerSchema);
 export const listMyJobRequestsOutput = z.array(jobRequestWithJobSchema);
+
+// Host My Jobs request badge: pending cleaner-request count per job id,
+// jobs with none omitted.
+export const pendingRequestCountsOutput = z.record(
+  z.string().uuid(),
+  z.number().int().positive(),
+);
+export type PendingRequestCounts = z.infer<typeof pendingRequestCountsOutput>;

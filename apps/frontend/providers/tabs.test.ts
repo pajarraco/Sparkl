@@ -5,16 +5,18 @@ import { getTabsForRole, stackHref, tabRootHref } from "./tabs";
 const tabs = getStrings().tabs;
 
 describe("role tabs", () => {
-  it("gives hosts My Jobs, a prominent Post tab, Messages, Profile", () => {
+  it("gives hosts My Jobs, Properties, a prominent Post tab, Messages, Profile", () => {
     const defs = getTabsForRole("host");
     expect(defs.map((d) => d.key)).toEqual([
       "myJobs",
+      "properties",
       "post",
       "messages",
       "profile",
     ]);
     expect(defs.map((d) => d.title)).toEqual([
       tabs.myJobs,
+      tabs.properties,
       tabs.post,
       tabs.messages,
       tabs.profile,
@@ -52,6 +54,7 @@ describe("tab stacks (03 A2)", () => {
   it("names a group screen for every tab with a detail stack", () => {
     expect(getTabsForRole("host").map((d) => d.screen)).toEqual([
       "(my-jobs)",
+      "(properties)",
       "post",
       "(messages)",
       "profile",

@@ -6,6 +6,7 @@ import {
   listJobRequestsForJobOutput,
   listMyJobRequestsOutput,
   offerJobInput,
+  pendingRequestCountsOutput,
   requestJobInput,
 } from "@sparkl/shared";
 import type { UserRole } from "@sparkl/shared";
@@ -149,6 +150,17 @@ export const jobRequestsRouter = router({
           requests: drizzleJobRequestsStore(ctx.db),
         },
         { cleanerId: ctx.sessionUserId, cleanerRole: ctx.role },
+      );
+    }),
+
+  // Host My Jobs request badge: pending cleaner-request count per job.
+  pendingCounts: authedProcedure
+    .output(pendingRequestCountsOutput)
+    .query(async ({ ctx }) => {
+      requireRole(ctx.role);
+      return jobRequestsService.countPendingRequestsByHost(
+        { requests: drizzleJobRequestsStore(ctx.db) },
+        ctx.sessionUserId,
       );
     }),
 });

@@ -1,4 +1,4 @@
-import type { Job, SparklErrorCode, User } from "@sparkl/shared";
+import type { Job, Property, SparklErrorCode, User } from "@sparkl/shared";
 import { describe, expect, it } from "vitest";
 import {
   type Clock,
@@ -10,6 +10,7 @@ import {
   listMyClaimedJobs,
   transitionJob,
 } from "./jobs.js";
+import type { PropertiesStore } from "./properties.js";
 import type { UsersStore } from "./users.js";
 
 const HOST_ID = "11111111-1111-4111-8111-111111111111";
@@ -86,6 +87,42 @@ function makeFakeStore(seed: Job[] = []): JobsStore {
       jobs.set(job.id, { ...job });
       return { ...job };
     },
+  };
+}
+
+function makeProperty(overrides: Partial<Property> = {}): Property {
+  return {
+    id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    hostId: HOST_ID,
+    name: "Beach Studio",
+    address: "Property Lane 1",
+    latitude: 41.0,
+    longitude: -3.0,
+    sizeSqm: 55,
+    defaultNotes: null,
+    archivedAt: null,
+    createdAt: "2026-01-01T00:00:00.000Z",
+    updatedAt: "2026-01-01T00:00:00.000Z",
+    ...overrides,
+  };
+}
+
+function makeFakePropertiesStore(seed: Property[] = []): PropertiesStore {
+  const byId = new Map(seed.map((p) => [p.id, { ...p }]));
+  return {
+    insert: async (p) => {
+      byId.set(p.id, { ...p });
+      return { ...p };
+    },
+    findById: async (id) =>
+      byId.has(id) ? { ...(byId.get(id) as Property) } : null,
+    listByHost: async (hostId) =>
+      [...byId.values()].filter((p) => p.hostId === hostId),
+    save: async (p) => {
+      byId.set(p.id, { ...p });
+      return { ...p };
+    },
+    isReferencedByAJob: async () => false,
   };
 }
 
@@ -179,6 +216,71 @@ describe("jobs service", () => {
         }),
       ),
     ).toBe("FORBIDDEN");
+  });
+
+  it("createJob with a propertyId snapshots its address/lat/lng/size, ignoring any client-sent ones", async () => {
+    const property = makeProperty();
+    const properties = makeFakePropertiesStore([property]);
+    const store = makeFakeStore();
+    const job = await createJob(store, clock, {
+      hostId: HOST_ID,
+      hostRole: "host",
+      properties,
+      input: {
+        ...createInput,
+        propertyId: property.id,
+        address: "ignored",
+        latitude: 0,
+        longitude: 0,
+      },
+    });
+    expect(job.propertyId).toBe(property.id);
+    expect(job.address).toBe(property.address);
+    expect(job.latitude).toBe(property.latitude);
+    expect(job.longitude).toBe(property.longitude);
+    expect(job.sizeSqm).toBe(property.sizeSqm);
+  });
+
+  it("createJob rejects a propertyId belonging to another host or an archived one", async () => {
+    const mine = makeProperty();
+    const stranger = makeProperty({
+      id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      hostId: CLEANER_A,
+    });
+    const archived = makeProperty({
+      id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+      archivedAt: "2026-01-02T00:00:00.000Z",
+    });
+    const properties = makeFakePropertiesStore([mine, stranger, archived]);
+    const store = makeFakeStore();
+    async function captureAnyCode(promise: Promise<unknown>): Promise<string> {
+      try {
+        await promise;
+        throw new Error("expected a rejection");
+      } catch (err) {
+        return (err as { code: string }).code;
+      }
+    }
+    expect(
+      await captureAnyCode(
+        createJob(store, clock, {
+          hostId: HOST_ID,
+          hostRole: "host",
+          properties,
+          input: { ...createInput, propertyId: stranger.id },
+        }),
+      ),
+    ).toBe("FORBIDDEN");
+    expect(
+      await captureAnyCode(
+        createJob(store, clock, {
+          hostId: HOST_ID,
+          hostRole: "host",
+          properties,
+          input: { ...createInput, propertyId: archived.id },
+        }),
+      ),
+    ).toBe("VALIDATION_ERROR");
   });
 
   it("claim race: winner claims, loser gets JOB_ALREADY_CLAIMED", async () => {
