@@ -33,7 +33,7 @@
 - Factories over static fixtures. No network calls in unit tests; mock at the service boundary.
 - CI enforces minimum 80% lines and functions. A change that drops below the gate fails.
 - On the frontend do fully end-to-end testing on routes, forms, buttons, scroll and navigation. Also test the logins, logout and registration. Using Vitest and Playwright.
-- Playwright covers Expo web only (it cannot drive native) and runs local-only as a separate `e2e` command, kept out of `pnpm verify`. Tests run against the local dockerized stack with timestamped seed-shaped accounts; chat assertions use history refetch, never socket timing.
+- Playwright covers Expo web only (it cannot drive native) and runs local-only as a separate `e2e` command, kept out of `pnpm verify`. Tests run against the local dockerized stack with timestamped seed-shaped accounts; chat assertions use history refetch, never socket timing. Stop any running dev servers before `e2e`: Playwright reuses them, and a live-mode API feeds real model turns to the scripted assistant suite (spending real calls) — the failure looks like a broken test, not a stale server.
 - E2E selectors use accessibility labels or `testID` first, never CSS or text. Failure artifacts (traces, screenshots) go under gitignored `test-results/` and are never committed. Playwright is additive: the 80% Vitest gate is unchanged.
 
 ## Errors and Logging

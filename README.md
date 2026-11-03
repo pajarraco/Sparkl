@@ -9,7 +9,7 @@ Built for the Meta Global AI Developer Hackathon with Expo (iOS, Android, Web), 
 - Auth with host/cleaner roles
 - Hosts add properties once (address, size, a default checklist) and post jobs for them by picking one — by chatting with an assistant or with the form; the assistant reuses saved checklists and offers that hosts have accepted
 - Cleaners browse a ranked board and request jobs, or accept a host's offer; a job is claimed only once the other side agrees
-- Ranked suggestions in both directions (hosts see suggested cleaners, cleaners see ranked jobs)
+- Ranked suggestions in both directions (hosts see suggested cleaners, cleaners see ranked jobs), with deterministic match explanations on the detail screens
 - Job lifecycle: open → claimed → in progress → completed
 - Per-job realtime chat
 - Profiles with service area and availability
@@ -115,8 +115,8 @@ Clean & airy, role-based tabs. Brand tokens adapted from alehosts.com: indigo `#
 | `context/code-standard.md` | Code style, testing, validation, libraries |
 | `context/rules.md` | Dos and don'ts |
 | `context/tasks.md` | Pending tasks and completed work |
-| `context/features/` | Feature plans, named `<number>-<name>.md` (e.g. `01-setup-pnpm.md`) |
-| `context/archive/` | Finished features in production (created on first archive) |
+| `context/features/` | Active feature plans, named `<number>-<name>.md` (empty once work is archived) |
+| `context/archive/` | Finished features in production — reference only, read when referring to a past decision or update |
 | `context/hackathon.md` | Hackathon rules, dates and compliance |
 
 ## Contributing

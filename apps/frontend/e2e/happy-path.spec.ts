@@ -11,7 +11,7 @@ import {
   tap,
 } from "./fixtures";
 
-// Happy-path suite (context/features/01-e2e-testing-implementation.md
+// Happy-path suite (context/archive/01-e2e-testing-implementation.md
 // step 7): post → request → accept → chat → in-progress → completed →
 // both reviews, end to end on web (03 D: a claim needs both sides to
 // agree). Two staged tests share the lifecycle through

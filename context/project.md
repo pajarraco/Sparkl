@@ -41,6 +41,7 @@ Built for the Meta Global AI Developer Hackathon.
 
 Ranked suggestions combine review scores with behavioral signals:
 average rating, distance, availability overlap, completed-job count, claim acceptance rate, and response time.
+Each ranked row also carries deterministic match reasons (the top contributing signals), shown on suggestion rows and the cleaner job detail.
 
 ### Out of scope (post-MVP)
 

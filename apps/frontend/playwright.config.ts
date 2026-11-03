@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { defineConfig, devices } from "@playwright/test";
 
-// Web-only, local-only E2E (context/features/01-e2e-testing-implementation.md).
+// Web-only, local-only E2E (context/archive/01-e2e-testing-implementation.md).
 // Playwright drives the Expo web build; native stays manual. Runs need the
 // local stack — the webServer entries below boot the API and Expo web when
 // they are not already running (reuseExistingServer), so `pnpm e2e` works

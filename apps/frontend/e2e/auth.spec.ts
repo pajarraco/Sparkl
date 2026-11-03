@@ -4,7 +4,7 @@ import { newApiSession, signUpViaApi, uniqueAccount } from "./fixtures";
 import type { TestAccount } from "./fixtures";
 
 // Auth suite: the only suite that drives the real sign-up/sign-in UI
-// (context/features/01-e2e-testing-implementation.md step 3). Every
+// (context/archive/01-e2e-testing-implementation.md step 3). Every
 // account is timestamped per worker, so reruns never collide.
 
 async function fillSignUp(

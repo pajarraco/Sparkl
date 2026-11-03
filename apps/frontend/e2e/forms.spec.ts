@@ -10,7 +10,7 @@ import {
   seedOpenJob,
 } from "./fixtures";
 
-// Forms and buttons suite (context/features/01-e2e-testing-implementation.md
+// Forms and buttons suite (context/archive/01-e2e-testing-implementation.md
 // step 5): Post Job create flow, board filters (date, distance, price),
 // the claim CTA, every primary button asserted by accessible label or
 // testID at both viewports. Sessions are API-seeded; only the auth suite

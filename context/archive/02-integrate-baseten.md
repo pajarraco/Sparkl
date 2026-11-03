@@ -370,5 +370,5 @@ Phases are ordered by what gets cut last. Deadline: Nov 4, 9 PM ET.
   reads and writes, ranked by the host's response and shared across hosts
   with the host's own first. It ships before P4. The P2 price hint and
   usual-cleaner offer stay as computed tools and report into it. Plan and
-  owner decisions are in `context/features/04-assistant-learning.md`; tasks
+  owner decisions are in `context/archive/04-assistant-learning.md`; tasks
   are in `tasks.md` §12.

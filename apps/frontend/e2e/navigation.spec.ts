@@ -8,7 +8,7 @@ import {
   tap,
 } from "./fixtures";
 
-// Navigation suite (context/features/01-e2e-testing-implementation.md
+// Navigation suite (context/archive/01-e2e-testing-implementation.md
 // step 4): role tabs, URL-per-tab, history back, unknown routes, and the
 // logged-out / expired-session redirects.
 

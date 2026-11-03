@@ -1,5 +1,8 @@
 import type { ReactNode } from "react";
+import { useEffect, useRef } from "react";
 import {
+  Animated,
+  Easing,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -22,12 +25,13 @@ import {
 // applying anything.
 //
 // position="top" anchors the same panel to the top instead (radius and
-// border flip to the bottom edge). Still uses Modal's "slide" animation
-// for both: react-native-web's Escape-to-close only works once its
-// animationend fires, and "fade"/"none" didn't reliably fire it in this
-// RN Web version (confirmed by e2e flakes), so the overlay still slides
-// up from the screen's bottom edge even though the content it reveals
-// sits pinned to the top.
+// border flip to the bottom edge) and slides it down from the top edge
+// on open (~180ms, skipped under prefers-reduced-motion). Modal's own
+// animation is off for "top": react-native-web's Escape-to-close only
+// works once its animationend fires, and "fade"/"none" didn't reliably
+// fire it in this RN Web version (confirmed by e2e flakes), so this
+// component listens for Escape itself on web and keeps onRequestClose
+// for Android back.
 
 export type BottomSheetPosition = "bottom" | "top";
 
@@ -88,11 +92,76 @@ const styles = StyleSheet.create({
   },
 });
 
+interface WebKeydownTarget {
+  addEventListener(
+    type: "keydown",
+    listener: (event: { key: string }) => void,
+  ): void;
+  removeEventListener(
+    type: "keydown",
+    listener: (event: { key: string }) => void,
+  ): void;
+}
+
+// Entrance offset for the top sheet: enough to start fully above the
+// panel (title + one field + actions), so it visibly slides down in.
+const TOP_SHEET_HIDDEN_OFFSET = -360;
+const TOP_SHEET_ENTER_MS = 180;
+
+function prefersReducedMotion(): boolean {
+  if (Platform.OS !== "web") return false;
+  const matchMedia = (
+    globalThis as unknown as {
+      matchMedia?: (query: string) => { matches: boolean };
+    }
+  ).matchMedia;
+  if (typeof matchMedia !== "function") return false;
+  return matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 export function BottomSheet(props: BottomSheetProps) {
   const position = props.position ?? "bottom";
+  const isTop = position === "top";
+  const translateY = useRef(new Animated.Value(0)).current;
+
+  // Slide-down entrance for the top sheet. The content mounts when the
+  // Modal opens, so resetting + animating on `visible` covers every open.
+  useEffect(() => {
+    if (!props.visible || !isTop || prefersReducedMotion()) return;
+    translateY.setValue(TOP_SHEET_HIDDEN_OFFSET);
+    const animation = Animated.timing(translateY, {
+      toValue: 0,
+      duration: TOP_SHEET_ENTER_MS,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    });
+    animation.start();
+    return () => {
+      animation.stop();
+    };
+  }, [props.visible, isTop, translateY]);
+
+  // Modal's own animation is off for "top", so its built-in web
+  // Escape-to-close never fires: listen for Escape directly on web.
+  // Android back still arrives via onRequestClose.
+  useEffect(() => {
+    if (!props.visible || !isTop || Platform.OS !== "web") return;
+    const documentRef = (
+      globalThis as unknown as { document?: WebKeydownTarget }
+    ).document;
+    if (documentRef === undefined) return;
+    const onKeyDown = (event: { key: string }) => {
+      if (event.key === "Escape") props.onClose();
+    };
+    documentRef.addEventListener("keydown", onKeyDown);
+    return () => {
+      documentRef.removeEventListener("keydown", onKeyDown);
+    };
+  }, [props.visible, isTop, props.onClose]);
+
   return (
     <Modal
-      animationType="slide"
+      animationType={isTop ? "none" : "slide"}
       onRequestClose={props.onClose}
       transparent
       visible={props.visible}
@@ -110,10 +179,11 @@ export function BottomSheet(props: BottomSheetProps) {
             props.testID === undefined ? undefined : `${props.testID}-scrim`
           }
         />
-        <View
+        <Animated.View
           style={[
             styles.sheet,
             position === "bottom" ? styles.sheetBottom : styles.sheetTop,
+            { transform: [{ translateY }] },
           ]}
           testID={props.testID}
         >
@@ -121,7 +191,7 @@ export function BottomSheet(props: BottomSheetProps) {
             {props.title}
           </Text>
           {props.children}
-        </View>
+        </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
   );

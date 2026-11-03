@@ -56,7 +56,7 @@
 
 ### 9. Frontend — E2E testing (Playwright, web-only, local-only)
 
-Spec: `context/features/01-e2e-testing-implementation.md` (grilled, 14 decisions agreed).
+Spec (archived, reference only): `context/archive/01-e2e-testing-implementation.md` (grilled, 14 decisions agreed).
 
 - [x] Groundwork: `@playwright/test` in `apps/frontend` (one-line new-dep justification), `playwright.config.ts` for local Expo web with 375px + wide projects, `e2e` script, web-only local-only scope documented
 - [x] Fixtures: timestamped seed-shaped host/cleaner account factory, seeded open job, storage-state helpers for logged-in sessions
@@ -69,7 +69,7 @@ Spec: `context/features/01-e2e-testing-implementation.md` (grilled, 14 decisions
 
 ### 10. Job-post assistant (Muse Spark on Baseten) + OSM maps
 
-Spec: `context/features/02-integrate-baseten.md` (approved 2026-10-29). Phases are cut from the bottom (P4, then P3) if the Nov 4 deadline is at risk.
+Spec (archived, reference only): `context/archive/02-integrate-baseten.md` (approved 2026-10-29). Phases are cut from the bottom (P4, then P3) if the Nov 4 deadline is at risk.
 
 #### P0 — Spike (no merge)
 
@@ -112,7 +112,7 @@ Spec: `context/features/02-integrate-baseten.md` (approved 2026-10-29). Phases a
 
 ### 11. Improvements and issues
 
-Spec: `context/features/03-improvements-issues.md` (approved 2026-10-29). Built on `feat/03-improvements` in its own worktree, alongside 02. A1–C start now; D waits for 02 P2, E for 02 P1. Cut from the bottom (E, then D) if the Nov 4 deadline is at risk.
+Spec (archived, reference only): `context/archive/03-improvements-issues.md` (approved 2026-10-29). Built on `feat/03-improvements` in its own worktree, alongside 02. A1–C start now; D waits for 02 P2, E for 02 P1. Cut from the bottom (E, then D) if the Nov 4 deadline is at risk.
 
 #### A — Bugs
 
@@ -145,7 +145,7 @@ Spec: `context/features/03-improvements-issues.md` (approved 2026-10-29). Built 
 
 ### 12. Assistant learning from use (solutions store)
 
-Spec: `context/features/04-assistant-learning.md` (approved 2026-10-29). L1 ships before Nov 4, ahead of 02 P4. Votes come only from the host's response; only answers are stored, never messages or personal data; shared across hosts with the host's own first.
+Spec (archived, reference only): `context/archive/04-assistant-learning.md` (approved 2026-10-29). L1 ships before Nov 4, ahead of 02 P4. Votes come only from the host's response; only answers are stored, never messages or personal data; shared across hosts with the host's own first.
 
 Resume here (2026-10-30): §12 steps 1–10 are done on `feat/04-assistant-learning` (not committed by the agent; the owner committed the work). The only open box is the e2e gate, which is blocked by pre-existing failures in the older suites until branch 03 merges (see the gates line). Migrations `0003` and `0004` are applied to the local dev DB. Start the stack with `docker compose -f docker-compose.dev.yml up -d`.
 
@@ -162,7 +162,7 @@ Resume here (2026-10-30): §12 steps 1–10 are done on `feat/04-assistant-learn
 
 ### 13. Issues & redesign pass
 
-Spec: `context/features/05-issues-redesign.md` (plan added 2026-11-02). One item at a time, confirm with Ernesto before moving to the next; see the spec for file-level detail per item.
+Spec (archived, reference only): `context/archive/05-issues-redesign.md` (plan added 2026-11-02). One item at a time, confirm with Ernesto before moving to the next; see the spec for file-level detail per item.
 
 - [x] 1. Post-job redirect to My Jobs instead of the post details screen. **2026-11-02:** `handlePosted` in `app/host/(tabs)/post.tsx` calls `router.replace("/host/my-jobs")`; `PostJobForm`'s dead-end success screen and `onPostAgain` prop removed. `pnpm verify` green, full `e2e` 72/72.
 - [x] 2. Rename "Post" tab to "New Job". **2026-11-02:** `tabs.post` string in `packages/i18n/src/en.ts`; e2e tab-name assertions updated. `pnpm verify` green, full `e2e` 72/72.

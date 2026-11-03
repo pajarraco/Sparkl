@@ -93,6 +93,7 @@ Every input and output is validated with the shared Zod schemas. No public REST 
 - Scores computed **on read** in the matching service (no precompute pipeline in MVP).
 - Signals: average rating, distance, availability overlap, completed-job count, claim acceptance rate, response time.
 - Weights live in one config object behind an Unleash flag so they can be tuned without deploys.
+- Explanations ride along: the service also returns `reasons` (max 2, picked by weight × score, raw signal ≥ 0.7, the pinned usual cleaner first). Clients only translate the keys via i18n. Deterministic — no model call, so no cost, latency, or PII leaves the server.
 
 ## Assistant Learning (Solutions Store, 04)
 

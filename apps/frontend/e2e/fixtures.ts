@@ -1,7 +1,7 @@
 import type { APIRequestContext, Browser, Page } from "@playwright/test";
 import { expect, request } from "@playwright/test";
 
-// Shared E2E fixtures (context/features/01-e2e-testing-implementation.md
+// Shared E2E fixtures (context/archive/01-e2e-testing-implementation.md
 // step 2). Every account is timestamped per worker so parallel or repeated
 // runs never collide; nothing here depends on the section-8 seed script.
 // Routine suites start from API-seeded sessions; only the auth suite

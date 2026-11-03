@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { newApiSession, newBrowserSession, seedOpenJob } from "./fixtures";
 
-// Scroll suite (context/features/01-e2e-testing-implementation.md step 6):
+// Scroll suite (context/archive/01-e2e-testing-implementation.md step 6):
 // the board FlatList scrolls at both viewports. Seeded jobs share one
 // day, unique per run and project, so the date filter isolates them from
 // every other run's leftovers on the shared dev database (each run seeds
