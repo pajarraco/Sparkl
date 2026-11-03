@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sparkl — Turnover cleanings, claimed in minutes</title>
+<style>
+  :root {
+    --paper: #FFFFFF;
+    --paper-2: #F8FAFC;
+    --ink: #1E293B;
+    --ink-soft: #64748B;
+    --ink-mute: #94A3B8;
+    --indigo: #2205A4;
+    --indigo-deep: #1A0480;
+    --orange: #FF6B00;
+    --orange-deep: #C24E00;
+    --orange-tint: #FFF0E6;
+    --stone: #E2E8F0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Elms Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.5;
+  }
+  .page { max-width: 1080px; margin: 0 auto; padding: 40px 32px 32px; }
+  .eyebrow {
+    font-size: 12px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-soft); margin-bottom: 8px;
+  }
+  h1 { font-size: 44px; line-height: 1.1; letter-spacing: -.02em; margin-bottom: 8px; }
+  h1 .spark { color: var(--indigo); }
+  .tagline { font-size: 19px; color: var(--ink-soft); margin-bottom: 28px; }
+  .hero {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: center;
+    background: var(--paper-2); border: 1px solid var(--stone); border-radius: 14px;
+    padding: 28px; margin-bottom: 28px;
+  }
+  .hero img { width: 100%; border-radius: 10px; display: block; }
+  .hero p { font-size: 16px; margin-bottom: 12px; }
+  .hero p strong { font-weight: 600; }
+  .pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .pill {
+    font-size: 13px; font-weight: 500; color: var(--orange-deep);
+    background: var(--orange-tint); border-radius: 6px; padding: 4px 12px;
+  }
+  h2 {
+    font-size: 13px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink); margin: 0 0 12px;
+  }
+  .flow {
+    display: grid; grid-template-columns: repeat(6, 1fr); gap: 0;
+    border: 1px solid var(--stone); border-radius: 14px; overflow: hidden; margin-bottom: 28px;
+  }
+  .step { padding: 16px 12px; background: var(--paper); position: relative; }
+  .step + .step { border-left: 1px solid var(--stone); }
+  .step:first-child { border-left: 4px solid var(--orange); }
+  .step .n {
+    display: inline-block; font-size: 12px; font-weight: 600; color: var(--paper);
+    background: var(--indigo); border-radius: 50%; width: 22px; height: 22px;
+    line-height: 22px; text-align: center; margin-bottom: 8px;
+  }
+  .step h3 { font-size: 14px; margin-bottom: 4px; }
+  .step p { font-size: 12.5px; color: var(--ink-soft); }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px; }
+  .card {
+    border: 1px solid var(--stone); border-radius: 14px; padding: 20px 22px; background: var(--paper);
+  }
+  .card.model { border-top: 4px solid var(--orange); }
+  .card ul { list-style: none; }
+  .card li { font-size: 14px; padding: 6px 0 6px 22px; position: relative; }
+  .card li::before { content: "★"; position: absolute; left: 0; color: var(--orange-deep); }
+  .card li span { color: var(--ink-soft); }
+  .card li strong { font-weight: 600; }
+  footer {
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
+    border-top: 1px solid var(--stone); padding-top: 16px;
+    font-size: 13px; color: var(--ink-mute);
+  }
+  footer strong { color: var(--ink-soft); }
+  @media (max-width: 760px) {
+    .hero, .cols { grid-template-columns: 1fr; }
+    .flow { grid-template-columns: repeat(2, 1fr); }
+    .step + .step { border-left: none; border-top: 1px solid var(--stone); }
+    h1 { font-size: 34px; }
+  }
+  @media print {
+    .page { max-width: none; padding: 0; }
+    body { font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="eyebrow">Meta Global AI Developer Hackathon</div>
+  <h1><span class="spark">Sparkl</span> — turnover cleanings, claimed in minutes</h1>
+  <p class="tagline">A two-sided marketplace connecting vacation-rental hosts with cleaning professionals.</p>
+
+  <div class="hero">
+    <div>
+      <p><strong>Hosts</strong> post a turnover cleaning once, pick a saved property or chat with an assistant, and get <strong>ranked cleaner suggestions</strong> with plain-language reasons.</p>
+      <p><strong>Cleaners</strong> browse a ranked board, request a job or accept an offer — nothing is assigned without both sides agreeing — then coordinate in per-job chat and close out with <strong>mutual reviews</strong>.</p>
+      <div class="pill-row">
+        <span class="pill">Ranked matching</span>
+        <span class="pill">Two-way claiming</span>
+        <span class="pill">Realtime chat</span>
+        <span class="pill">Mutual reviews</span>
+      </div>
+    </div>
+    <img src="generated_images/call_01a19f2c610971fda014675d2615fd7f.jpg" alt="Illustration of a cleaner with a checklist beside a phone showing a Sparkl job card">
+  </div>
+
+  <h2>How a job flows</h2>
+  <div class="flow">
+    <div class="step"><span class="n">1</span><h3>Post</h3><p>Host chats or uses the form; price hint + checklist drafted.</p></div>
+    <div class="step"><span class="n">2</span><h3>Rank</h3><p>Both sides get ranked matches with reasons.</p></div>
+    <div class="step"><span class="n">3</span><h3>Claim</h3><p>Request or offer — accepted, never auto-assigned.</p></div>
+    <div class="step"><span class="n">4</span><h3>Chat</h3><p>Per-job realtime thread to confirm details.</p></div>
+    <div class="step"><span class="n">5</span><h3>Complete</h3><p>In progress → completed, tracked per role.</p></div>
+    <div class="step"><span class="n">6</span><h3>Review</h3><p>Mutual 1–5 star reviews feed future ranking.</p></div>
+  </div>
+
+  <div class="cols">
+    <div class="card">
+      <h2>How it&apos;s built</h2>
+      <ul>
+        <li><strong>Expo + Expo Router</strong> <span>— one codebase for iOS, Android, Web</span></li>
+        <li><strong>Fastify + tRPC</strong> <span>— typed APIs; logic lives in services</span></li>
+        <li><strong>PostgreSQL + Drizzle</strong> <span>— versioned migrations</span></li>
+        <li><strong>Shared Zod contracts</strong> <span>— validated on both ends</span></li>
+        <li><strong>SSE chat, S3 uploads</strong> <span>— presigned URLs, no proxy bytes</span></li>
+        <li><strong>688 unit tests + green e2e</strong> <span>— colocated Vitest, Playwright web</span></li>
+      </ul>
+    </div>
+    <div class="card model">
+      <h2>Meta AI inside</h2>
+      <ul>
+        <li><strong>Job-post assistant</strong> <span>— Muse Spark Open on Baseten; tool-using agent fills the draft, never posts</span></li>
+        <li><strong>Voice input</strong> <span>— Muse Voice Transcribe on web and iOS</span></li>
+        <li><strong>Learns with use</strong> <span>— saved answers ranked by host feedback</span></li>
+        <li><strong>Local-first dev</strong> <span>— Muse Glimmer via Ollama; scripted fake for tests</span></li>
+        <li><strong>Brand assets</strong> <span>— Muse Image generated prototype art</span></li>
+        <li><strong>Built with Muse Code</strong> <span>— agentic CLI, service-layer rules</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>
+    <span><strong>Sparkl</strong> · Startup track · Build for Your World</span>
+    <span>English-first, Spanish-ready · No payments, no auto-assign in MVP</span>
+  </footer>
+</div>
+</body>
+</html>
