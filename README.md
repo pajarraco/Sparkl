@@ -1,5 +1,7 @@
 # Sparkl
 
+Sample Video: https://youtu.be/txohIZv-GjE
+
 A two-sided marketplace connecting vacation-rental hosts with cleaning professionals.
 
 Built for the Meta Global AI Developer Hackathon with Expo (iOS, Android, Web), Fastify, tRPC, and PostgreSQL.
