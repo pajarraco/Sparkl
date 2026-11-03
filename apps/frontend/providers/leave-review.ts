@@ -13,6 +13,13 @@ export const REVIEW_STARS = [1, 2, 3, 4, 5] as const;
 
 export type ReviewStars = (typeof REVIEW_STARS)[number];
 
+// Read-only star row for a sent review (ReviewCard): which of the five
+// ★ glyphs render filled. Stars are 1–5 from the shared schema, so every
+// entry always resolves — no clamping, no guessing.
+export function reviewStarsFill(stars: number): boolean[] {
+  return REVIEW_STARS.map((value) => value <= stars);
+}
+
 export const REVIEW_COMMENT_MAX_LENGTH = 1000;
 
 export type ReviewField = "stars" | "comment";

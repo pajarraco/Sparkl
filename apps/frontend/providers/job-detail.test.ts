@@ -5,6 +5,7 @@ import {
   hostActionsForStatus,
   hostChatAvailableForStatus,
   hostReviewAvailableForStatus,
+  hostReviewCtaTitle,
   suggestionTrustLine,
 } from "./job-detail";
 
@@ -71,6 +72,13 @@ describe("suggestionTrustLine", () => {
     expect(suggestionTrustLine({ avgRating: null, completedJobCount: 0 })).toBe(
       "0 jobs completed",
     );
+  });
+});
+
+describe("hostReviewCtaTitle", () => {
+  it("says See review once the host already reviewed, Leave a review otherwise", () => {
+    expect(hostReviewCtaTitle(true)).toBe("See review");
+    expect(hostReviewCtaTitle(false)).toBe("Leave a review");
   });
 });
 

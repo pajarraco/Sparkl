@@ -4,6 +4,7 @@ import {
   cleanerChatAvailableForStatus,
   cleanerClaimAvailableForStatus,
   cleanerReviewAvailableForStatus,
+  cleanerReviewCtaTitle,
   cleanerStartAvailableForStatus,
   myPendingRequestForJob,
   requestSubmitErrorMessage,
@@ -100,6 +101,13 @@ describe("requestSubmitErrorMessage", () => {
     expect(requestSubmitErrorMessage({})).toBe(
       "Something went wrong. Try again.",
     );
+  });
+});
+
+describe("cleanerReviewCtaTitle", () => {
+  it("says See review once the cleaner already reviewed, Leave a review otherwise", () => {
+    expect(cleanerReviewCtaTitle(true)).toBe("See review");
+    expect(cleanerReviewCtaTitle(false)).toBe("Leave a review");
   });
 });
 

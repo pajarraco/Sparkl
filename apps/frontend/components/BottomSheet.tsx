@@ -9,7 +9,6 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  View,
 } from "react-native";
 import {
   THEME_COLORS,

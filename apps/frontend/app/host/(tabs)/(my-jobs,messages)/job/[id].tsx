@@ -1,6 +1,11 @@
 import type { JobRequestWithCleaner, RankedCleaner } from "@sparkl/shared";
-import { useLocalSearchParams, useRouter, useSegments } from "expo-router";
-import { useState } from "react";
+import {
+  useFocusEffect,
+  useLocalSearchParams,
+  useRouter,
+  useSegments,
+} from "expo-router";
+import { useCallback, useState } from "react";
 import {
   FlatList,
   StyleSheet,
@@ -19,9 +24,13 @@ import {
   hostActionsForStatus,
   hostChatAvailableForStatus,
   hostReviewAvailableForStatus,
+  hostReviewCtaTitle,
   suggestionTrustLine,
 } from "../../../../../providers/job-detail";
-import { formatMatchReasons } from "../../../../../providers/match-reasons";
+import {
+  detailTrustLine,
+  formatMatchReasons,
+} from "../../../../../providers/match-reasons";
 import {
   formatJobWindow,
   formatPriceMinorUnits,
@@ -263,6 +272,27 @@ export default function HostJobDetailScreen() {
   const pendingRequests = (requestsQuery.data ?? []).filter(
     (row) => row.request.initiatedBy === "cleaner",
   );
+  // The host's own review, if any — decides whether the review CTA says
+  // "Leave a review" or "See review". Refetched on focus so the label
+  // flips right after submitting on the review screen.
+  const myReviewQuery = sparklTrpc.reviews.mineForJob.useQuery(
+    { jobId: jobId ?? "" },
+    { enabled: jobId !== null },
+  );
+  const { refetch: refetchMyReview } = myReviewQuery;
+  useFocusEffect(
+    useCallback(() => {
+      if (jobId !== null) void refetchMyReview();
+    }, [jobId, refetchMyReview]),
+  );
+  // The claimed cleaner's trust row, same batched lookup the cards use —
+  // one query per screen, omitted while the job is still open (there is
+  // no counterpart yet) or when the cleaner has no rating data.
+  const claimedCleanerId = job?.claimedByCleanerId ?? null;
+  const cleanerRatingsQuery = sparklTrpc.users.ratingsFor.useQuery(
+    { userIds: claimedCleanerId === null ? [] : [claimedCleanerId] },
+    { enabled: jobId !== null && claimedCleanerId !== null },
+  );
 
   const cancelJob = sparklTrpc.jobs.cancel.useMutation();
   const transitionJob = sparklTrpc.jobs.transition.useMutation();
@@ -392,6 +422,14 @@ export default function HostJobDetailScreen() {
   const pill =
     STATUS_PILL[job.status === "in_progress" ? "inProgress" : job.status];
   const actions = hostActionsForStatus(job.status);
+  const reviewCtaTitle = hostReviewCtaTitle(
+    (myReviewQuery.data?.review ?? null) !== null,
+  );
+  const cleanerTrustLine = detailTrustLine(
+    cleanerRatingsQuery.data ?? {},
+    job.claimedByCleanerId,
+    suggestionTrustLine,
+  );
 
   return (
     <DetailScreen
@@ -419,12 +457,12 @@ export default function HostJobDetailScreen() {
             ) : null}
             {hostReviewAvailableForStatus(job.status) ? (
               <SparklButton
-                accessibilityLabel={strings.review.title}
+                accessibilityLabel={reviewCtaTitle}
                 onPress={() => {
                   router.push(stackHref("host", segments, `review/${job.id}`));
                 }}
                 testID="host-job-leave-review"
-                title={strings.review.title}
+                title={reviewCtaTitle}
                 variant="secondary"
               />
             ) : null}
@@ -469,6 +507,15 @@ export default function HostJobDetailScreen() {
                   {statusLabelFor(job.status)}
                 </Text>
               </View>
+              {cleanerTrustLine === null ? null : (
+                <Text
+                  style={styles.suggestionTrust}
+                  testID="host-job-cleaner-trust"
+                >
+                  <Text style={styles.suggestionStars}>{"★ "}</Text>
+                  {cleanerTrustLine}
+                </Text>
+              )}
             </View>
             <View style={styles.section}>
               <Text style={styles.heading}>

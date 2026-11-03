@@ -1,5 +1,10 @@
-import { useLocalSearchParams, useRouter, useSegments } from "expo-router";
-import { useState } from "react";
+import {
+  useFocusEffect,
+  useLocalSearchParams,
+  useRouter,
+  useSegments,
+} from "expo-router";
+import { useCallback, useState } from "react";
 import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { DetailScreen } from "../../../../../components/DetailScreen";
 import { SparklButton } from "../../../../../components/SparklButton";
@@ -8,12 +13,17 @@ import {
   cleanerChatAvailableForStatus,
   cleanerClaimAvailableForStatus,
   cleanerReviewAvailableForStatus,
+  cleanerReviewCtaTitle,
   cleanerStartAvailableForStatus,
   myPendingRequestForJob,
   requestSubmitErrorMessage,
 } from "../../../../../providers/cleaner-job-detail";
 import { getStrings } from "../../../../../providers/i18n";
-import { formatMatchReasons } from "../../../../../providers/match-reasons";
+import { suggestionTrustLine } from "../../../../../providers/job-detail";
+import {
+  detailTrustLine,
+  formatMatchReasons,
+} from "../../../../../providers/match-reasons";
 import {
   formatJobWindow,
   formatPriceMinorUnits,
@@ -65,6 +75,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: THEME_COLORS.inkSoft,
+  },
+  trustStars: {
+    color: THEME_COLORS.orangeDeep,
+    fontWeight: "500",
   },
   pill: {
     alignSelf: "flex-start",
@@ -138,6 +152,29 @@ export default function CleanerJobDetailScreen() {
   // The caller's own pending request/offer, across all jobs — used to
   // decide between "Request job" and the offer-response actions below.
   const myRequestsQuery = sparklTrpc.jobRequests.listMine.useQuery();
+
+  // The host's trust row (design.md Signature Element), same batched
+  // lookup the board cards use — one query per screen, omitted when the
+  // host has no rating data yet.
+  const hostIds = job === undefined ? [] : [job.hostId];
+  const hostRatingsQuery = sparklTrpc.users.ratingsFor.useQuery(
+    { userIds: hostIds },
+    { enabled: hostIds.length > 0 },
+  );
+
+  // The cleaner's own review, if any — decides whether the review CTA
+  // says "Leave a review" or "See review". Refetched on focus so the
+  // label flips right after submitting on the review screen.
+  const myReviewQuery = sparklTrpc.reviews.mineForJob.useQuery(
+    { jobId: jobId ?? "" },
+    { enabled: jobId !== null },
+  );
+  const { refetch: refetchMyReview } = myReviewQuery;
+  useFocusEffect(
+    useCallback(() => {
+      if (jobId !== null) void refetchMyReview();
+    }, [jobId, refetchMyReview]),
+  );
 
   const transitionJob = sparklTrpc.jobs.transition.useMutation();
   const requestJob = sparklTrpc.jobRequests.request.useMutation();
@@ -253,6 +290,14 @@ export default function CleanerJobDetailScreen() {
   const pill =
     STATUS_PILL[job.status === "in_progress" ? "inProgress" : job.status];
   const myRequest = myPendingRequestForJob(myRequestsQuery.data ?? [], job.id);
+  const reviewCtaTitle = cleanerReviewCtaTitle(
+    (myReviewQuery.data?.review ?? null) !== null,
+  );
+  const hostTrustLine = detailTrustLine(
+    hostRatingsQuery.data ?? {},
+    job.hostId,
+    suggestionTrustLine,
+  );
 
   return (
     <DetailScreen
@@ -275,6 +320,12 @@ export default function CleanerJobDetailScreen() {
         formatMatchReasons(ranked.reasons) === null ? null : (
           <Text style={styles.hint} testID="cleaner-job-match-reasons">
             {formatMatchReasons(ranked.reasons)}
+          </Text>
+        )}
+        {hostTrustLine === null ? null : (
+          <Text style={styles.hint} testID="cleaner-job-host-trust">
+            <Text style={styles.trustStars}>{"★ "}</Text>
+            {hostTrustLine}
           </Text>
         )}
       </View>
@@ -310,12 +361,12 @@ export default function CleanerJobDetailScreen() {
         ) : null}
         {cleanerReviewAvailableForStatus(job.status) ? (
           <SparklButton
-            accessibilityLabel={strings.review.title}
+            accessibilityLabel={reviewCtaTitle}
             onPress={() => {
               router.push(stackHref("cleaner", segments, `review/${job.id}`));
             }}
             testID="cleaner-job-leave-review"
-            title={strings.review.title}
+            title={reviewCtaTitle}
             variant="secondary"
           />
         ) : null}

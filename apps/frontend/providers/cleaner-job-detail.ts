@@ -29,6 +29,13 @@ export function cleanerReviewAvailableForStatus(status: JobStatus): boolean {
   return status === "completed";
 }
 
+// The Job Detail CTA mirrors the review screen: once the cleaner already
+// reviewed, the button leads to the sent review instead of the form.
+export function cleanerReviewCtaTitle(hasReviewed: boolean): string {
+  const strings = getStrings();
+  return hasReviewed ? strings.review.seeReview : strings.review.title;
+}
+
 function isConflictError(err: unknown): boolean {
   if (typeof err !== "object" || err === null) return false;
   const data = (err as { data?: unknown }).data;

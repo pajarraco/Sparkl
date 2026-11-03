@@ -34,6 +34,13 @@ export function hostReviewAvailableForStatus(status: JobStatus): boolean {
   return status === "completed";
 }
 
+// The Job Detail CTA mirrors the review screen: once the host already
+// reviewed, the button leads to the sent review instead of the form.
+export function hostReviewCtaTitle(hasReviewed: boolean): string {
+  const strings = getStrings();
+  return hasReviewed ? strings.review.seeReview : strings.review.title;
+}
+
 type CleanerTrustProfile = Pick<
   RankedCleaner["cleaner"]["profile"],
   "avgRating" | "completedJobCount"

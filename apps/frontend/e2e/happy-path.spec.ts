@@ -183,8 +183,11 @@ test("start, complete, both reviews", async ({ browser }, testInfo) => {
     await expect(host.page.getByTestId("leave-review-success")).toBeVisible();
     // Reopening the review shows what was sent, not the form again.
     await host.page.reload();
+    await expect(
+      host.page.getByTestId("leave-review-existing-stars"),
+    ).toHaveAttribute("aria-label", "5 out of 5 stars");
     await expect(host.page.getByTestId("leave-review-existing")).toContainText(
-      "5 out of 5 stars",
+      "E2E review, obviously fake",
     );
     await expect(host.page.getByTestId("review-submit")).toHaveCount(0);
 
@@ -210,8 +213,9 @@ test("start, complete, both reviews", async ({ browser }, testInfo) => {
       host.page
         .getByTestId("reviews-received")
         .getByTestId("review-card")
-        .first(),
-    ).toContainText("4 out of 5 stars");
+        .first()
+        .getByTestId("review-card-stars"),
+    ).toHaveAttribute("aria-label", "4 out of 5 stars");
   } finally {
     await host.close();
     await cleaner.close();

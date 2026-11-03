@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   cleanerReviewSubjectForJob,
   hostReviewSubjectForJob,
+  reviewStarsFill,
   reviewSubmitErrorMessage,
   validateReviewForm,
 } from "./leave-review";
@@ -73,5 +74,16 @@ describe("reviewSubmitErrorMessage", () => {
     expect(reviewSubmitErrorMessage(null)).toBe(
       "Something went wrong. Try again.",
     );
+  });
+});
+
+describe("reviewStarsFill", () => {
+  it("fills glyphs up to the given stars", () => {
+    expect(reviewStarsFill(3)).toEqual([true, true, true, false, false]);
+  });
+
+  it("handles the edges", () => {
+    expect(reviewStarsFill(1)).toEqual([true, false, false, false, false]);
+    expect(reviewStarsFill(5)).toEqual([true, true, true, true, true]);
   });
 });
