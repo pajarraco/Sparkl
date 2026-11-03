@@ -121,6 +121,15 @@ export const en = {
     title: "Turnover cleaning",
     jobsDone: "jobs completed",
   },
+  matchReasons: {
+    rating: "Highly rated",
+    distance: "Nearby",
+    availability: "Available for this window",
+    completedJobs: "Experienced",
+    acceptanceRate: "Reliable",
+    responseTime: "Responds fast",
+    usual: "Your usual cleaner",
+  },
   jobDetail: {
     title: "Job details",
     dateHeading: "Date and time",

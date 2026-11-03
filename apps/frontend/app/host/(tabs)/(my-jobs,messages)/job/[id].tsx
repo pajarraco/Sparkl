@@ -21,6 +21,7 @@ import {
   hostReviewAvailableForStatus,
   suggestionTrustLine,
 } from "../../../../../providers/job-detail";
+import { formatMatchReasons } from "../../../../../providers/match-reasons";
 import {
   formatJobWindow,
   formatPriceMinorUnits,
@@ -154,6 +155,7 @@ function SuggestionRow(props: {
 }) {
   const strings = getStrings();
   const { profile } = props.suggestion.cleaner;
+  const reasons = formatMatchReasons(props.suggestion.reasons);
   return (
     <View style={styles.suggestion} testID={`job-suggestion-${profile.id}`}>
       <Text style={styles.suggestionName}>{profile.name}</Text>
@@ -161,6 +163,14 @@ function SuggestionRow(props: {
         <Text style={styles.suggestionStars}>{"★ "}</Text>
         {suggestionTrustLine(profile)}
       </Text>
+      {reasons === null ? null : (
+        <Text
+          style={styles.suggestionTrust}
+          testID={`job-suggestion-reasons-${profile.id}`}
+        >
+          {reasons}
+        </Text>
+      )}
       {props.isBestMatch ? (
         <View style={styles.bestMatch}>
           <Text style={styles.bestMatchText}>{props.bestMatchLabel}</Text>

@@ -6,6 +6,7 @@ import {
   rankJobsOutputSchema,
   rankingWeightsSchema,
   suggestCleanersInput,
+  topMatchSignals,
 } from "./suggestions";
 
 function sum(weights: Record<string, number>): number {
@@ -48,5 +49,42 @@ describe("ranking contract", () => {
       jobs: [],
       total: 0,
     });
+  });
+});
+
+describe("topMatchSignals", () => {
+  const breakdown = {
+    rating: 0.9,
+    distance: 0.8,
+    availability: 1,
+    completedJobs: 0.2,
+    acceptanceRate: 0.5,
+    responseTime: 0.5,
+  };
+  it("picks the top two strong signals by weight x score", () => {
+    expect(topMatchSignals(breakdown, { ...RANKING_WEIGHTS_V1 })).toEqual([
+      "rating",
+      "distance",
+    ]);
+  });
+  it("omits weak or neutral signals", () => {
+    expect(
+      topMatchSignals(
+        {
+          rating: 0.5,
+          distance: 0.5,
+          availability: 0.5,
+          completedJobs: 0,
+          acceptanceRate: 0.5,
+          responseTime: 0.5,
+        },
+        { ...RANKING_WEIGHTS_V1 },
+      ),
+    ).toEqual([]);
+  });
+  it("pins the usual cleaner first", () => {
+    expect(
+      topMatchSignals(breakdown, { ...RANKING_WEIGHTS_V1 }, { usual: true }),
+    ).toEqual(["usual", "rating"]);
   });
 });

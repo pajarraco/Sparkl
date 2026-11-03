@@ -13,6 +13,7 @@ import {
   requestSubmitErrorMessage,
 } from "../../../../../providers/cleaner-job-detail";
 import { getStrings } from "../../../../../providers/i18n";
+import { formatMatchReasons } from "../../../../../providers/match-reasons";
 import {
   formatJobWindow,
   formatPriceMinorUnits,
@@ -269,6 +270,12 @@ export default function CleanerJobDetailScreen() {
         </View>
         {ranked === undefined ? null : (
           <Text style={styles.hint}>{formatMatchPercent(ranked.score)}</Text>
+        )}
+        {ranked === undefined ||
+        formatMatchReasons(ranked.reasons) === null ? null : (
+          <Text style={styles.hint} testID="cleaner-job-match-reasons">
+            {formatMatchReasons(ranked.reasons)}
+          </Text>
         )}
       </View>
       <View style={styles.section}>

@@ -101,7 +101,7 @@ Spec: `context/features/02-integrate-baseten.md` (approved 2026-10-29). Phases a
 
 #### P4 — Stretch (cut first; §12 learning L1 goes before it)
 
-- [ ] Smart match explanations on ranked suggestions
+- [x] Smart match explanations on ranked suggestions. **2026-11-03:** deterministic `reasons` (max 2, weight × score, signal ≥ 0.7, `usual` first) computed in the matching service with the active weights, rendered via `matchReasons.*` i18n on host suggestions + cleaner job detail. `pnpm test` green (shared 98, api 369, frontend 215), `pnpm typecheck` clean, `biome check` clean on touched files (full lint has a pre-existing CRLF error in untouched `.vscode/settings.json`).
 
 #### Close-out
 

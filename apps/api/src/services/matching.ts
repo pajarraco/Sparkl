@@ -19,6 +19,7 @@ import {
   type SuggestCleanersInput,
   type User,
   type UserRole,
+  topMatchSignals,
 } from "@sparkl/shared";
 import { type JobsStore, filterOpenJobs, haversineKm } from "./jobs.js";
 import type { UsersStore } from "./users.js";
@@ -229,6 +230,7 @@ export async function suggestCleanersForJob(
     throw new MatchingError("JOB_NOT_OPEN", `Job is ${job.status}, not open.`);
   }
   const weights = resolveWeights(flags);
+  const pinned = job.preferredCleanerId ?? null;
   const cleaners = await stores.users.listCleaners();
   const ranked: RankedCleaner[] = [];
   for (const cleaner of cleaners) {
@@ -260,9 +262,11 @@ export async function suggestCleanersForJob(
       cleaner: toPublicProfile(cleaner, availability),
       score: scoreCleaner(breakdown, weights),
       breakdown,
+      reasons: topMatchSignals(breakdown, weights, {
+        usual: pinned !== null && cleaner.id === pinned,
+      }),
     });
   }
-  const pinned = job.preferredCleanerId ?? null;
   ranked.sort(
     (a, b) =>
       pinRank(a.cleaner.profile.id, pinned) -
@@ -357,6 +361,7 @@ export async function rankJobsForCleaner(
       job,
       score: scoreCleaner(breakdown, weights),
       breakdown,
+      reasons: topMatchSignals(breakdown, weights),
     });
   }
   ranked.sort(

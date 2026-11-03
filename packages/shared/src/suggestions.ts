@@ -95,11 +95,57 @@ export const matchBreakdownSchema = z
 
 export type MatchBreakdown = z.infer<typeof matchBreakdownSchema>;
 
+export const matchSignalSchema = z.enum([
+  "rating",
+  "distance",
+  "availability",
+  "completedJobs",
+  "acceptanceRate",
+  "responseTime",
+  "usual",
+]);
+
+export type MatchSignal = z.infer<typeof matchSignalSchema>;
+
+// Deterministic match explanations (02 P4): the top contributing signals,
+// picked by weight × score, only when the raw signal is strong (>= 0.7).
+// The service computes them with the active weights; the frontend only
+// translates keys via i18n. Max 2, never scores or personal data.
+const MATCH_REASON_THRESHOLD = 0.7;
+const MAX_MATCH_REASONS = 2;
+
+export function topMatchSignals(
+  breakdown: MatchBreakdown,
+  weights: RankingWeights,
+  opts: { usual?: boolean } = {},
+): MatchSignal[] {
+  const entries: Array<{ signal: MatchSignal; contribution: number }> = (
+    Object.keys(weights) as Array<keyof RankingWeights>
+  )
+    .filter((key) => key in breakdown)
+    .map((key) => ({
+      signal: key as MatchSignal,
+      contribution: weights[key] * breakdown[key as keyof MatchBreakdown],
+    }))
+    .filter(
+      ({ signal }) =>
+        breakdown[signal as keyof MatchBreakdown] >= MATCH_REASON_THRESHOLD,
+    )
+    .sort((a, b) => b.contribution - a.contribution);
+  const top = entries.slice(0, MAX_MATCH_REASONS).map((e) => e.signal);
+  if (opts.usual === true) {
+    const pinnedFirst: MatchSignal[] = ["usual", ...top];
+    return pinnedFirst.slice(0, MAX_MATCH_REASONS);
+  }
+  return top;
+}
+
 export const rankedCleanerSchema = z
   .object({
     cleaner: publicCleanerProfileSchema,
     score: z.number().min(0).max(1),
     breakdown: matchBreakdownSchema,
+    reasons: z.array(matchSignalSchema).max(2),
   })
   .strict();
 
@@ -123,6 +169,7 @@ export const rankedJobSchema = z
     job: jobSchema,
     score: z.number().min(0).max(1),
     breakdown: matchBreakdownSchema,
+    reasons: z.array(matchSignalSchema).max(2),
   })
   .strict();
 
